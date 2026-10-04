@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>The Depths</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.13">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.13">
-<link rel="apple-touch-icon-precomposed" sizes="180x180" href="icon-180.png?v=0.13">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.16">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.16">
 <link rel="manifest" href="manifest.webmanifest">
+<title>Black Tiger: The Depths v0.16</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
   --head:"Segoe UI",system-ui,sans-serif; --body:"Segoe UI",system-ui,-apple-system,sans-serif;
-  box-sizing:border-box; color-scheme:dark;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); color-scheme:dark;
 }
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);touch-action:manipulation;-webkit-text-size-adjust:100%}
+body{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--body);display:flex;flex-direction:column;align-items:center}
 h1{font:700 20px var(--head);margin:0}
 button{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
@@ -38,47 +38,66 @@ header{width:100%;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;ju
 .keys{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:14px;color:var(--muted);max-width:900px}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center}
 kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--panel);color:var(--text)}
+#touch{display:none;width:100%;max-width:640px;justify-content:space-between;align-items:center;gap:12px;user-select:none;-webkit-user-select:none;touch-action:none}
+#touch .pad{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,48px);gap:4px}
+#touch .act{display:flex;gap:10px;align-items:center}
+#touch button{padding:0;font-size:18px;touch-action:none;-webkit-tap-highlight-color:transparent}
+#touch button.big{width:68px;height:68px;border-radius:50%;font-size:15px;font-weight:600}
+#touch button.on{background:var(--gold);color:var(--ink)}
+#touch .act{flex-direction:column;align-items:flex-end;gap:10px}
+#touch .act-row{display:flex;gap:10px}
+#touch .mapbtn{padding:5px 18px;font-size:14px;border-radius:14px}
+@media (pointer:coarse){
+  #touch{display:flex}.keys{display:none}
+  #screen{border-radius:0}
+  header{padding:6px 12px}header h1{font-size:16px}#status{display:none}
+  #stage{gap:6px;padding:0 0 6px}
+  #touch .pad{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,44px)}
+  #touch{padding:0 12px}
+  #touch button.big{width:62px;height:62px}
+}
 [hidden]{display:none !important}
-body.touch{touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-body.touch .keys,body.touch header{display:none}
-#touch{position:fixed;inset:0;pointer-events:none;z-index:5}
-#touch[hidden]{display:none !important}
-.tb{position:absolute;pointer-events:auto;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);color:rgba(255,255,255,.85);font:700 14px var(--head);display:flex;align-items:center;justify-content:center;touch-action:none}
-.tb.on{background:rgba(212,168,67,.55)}
-.sq{border-radius:14px}
-#tL{left:max(12px,env(safe-area-inset-left));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 40px);width:64px;height:64px}
-#tR{left:calc(max(12px,env(safe-area-inset-left)) + 76px);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 40px);width:64px;height:64px}
-#tU{left:calc(max(12px,env(safe-area-inset-left)) + 38px);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 100px);width:64px;height:64px}
-#tD{left:calc(max(12px,env(safe-area-inset-left)) + 38px);bottom:max(14px,env(safe-area-inset-bottom));width:64px;height:48px}
-#tJ{right:calc(max(14px,env(safe-area-inset-right)) + 86px);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 24px);width:76px;height:76px}
-#tA{right:max(14px,env(safe-area-inset-right));bottom:calc(max(14px,env(safe-area-inset-bottom)) + 70px);width:76px;height:76px}
-#tM{right:max(12px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));width:48px;height:48px;font-size:12px}
 </style>
 </head>
 <body>
-
 <header>
-  <h1>The Depths</h1>
-  <span class="muted" id="status">Tap Jump to begin.</span>
+  <h1>Black Tiger: The Depths <span id="ver" style="font-size:14px;font-weight:500;color:var(--muted)"></span></h1>
+  <span class="muted" id="status">Waiting for your game files.</span>
 </header>
 
-
-<div id="touch" hidden>
-  <div class="tb" id="tL" data-k="left">&#9664;</div><div class="tb" id="tR" data-k="right">&#9654;</div>
-  <div class="tb" id="tU" data-k="up">&#9650;</div><div class="tb" id="tD" data-k="down">&#9660;</div>
-  <div class="tb" id="tJ" data-k="jump">JUMP</div><div class="tb" id="tA" data-k="attack">FLAIL</div>
-  <div class="tb sq" id="tM" data-k="map">MAP</div>
+<div id="load">
+  <h2>Open your blktiger.zip</h2>
+  <p class="muted">Graphics and colours are read from your own file at start-up. Nothing from the game is stored in this page.</p>
+  <div class="row">
+    <button class="primary" id="openBtn">Choose file</button>
+  </div>
+  <p style="margin:12px 0 0"><label class="muted"><input type="checkbox" id="remember" checked> Remember the files in this browser</label></p>
+  <div id="msg"></div>
 </div>
+<input type="file" id="fileIn" multiple hidden>
 
 <div id="stage" hidden>
   <canvas id="screen" width="256" height="224" tabindex="0" aria-label="Game screen"></canvas>
+  <div id="touch" aria-label="Touch controls">
+    <div class="pad">
+      <span></span><button data-k="up" aria-label="Up">▲</button><span></span>
+      <button data-k="left" aria-label="Left">◀</button><span></span><button data-k="right" aria-label="Right">▶</button>
+      <span></span><button data-k="down" aria-label="Down">▼</button><span></span>
+    </div>
+    <div class="act">
+      <div class="act-row">
+        <button class="big" data-k="attack" aria-label="Flail">Flail</button>
+        <button class="big" data-k="jump" aria-label="Jump">Jump</button>
+      </div>
+      <button class="mapbtn" data-k="map" aria-label="Map">Map</button>
+    </div>
+  </div>
   <div class="keys">
     <span><kbd>←</kbd> <kbd>→</kbd> walk</span>
     <span><kbd>↑</kbd> <kbd>↓</kbd> climb chains</span>
     <span><kbd>↓</kbd> crouch, <kbd>↓</kbd>+<kbd>Z</kbd> drop through a ledge</span>
     <span><kbd>Z</kbd>/<kbd>Space</kbd> jump</span>
     <span><kbd>X</kbd> flail</span>
-    <span><kbd>↑</kbd> at a caged wise man: shop</span>
     <span><kbd>M</kbd> map</span>
     <span><kbd>`</kbd> debug view</span>
   </div>
@@ -88,65 +107,103 @@ body.touch .keys,body.touch header{display:none}
   </div>
 </div>
 
+<div id="gate" style="position:fixed;inset:0;z-index:99;background:#0f1118;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font:16px system-ui,sans-serif;color:#e9e4d6">
+  <div style="font:700 22px system-ui">Black Tiger: The Depths</div>
+  <input id="pw" type="password" placeholder="Password" autocomplete="off" style="font:inherit;padding:8px 12px;border-radius:6px;border:1px solid #33394a;background:#1b1f2b;color:inherit">
+  <button id="pwGo" style="font:inherit;padding:8px 18px;border-radius:6px;border:0;background:#d4a843;color:#151821;font-weight:600">Enter</button>
+  <div id="pwErr" style="color:#e0874f;min-height:1.2em"></div>
+</div>
 <script>
-const VERSION = "0.13";   // revision number: bump on every push
+(function(){
+  const H="b8deec418f1bf026dde408343fbe408ab2e53f9ad2c5ec2e620baca84357efe4", K="btdepths.unlocked.v1";
+  async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+  function go(){ document.getElementById("gate").remove(); const s=document.createElement("script"); s.textContent=document.getElementById("game").textContent; document.body.appendChild(s); }
+  let ok=false; try{ ok=localStorage.getItem(K)===H; }catch(e){}
+  if(ok){ go(); return; }
+  async function tryIt(){ const v=document.getElementById("pw").value.trim().toLowerCase(); if(await sha(v)===H){ try{localStorage.setItem(K,H);}catch(e){} go(); } else document.getElementById("pwErr").textContent="Wrong password."; }
+  document.getElementById("pwGo").onclick=tryIt;
+  document.getElementById("pw").addEventListener("keydown",e=>{ if(e.key==="Enter") tryIt(); });
+})();
+</script>
+<script type="text/plain" id="game">
 "use strict";
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
+const VERSION = "0.16";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
-  attackLength: 26, strikeFrom: 9, strikeTo: 20,
-  saveEvery: 600,              // frames between autosaves
-  coyote: 6, jumpBuffer: 6,    // frames of forgiveness for jumping
-  grabRange: 4,                // px of slack when grabbing a chain
-  hitPause: 3, shakeHit: 10, shakeKill: 5,   // frames
+  attackLength: 28,               // windup 1-6, flail out 7-26, back 27-28
+  saveEvery: 600,
+  potHits: 3,                  // flail hits it takes to break a clay pot              // frames between autosaves
 };
 // World size, in cells. One cell = one screen = 16 x 14 tiles = 256 x 224 px.
 const CW = 16, CH = 14, GW = 36, GH = 24, TS = 16;
 const WT = GW * CW, HT = GH * CH;   // world size in tiles
+// The view: 256 x 224 like the arcade. On a phone held upright it narrows to 208 so everything is drawn bigger.
+let VW = 256; const VH = 224;
 
 /* Zones run from the surface down. "lab" zones are tight labyrinths.
-   lv/p choose which level palette the ROM art uses for the zone's tiles. */
+   lv/p choose which level palette the ROM art uses for the zone's tiles.
+   "rock" is a colour filter for the zone's rock (the rock tiles are level 1's own; this tints them per zone).
+   "enemies" is the mix of enemy types for the zone (repeat a name to make it more common). */
 const ZONES = [
-  { name: "Upper Halls", enemies: [["crawler",6],["bat",2]],        lv: 0, p: 2,  lab: false, loop: 0.08, wall: "#4a4a5e", solid: "#b07040", ledge: "#c8a050" },
-  { name: "Mossy Galleries", enemies: [["crawler",4],["bat",3],["skeleton",2]],    lv: 4, p: 14, lab: false, loop: 0.12, wall: "#2f4a35", solid: "#8a9a50", ledge: "#b8c070" },
-  { name: "Sandstone Labyrinth", enemies: [["crawler",3],["skeleton",3],["dropper",2]],lv: 2, p: 9,  lab: true,  loop: 0.35, wall: "#5e4630", solid: "#d09060", ledge: "#e8b070" },
-  { name: "Flooded Vaults", enemies: [["bat",3],["skeleton",3],["knight",1],["crawler",2]],     lv: 1, p: 6,  lab: false, loop: 0.10, wall: "#283a5e", solid: "#5080c0", ledge: "#4a9a8a" },
-  { name: "Iron Mines", enemies: [["skeleton",3],["knight",3],["dropper",2],["bat",2]],         lv: 6, p: 15, lab: false, loop: 0.10, wall: "#3a3a3a", solid: "#808080", ledge: "#d08040" },
-  { name: "Crystal Depths", enemies: [["bat",3],["dropper",3],["knight",2],["skeleton",2]],     lv: 7, p: 6,  lab: true,  loop: 0.30, wall: "#4a4020", solid: "#c0a040", ledge: "#5070e0" },
-  { name: "Magma Roots", enemies: [["knight",4],["skeleton",3],["bat",3],["dropper",2]],        lv: 3, p: 10, lab: false, loop: 0.12, wall: "#4a2018", solid: "#c04020", ledge: "#f08030" },
-  { name: "Ancient Core", enemies: [["knight",4],["skeleton",3],["dropper",3],["bat",3]],       lv: 5, p: 7,  lab: true,  loop: 0.25, wall: "#40403a", solid: "#e0d0a0", ledge: "#40a0a0" },
+  { name: "Upper Halls",        lv: 0, p: 2,  lab: false, loop: 0.08, wall: "#4a4a5e", solid: "#b07040", ledge: "#c8a050" , rock: "none", enemies: ["orc", "orc", "bat", "skeleton"] },
+  { name: "Mossy Galleries",    lv: 4, p: 14, lab: false, loop: 0.12, wall: "#2f4a35", solid: "#8a9a50", ledge: "#b8c070" , rock: "hue-rotate(55deg) saturate(0.8)", enemies: ["orc", "snake", "plant", "bat"] },
+  { name: "Sandstone Labyrinth",lv: 2, p: 9,  lab: true,  loop: 0.35, wall: "#5e4630", solid: "#d09060", ledge: "#e8b070" , rock: "saturate(0.75) brightness(1.08)", enemies: ["skeleton", "mummy", "skull", "snake"] },
+  { name: "Flooded Vaults",     lv: 1, p: 6,  lab: false, loop: 0.10, wall: "#283a5e", solid: "#5080c0", ledge: "#60c0a0" , rock: "hue-rotate(175deg) saturate(0.7)", enemies: ["snake", "bat", "firedemon", "orc"] },
+  { name: "Iron Mines",         lv: 6, p: 15, lab: false, loop: 0.10, wall: "#3a3a3a", solid: "#808080", ledge: "#d08040" , rock: "grayscale(0.85) brightness(0.92)", enemies: ["orc", "mummy", "firedemon", "skeleton"] },
+  { name: "Crystal Depths",     lv: 7, p: 6,  lab: true,  loop: 0.30, wall: "#4a4020", solid: "#c0a040", ledge: "#5070e0" , rock: "hue-rotate(215deg) saturate(1.25)", enemies: ["skull", "witch", "bat", "plant"] },
+  { name: "Magma Roots",        lv: 3, p: 10, lab: false, loop: 0.12, wall: "#4a2018", solid: "#c04020", ledge: "#f08030" , rock: "hue-rotate(-22deg) saturate(1.7) brightness(0.92)", enemies: ["firedemon", "orc", "skeleton", "witch"] },
+  { name: "Ancient Core",       lv: 5, p: 7,  lab: true,  loop: 0.25, wall: "#40403a", solid: "#e0d0a0", ledge: "#40a0a0" , rock: "sepia(0.35) hue-rotate(250deg) saturate(0.6)", enemies: ["witch", "mummy", "skull", "orc", "firedemon"] },
 ];
-/* Enemy types. w/h in px, speed in px per frame. hp grows by 1 every 3 zones deep.
-   Behaviour for each type is in BEHAVE (section 10). */
-const ENEMIES = {
-  crawler:  { w: 16, h: 16, hp: 1, speed: 0.5,  drop: ["coin10", 10] },
-  bat:      { w: 16, h: 12, hp: 1, speed: 1.15, drop: ["coin10", 10], sight: 110, swoopFrames: 70 },
-  skeleton: { w: 16, h: 32, hp: 2, speed: 0.35, drop: ["coin10", 10], sight: 128, throwEvery: 100 },
-  knight:   { w: 16, h: 32, hp: 3, speed: 0.3,  drop: ["coin50", 50], sight: 110, block: true, turnFrames: 45, dmg: 2 },
-  dropper:  { w: 16, h: 16, hp: 1, speed: 0.8,  drop: ["coin10", 10], fallAccel: 0.25, restFrames: 70, dmg: 2 },
-};
-/* Progression. Armour adds life and cuts damage from big hits; the flail gains damage and reach.
-   col is the placeholder hero's armour colour. ROM-art armour sets are chosen in the owner's workshop. */
-const ARMOUR = [
-  { hp: 0, red: 0, col: "#a8662a" }, { hp: 2, red: 0, col: "#7a8a52" }, { hp: 3, red: 1, col: "#4a78c8" },
-  { hp: 4, red: 1, col: "#6a3a8a" }, { hp: 6, red: 2, col: "#c8c8d8" },
-];
-const FLAIL = [null, { dmg: 1, reach: 0 }, { dmg: 2, reach: 8 }, { dmg: 3, reach: 16 }];
-const PRICES = { potion: 100, key: 150, flail: [0, 0, 400, 900], armour: [300, 700, 1500, 3000] };   // armour[i] = price to go from level i to i+1
 const zoneOfCellY = cy => Math.min(ZONES.length - 1, Math.floor(cy / 3));
 
 // Tile codes in the world grid
-const EMPTY = 0, SOLID = 1, LEDGE = 2, CHAIN = 3, LEDGECHAIN = 4, LOCK = 5;   // LOCK: a locked door, opened with a key
+const EMPTY = 0, SOLID = 1, LEDGE = 2, CHAIN = 3, LEDGECHAIN = 4, WATER = 5, BRIDGE = 6;
+// Atmosphere settings
+const LOOK = {
+  darkLit: 0.70,       // how dark a room with torches is (0 = no darkness, 1 = black)
+  darkDim: 0.88,       // how dark an unlit room is
+  heroLight: 78,       // radius of the light around the hero in lit rooms (px)
+  heroLightDim: 58,    // ...and in dark rooms
+  torchLight: 96,      // radius of a torch's light (px)
+  wallShade: 0.80,     // how much the background wall is darkened before lighting
+};
 
 /* ======================================================================
-   2. HELPERS
+   2. ROM FILES — read at runtime from the player's own zip
    ====================================================================== */
+const NEED = {
+  tiles:   [["bd-12.5b",0xc4524993],["bd-11.4b",0x7932c86f],["bd-14.9b",0xdc49593a],["bd-13.8b",0x7ed7a122]],
+  sprites: [["bd-08.5a",0xe2f17438],["bd-07.4a",0x5fccbd27],["bd-10.9a",0xfc33ccc6],["bd-09.8a",0xf449de01]],
+  prog:    [["bdu-01a.5e",0xa8f98f22],["bdu-03a.8e",0x4089e157]],
+};
+const NAMES = Object.values(NEED).flat().map(r => r[0]);
 const $ = id => document.getElementById(id);
-// Sound hook: called from jump, land, hit, hurt, coin, jar, potion and shrine. Silent until the audio phase.
-function sfx(name) {}
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u => { let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+
+async function readZip(buf, wanted) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), out = {}; let e = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("This file is not a readable zip.");
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true); const td = new TextDecoder();
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const m = dv.getUint16(p + 10, true), cs = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    const name = td.decode(u8.subarray(p + 46, p + 46 + nl)); p += 46 + nl + el + cl;
+    if (name.includes("/") || !wanted.has(name)) continue;
+    const s = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true), raw = u8.slice(s, s + cs);
+    out[name] = m === 0 ? raw : new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+  }
+  return out;
+}
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open("bt-depths", 1); r.onupgradeneeded = () => r.result.createObjectStore("rom"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbDo(mode, fn) { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction("rom", mode), r = fn(t.objectStore("rom")); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); }
+const idbPut = v => idbDo("readwrite", s => s.put(v, "files")).catch(() => {});
+const idbGet = () => idbDo("readonly", s => s.get("files")).catch(() => null);
 
 /* ======================================================================
    3. ART — one interface, two backends.
@@ -157,31 +214,190 @@ function sfx(name) {}
 const Art = {
   mode: "placeholder",
   cache: new Map(),
+  // ---- ROM data (filled at runtime) ----
+  spr: null, til: null, pal: {},
   // ---- layout data: piece numbers only, no graphics ----
+  // Hero frames, taken from the arcade game's own sprite list while it runs.
+  // [sprite, dx, dy]; the original art faces left. Body = 2x2 pieces, plus the flail ball/chain.
+  HERO: {
+    stand:[[2,0,0],[3,16,0],[10,0,16],[11,16,16],[96,8,16]],
+    walk1:[[4,0,0],[5,16,0],[12,0,16],[13,16,16],[101,11,17]],
+    walk2:[[6,0,0],[7,16,0],[14,0,16],[15,16,16],[106,13,17]],
+    jump:[[34,0,0],[35,16,0],[42,0,16],[43,16,16],[96,21,8]],
+    windup:[[16,0,0],[17,16,0],[24,0,16],[25,16,16],[116,28,-8]],
+    strike1:[[18,0,0],[19,16,0],[26,0,16],[27,16,16],[1,-16,6],[111,-32,6]],
+    strike2:[[18,0,0],[19,16,0],[26,0,16],[27,16,16],[1,-16,6],[1,-32,6],[111,-48,6]],
+    strike3:[[18,0,0],[19,16,0],[26,0,16],[27,16,16],[1,-16,6],[1,-32,6],[1,-48,6],[111,-64,6]],
+    crouch:[[32,0,0],[33,16,0],[40,0,16],[41,16,16],[96,16,18]],
+    cwind:[[20,0,0],[21,16,0],[28,0,16],[29,16,16],[116,31,0]],
+    cstrike1:[[22,0,0],[23,16,0],[30,0,16],[31,16,16],[1,-16,14],[111,-32,14]],
+    cstrike2:[[22,0,0],[23,16,0],[30,0,16],[31,16,16],[1,-16,14],[1,-32,14],[111,-48,14]],
+    cstrike3:[[22,0,0],[23,16,0],[30,0,16],[31,16,16],[1,-16,14],[1,-32,14],[1,-48,14],[111,-64,14]],
+    // climbing (seen from behind), matched against a full rip of the hero's animations
+    climb0:[[66,0,0],[67,16,0],[74,0,16],[75,16,16]],
+    climb1:[[68,0,0],[69,16,0],[76,0,16],[77,16,16]],
+    climb2:[[70,0,0],[71,16,0],[78,0,16],[79,16,16]],
+    // death: staggers, falls, and only bones are left. A 4th value of 1 means "mirror this piece".
+    die0:[[128,-4,0],[129,12,0],[136,-5,16],[137,11,16]],
+    die1:[[130,-3,0],[131,13,0],[138,-4,16],[139,12,16]],
+    die2:[[132,-8,16],[133,8,16],[134,17,15]],
+    die3:[[145,14,2],[152,-2,18],[153,14,18]],
+    die4:[[155,0,22],[155,18,22,1]],
+  },
+  ITEMS: { coin10: 258, coin50: 259, coin100: 260, coin500: 261, coin1000: 262, potion: 265, shrineA: 271, shrineB: 272, hudCoin: 256 },
+  // Characters and objects: sprite pieces matched against reference rips, colours = the level's sprite palette "pal" (0-7).
+  // "face" is the way the original art faces (1 = right). Each zone uses its own level's sprite palettes, so orcs change colour with depth.
+  OBJ: {
+    orc: { pal: 5, face: 1, w: 32, frames: {
+      walk0: q2(640), walk1: q2(642), walk2: q2(644), walk3: q2(646),
+      windup: [...q2(660), [677, 16, -16]], strike: [...q2(658), [676, 32, 0]],
+      hurt: q2(724), die0: q2(726), die1: q2(736), die2: q2(738) } },
+    pot:      { pal: 3, frames: { idle: [[184, 0, 0]] } },
+    key:      { pal: 6, frames: { idle: [[263, 0, 0]] } },
+    chest:    { pal: 6, frames: { shut: q2(1072), open1: q2(1074), open2: q2(1076), open: q2(1078) } },
+    frozen:   { pal: 4, frames: { stone: q2(768), man0: q2(770), man1: q2(772), man2: q2(774) } },
+    // ---- more enemies (matched against reference rips; palettes from level 1) ----
+    skeleton: { pal: 3, face: 0, w: 32, frames: { walk0: q2(592), walk1: q2(592).map(([c, x, y]) => [c, x, y + 1]), bones: q2(610), rise0: q2(608), rise1: q2(598), rise2: q2(596) } },
+    mummy:    { pal: 2, face: 1, w: 32, frames: { walk0: q2(832), walk1: q2(834), walk2: q2(836), walk3: q2(838), spit0: q2(850), spit1: q2(852) } },
+    snake:    { pal: 4, face: -1, w: 32, frames: { idle0: q2(1346), idle1: q2(1348), idle2: q2(1350), bite0: q2(1362), bite1: q2(1364), bite2: q2(1366) } },
+    plant:    { pal: 4, face: 0, w: 32, frames: { hide: q2(994), rise0: q2(992), rise1: q2(982), bud0: q2(976), bud1: q2(978), bite0: q2(980), bite1: q2(996) } },
+    firedemon:{ pal: 2, face: 0, w: 32, frames: { fly0: q2(1444), fly1: q2(1446), fly2: q2(1456), fly3: q2(1458), cast0: q2(1460), cast1: q2(1462) } },
+    fireball: { pal: 2, frames: { idle: [[1440, 0, 0]] } },
+    bat:      { pal: 4, face: 0, w: 16, frames: { e0: [[1395, 0, 0]], e1: [[1396, 0, 0]], e2: [[1397, 0, 0]], f0: [[1398, 0, 0]], f1: [[1399, 0, 0]], f2: [[1400, 0, 0]], f3: [[1401, 0, 0]] } },
+    witch:    { pal: 4, face: 1, w: 32, frames: { appear0: q2(1238), appear1: q2(1236), idle0: q2(1216), idle1: q2(1218), cast: q2(1220) } },
+    skull:    { pal: 2, face: 0, w: 32, frames: { s0: q2(740), s1: q2(742), s2: q2(758), s3: q2(756), s4: q2(754) } },
+    bluefire: { pal: 1, frames: { small: [[1030, 0, 32]], f0: [[1026, 0, 0], [1034, 0, 16], [1042, 0, 32]], f1: [[1026, 0, 0, 1], [1034, 0, 16, 1], [1042, 0, 32, 1]] } },
+    fire:     { pal: 6, frames: { small: [[1028, 0, 32]], f0: [[1024, 0, 0], [1032, 0, 16], [1040, 0, 32]], f1: [[1025, 0, 0], [1033, 0, 16], [1041, 0, 32]] } },
+    rock:     { pal: 2, frames: { idle: q2(1520) } },
+    berry:    { pal: 6, frames: { idle: [[1027, 0, 0]] } },
+    pinwheel: { pal: 6, frames: { idle: [[1035, 0, 0]] } },
+    barrel:   { pal: 6, frames: { idle: [[1386, 0, 0]] } },
+  },
+  // Ground kit: the rock pieces level 1 really uses, found by recognising tiles in screenshots of the running game.
+  // top/mid/tips are 4-wide runs (x % 4); boulders is a 2 x 4 block of the cave-wall rock (drawn mirrored, as in the game).
+  KIT: { top: [36, 37, 38, 39], mid: [44, 45, 46, 47], tips: [60, 61, 62, 63], boulders: [[145, 153, 133, 137], [144, 152, 132, 132]] },
+  TILES: { wall: [1329, 1330], fill: [1297, 1298, 1299], surf: [1281, 1282, 1283], ledge: [1344,1345,1346,1347,1348,1349,1350,1351], under: [1360,1361,1362,1363,1364,1365,1366,1367], chainSprite: 1 },
+
+  loadRom(f) {
+    const bit = (d, b) => (d[b >> 3] >> (7 - (b & 7))) & 1;
+    const decode16 = d => {
+      const n = d.length / 128, out = new Uint8Array(n * 256), half = d.length * 4, pl = [half + 4, half, 4, 0], xo = [0,1,2,3,8,9,10,11,256,257,258,259,264,265,266,267];
+      for (let t = 0; t < n; t++) { const b = t * 512; for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { let v = 0; const o = b + xo[x] + y * 16; for (let k = 0; k < 4; k++) v = (v << 1) | bit(d, pl[k] + o); out[t * 256 + y * 16 + x] = v; } }
+      return out;
+    };
+    const join = l => { const u = new Uint8Array(l.reduce((s, [n]) => s + f[n].length, 0)); let o = 0; for (const [n] of l) { u.set(f[n], o); o += f[n].length; } return u; };
+    this.spr = decode16(join(NEED.sprites)); this.til = decode16(join(NEED.tiles));
+    // colour tables in the program ROM: low byte RRRRGGGG, high byte ----BBBB
+    const fix = f["bdu-01a.5e"], bnk = f["bdu-03a.8e"], col = (lo, hi) => [(lo >> 4) * 17, (lo & 15) * 17, (hi & 15) * 17];
+    const hero = Array.from({ length: 16 }, (_, i) => col(fix[0x19cb + i], fix[0x1a4b + i]));
+    for (let i = 0; i < 10; i++) hero[i] = col(fix[0x1add + i], fix[0x1add + 10 + i]);
+    const lv = (level, p) => { const L = 0x8000 + 0x0c76 + level * 0x300; return Array.from({ length: 16 }, (_, i) => col(bnk[L + p * 16 + i], bnk[L + 0x180 + p * 16 + i])); };
+    this.pal = { hero, items: lv(0, 22), rock: lv(0, 6), boulder: lv(0, 9) };
+    ZONES.forEach((z, i) => { this.pal["z" + i] = lv(z.lv, z.p); for (let n = 0; n < 8; n++) this.pal["zs" + i + "_" + n] = lv(z.lv, 16 + n); });
+    this.mode = "rom"; this.cache.clear();
+  },
+  // one 16x16 ROM piece
+  piece(src, i, pal, clear) {
+    const key = "p" + src + i + pal + clear; if (this.cache.has(key)) return this.cache.get(key);
+    const c = mk(16, 16), x = c.getContext("2d"), img = x.createImageData(16, 16), d = src === "s" ? this.spr : this.til, P = this.pal[pal];
+    for (let k = 0; k < 256; k++) { const v = d[i * 256 + k]; if (v === clear) continue; const p = P[v]; img.data.set([p[0], p[1], p[2], 255], k * 4); }
+    x.putImageData(img, 0, 0); this.cache.set(key, c); return c;
+  },
   // A finished 16x16 map tile. kind: wall | fill | surf | ledge | under | chain | ledgechain
-  tile(zone, kind, x, y) {
-    const key = "t" + this.mode + zone + kind + ((x % 8) + 8) % 8 + "," + ((y % 8) + 8) % 8; if (this.cache.has(key)) return this.cache.get(key);
+  // A finished 16x16 map tile. kind: wall | top | mid | fill | under | ledge | chain | ledgechain
+  tile(zone, kind, x, y, open = 0) {
+    const key = "t" + this.mode + zone + kind + (x % 24) + "_" + (y & 3) + "_" + open; if (this.cache.has(key)) return this.cache.get(key);
     const c = mk(16, 16), g = c.getContext("2d"), Z = ZONES[zone];
-    const chainOver = () => { g.save(); g.translate(8, 8); g.rotate(Math.PI / 2); g.drawImage(phChain(), -8, -8); g.restore(); };
-    phTile(g, Z, kind, ((x % 8) + 8) % 8, ((y % 8) + 8) % 8, zone);
+    const pick = (arr) => arr[x % arr.length];
+    const chainOver = () => { g.save(); g.translate(8, 8); g.rotate(Math.PI / 2); g.drawImage(this.mode === "rom" ? this.piece("s", this.TILES.chainSprite, "hero", 15) : phChain(), -8, -8); g.restore(); };
+    if (this.mode === "rom") {
+      const K = this.KIT, L = mk(16, 16), lg = L.getContext("2d");
+      const rock = (i, flip) => {   // a kit piece, tinted for the zone, with its see-through pen left clear
+        lg.save(); lg.filter = Z.rock || "none";
+        if (flip) { lg.translate(16, 0); lg.scale(-1, 1); }
+        lg.drawImage(this.piece("t", i, i >= 128 ? "boulder" : "rock", 15), 0, 0); lg.restore();
+      };
+      // the dark background wall goes behind everything
+      g.drawImage(this.piece("t", pick(this.TILES.wall), "z" + zone, -1), 0, 0);
+      g.fillStyle = `rgba(8,6,18,${LOOK.wallShade})`; g.fillRect(0, 0, 16, 16);
+      const boulder = () => rock(K.boulders[x & 1][y & 3], true);
+      if (kind === "fill") boulder();
+      else if (kind === "mid") { boulder(); rock(K.mid[x & 3]); }
+      else if (kind === "top") rock(K.top[x & 3]);
+      else if (kind === "ledge" || kind === "ledgechain") rock(K.top[x & 3]);
+      else if (kind === "under") rock(K.tips[x & 3]);
+      // wear the exposed edges: a ragged top, and ragged sides where the rock meets open space
+      lg.globalCompositeOperation = "destination-out";
+      if (kind === "top" || kind === "ledge" || kind === "ledgechain") for (let i = 0; i < 16; i++) { const d = wear(x * 16 + i, 1); if (d) lg.fillRect(i, 0, 1, d); }
+      if (open & 1) for (let j = 0; j < 16; j++) { const d = wear(y * 16 + j, 3) + 1; lg.fillRect(0, j, d, 1); }
+      if (open & 2) for (let j = 0; j < 16; j++) { const d = wear(y * 16 + j, 9) + 1; lg.fillRect(16 - d, j, d, 1); }
+      lg.globalCompositeOperation = "source-over";
+      g.drawImage(L, 0, 0);
+      if (kind === "bridge") drawBridge(g, x);
+    } else {
+      g.fillStyle = Z.wall; g.fillRect(0, 0, 16, 16); g.fillStyle = "rgba(0,0,0,.25)"; g.fillRect(0, 7, 16, 1); g.fillRect((x % 2) * 8, 0, 1, 7); g.fillRect(((x + 1) % 2) * 8 + 4, 8, 1, 8);
+      if (kind === "fill" || kind === "mid" || kind === "top") { g.fillStyle = Z.solid; g.fillRect(0, 0, 16, 16); g.fillStyle = "rgba(0,0,0,.3)"; g.fillRect(0, 7, 16, 1); g.fillRect(0, 15, 16, 1); g.fillRect((x % 2) * 8, 0, 1, 7); g.fillRect(((x + 1) % 2) * 8 + 4, 8, 1, 7); }
+      if (kind === "top") { g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(0, 0, 16, 2); }
+      if (kind === "ledge" || kind === "ledgechain") { g.fillStyle = Z.ledge; g.fillRect(0, 0, 16, 6); g.fillStyle = "rgba(0,0,0,.3)"; g.fillRect(0, 5, 16, 1); }
+      if (kind === "under") { g.fillStyle = "rgba(0,0,0,.25)"; g.fillRect(2, 0, 12, 3); }
+      if (kind === "bridge") drawBridge(g, x);
+    }
     if (kind === "chain" || kind === "ledgechain") chainOver();
     this.cache.set(key, c); return c;
   },
-  // Hero frame: returns { img, ox } where ox is the hero's x=0 inside img
+  // Hero frame: returns { img, ox, oy } where (ox, oy) is the hero's top-left inside img
   hero(name, dir) {
-    const key = "h" + this.mode + name + dir + (this.mode === "rom" ? "" : (G ? G.armour : 0)); if (this.cache.has(key)) return this.cache.get(key);
-    const minX = name.includes("strike") ? -32 : 0, HH = 48, c = mk(32 - minX, HH), g = c.getContext("2d");   // strike frames are 64 wide so the chain has room
-    phHero(g, name, -minX);
-    let out = { img: c, ox: -minX, oy: HH - 32 };
-    if (dir > 0) { const m = mk(c.width, HH), mg = m.getContext("2d"); mg.translate(c.width, 0); mg.scale(-1, 1); mg.drawImage(c, 0, 0); out = { img: m, ox: c.width - (-minX + 32), oy: HH - 32 }; }
+    const key = "h" + this.mode + name + dir; if (this.cache.has(key)) return this.cache.get(key);
+    const parts = this.HERO[name], minX = Math.min(0, ...parts.map(p => p[1])), maxX = Math.max(32, ...parts.map(p => p[1] + 16));
+    const minY = Math.min(0, ...parts.map(p => p[2])), maxY = Math.max(32, ...parts.map(p => p[2] + 16));
+    const c = mk(maxX - minX, maxY - minY), g = c.getContext("2d");
+    if (this.mode === "rom") for (const [i, dx, dy, fl] of parts) {
+      const pc = this.piece("s", i, "hero", 15);
+      if (fl) { g.save(); g.translate(dx - minX + 16, dy - minY); g.scale(-1, 1); g.drawImage(pc, 0, 0); g.restore(); }
+      else g.drawImage(pc, dx - minX, dy - minY);
+    }
+    else { g.translate(0, -minY); phHero(g, name, -minX); }
+    let out = { img: c, ox: -minX, oy: -minY };
+    if (dir > 0) { const m = mk(c.width, c.height), mg = m.getContext("2d"); mg.translate(c.width, 0); mg.scale(-1, 1); mg.drawImage(c, 0, 0); out = { img: m, ox: c.width - (-minX + 32), oy: -minY }; }
+    this.cache.set(key, out); return out;
+  },
+  // Any object from OBJ. Returns { img, ox, oy } like hero().
+  obj(kind, frame, dir, zone) {
+    const key = "o" + this.mode + kind + frame + dir + zone; if (this.cache.has(key)) return this.cache.get(key);
+    const O = this.OBJ[kind], parts = O.frames[frame];
+    const minX = Math.min(0, ...parts.map(p => p[1])), maxX = Math.max(16, ...parts.map(p => p[1] + 16));
+    const minY = Math.min(0, ...parts.map(p => p[2])), maxY = Math.max(16, ...parts.map(p => p[2] + 16));
+    const c = mk(maxX - minX, maxY - minY), g = c.getContext("2d");
+    if (this.mode === "rom") for (const [i, dx, dy, fl] of parts) {
+      const pc = this.piece("s", i, "zs" + zone + "_" + O.pal, 15);
+      if (fl) { g.save(); g.translate(dx - minX + 16, dy - minY); g.scale(-1, 1); g.drawImage(pc, 0, 0); g.restore(); } else g.drawImage(pc, dx - minX, dy - minY);
+    }
+    else phObj(g, kind, frame, -minX, -minY, parts);
+    let out = { img: c, ox: -minX, oy: -minY };
+    if (O.face && dir && dir !== O.face) { const m = mk(c.width, c.height), mg = m.getContext("2d"); mg.translate(c.width, 0); mg.scale(-1, 1); mg.drawImage(c, 0, 0); out = { img: m, ox: c.width - (-minX + (O.w || 16)), oy: -minY }; }
     this.cache.set(key, out); return out;
   },
   item(name) {
     const key = "i" + this.mode + name; if (this.cache.has(key)) return this.cache.get(key);
-    const c = phItem(name);
+    const c = this.mode === "rom" ? this.piece("s", this.ITEMS[name], "items", 15) : phItem(name);
     this.cache.set(key, c); return c;
   },
 };
+// Smooth bumpy noise for worn rock edges: 0-3 px, the same every time for the same spot.
+function wear(n, salt) {
+  const h = i => { const v = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453; return v - Math.floor(v); };
+  const a = Math.floor(n / 4), f = (n % 4) / 4, v = h(a) * (1 - f) + h(a + 1) * f;
+  return Math.min(4, Math.floor(v * 3.2 + (h(n * 7) > 0.92 ? 1 : 0)));
+}
+// A thin rope-and-plank bridge (original drawing)
+function drawBridge(g, x) {
+  g.fillStyle = "#5a3a1e"; g.fillRect(0, 1, 16, 4);
+  g.fillStyle = "#8a6034"; for (let i = (x & 1) * 2; i < 16; i += 4) g.fillRect(i, 1, 3, 3);
+  g.fillStyle = "#2a1a0c"; g.fillRect(0, 5, 16, 1);
+  g.fillStyle = "#b09060"; g.fillRect(0, 0, 16, 1);
+  if ((x & 3) === 0) { g.fillStyle = "#6a4a2a"; g.fillRect(1, 5, 1, 3); }
+}
+function q2(n) { return [[n, 0, 0], [n + 1, 16, 0], [n + 8, 0, 16], [n + 9, 16, 16]]; }   // 2x2 block of pieces
 const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
 
 // ---- placeholder drawings (original, simple) ----
@@ -194,240 +410,32 @@ function phItem(name) {
   else { g.fillStyle = name === "shrineA" ? "#ffe060" : "#ffa020"; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 3 : 7, a = k * Math.PI / 5; g.lineTo(8 + Math.cos(a) * r, 8 + Math.sin(a) * r); } g.fill(); }
   return c;
 }
-/* ---- curved, shaded pixel-art toolkit (original art) ----
-   Shapes are ellipses, tapered capsules (limbs) and polygons. Each is inked with a dark outline and
-   shaded as a rounded form (highlight, base, shadow, rim) with the light from the top left. */
-const OUTL = "#1a1230";   // dark indigo, never pure black
-let inkFlash = false;
-function shadeCol(c, f) { const n = parseInt(c.slice(1), 16); return "rgb(" + Math.min(255, Math.round((n >> 16) * f)) + "," + Math.min(255, Math.round(((n >> 8) & 255) * f)) + "," + Math.min(255, Math.round((n & 255) * f)) + ")"; }
-const tri = c => [c, shadeCol(c, 1.5), shadeCol(c, 0.62), shadeCol(c, 0.38)];   // base, highlight, shadow, rim
-const Sh = {
-  ell(cx, cy, rx, ry) { return { bb: [cx - rx, cy - ry, cx + rx, cy + ry], test: (x, y) => { const a = (x + .5 - cx) / rx, b = (y + .5 - cy) / ry; return a * a + b * b <= 1; }, norm: (x, y) => [(x + .5 - cx) / rx, (y + .5 - cy) / ry] }; },
-  sq(cx, cy, rx, ry, n) { n = n || 4; return { bb: [cx - rx, cy - ry, cx + rx, cy + ry], test: (x, y) => Math.pow(Math.abs((x + .5 - cx) / rx), n) + Math.pow(Math.abs((y + .5 - cy) / ry), n) <= 1, norm: (x, y) => [(x + .5 - cx) / rx, (y + .5 - cy) / ry] }; },
-  cap(x0, y0, x1, y1, r0, r1) {
-    if (r1 === undefined) r1 = r0; const dx = x1 - x0, dy = y1 - y0, L = dx * dx + dy * dy || 1, R = Math.max(r0, r1);
-    const q = (x, y) => { let t = ((x + .5 - x0) * dx + (y + .5 - y0) * dy) / L; t = t < 0 ? 0 : t > 1 ? 1 : t; return [x + .5 - (x0 + dx * t), y + .5 - (y0 + dy * t), r0 + (r1 - r0) * t]; };
-    return { bb: [Math.min(x0, x1) - R, Math.min(y0, y1) - R, Math.max(x0, x1) + R, Math.max(y0, y1) + R], test: (x, y) => { const [a, b, r] = q(x, y); return a * a + b * b <= r * r; }, norm: (x, y) => { const [a, b, r] = q(x, y); return [a / r, b / r]; } };
-  },
-  poly(pts) {
-    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), n = pts.length;
-    return { bb: [x0, y0, x1, y1], test: (x, y) => { const px = x + .5, py = y + .5; let c = false; for (let i = 0, j = n - 1; i < n; j = i++) { const a = pts[i], b = pts[j]; if ((a[1] > py) !== (b[1] > py) && px < (b[0] - a[0]) * (py - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }, norm: (x, y) => [(x + .5 - (x0 + x1) / 2) / ((x1 - x0) / 2 || 1) * .7, (y + .5 - (y0 + y1) / 2) / ((y1 - y0) / 2 || 1) * .7] };
-  },
-};
-function inkPart(g, sh, t, noOutline) {
-  const x0 = Math.floor(sh.bb[0]) - 1, y0 = Math.floor(sh.bb[1]) - 1, x1 = Math.ceil(sh.bb[2]) + 1, y1 = Math.ceil(sh.bb[3]) + 1, ins = sh.test;
-  const lit = (x, y) => { const n = sh.norm(x, y); return -(n[0] * 0.6 + n[1] * 0.8); };
-  if (!noOutline) {
-    g.fillStyle = OUTL;
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!ins(x, y)) {
-      let nb = null; if (ins(x - 1, y)) nb = [x - 1, y]; else if (ins(x + 1, y)) nb = [x + 1, y]; else if (ins(x, y - 1)) nb = [x, y - 1]; else if (ins(x, y + 1)) nb = [x, y + 1];
-      if (!nb) continue;
-      if (lit(nb[0], nb[1]) > 0.8 && ((x + y) & 1)) continue;          // the outline breaks where light hits directly
-      g.fillRect(x, y, 1, 1);
-    }
-  }
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (ins(x, y)) {
-    const l = lit(x, y) + ((((x >> 1) + (y >> 1)) & 1) ? 0.13 : -0.13);                 // checkerboard dither between neighbouring tones
-    g.fillStyle = inkFlash ? "#fff" : l > 0.55 ? t[1] : l > -0.2 ? t[0] : l > -0.68 ? t[2] : t[3]; g.fillRect(x, y, 1, 1);
-  }
-}
-// hand-placed pixels: each char maps to a colour, '.' is transparent
-function stamp(g, x, y, rows, pal, fx, fy) { const H = rows.length; for (let j = 0; j < H; j++) { const row = rows[fy ? H - 1 - j : j], W2 = row.length; for (let i = 0; i < W2; i++) { const c = pal[row[fx ? W2 - 1 - i : i]]; if (c) { g.fillStyle = inkFlash ? "#fff" : c; g.fillRect(x + i, y + j, 1, 1); } } } }
-function bez(x0, y0, cx, cy, x1, y1, t) { const u = 1 - t; return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]; }
-// a hanging chain along a quadratic curve
-function chainCurve(g, x0, y0, cx, cy, x1, y1) {
-  const n = Math.max(4, Math.round(Math.hypot(x1 - x0, y1 - y0) * 1.3));
-  for (let i = 0; i <= n; i++) { const [x, y] = bez(x0, y0, cx, cy, x1, y1, i / n), rx = Math.round(x), ry = Math.round(y); g.fillStyle = OUTL; g.fillRect(rx - 1, ry, 3, 2); g.fillStyle = (i % 3 === 0) ? "#c8d0e0" : "#7a8296"; g.fillRect(rx, ry, 1, 1); }
-}
-function spikeBall(g, cx, cy, r) {
-  g.fillStyle = OUTL; for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; g.fillRect(Math.round(cx + Math.cos(a) * (r + 2)) - 1, Math.round(cy + Math.sin(a) * (r + 2)) - 1, 3, 3); }
-  g.fillStyle = "#dfe4f4"; for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; g.fillRect(Math.round(cx + Math.cos(a) * (r + 1.5)), Math.round(cy + Math.sin(a) * (r + 1.5)), 1, 1); }
-  inkPart(g, Sh.ell(cx, cy, r, r), tri("#7a8094"));
-}
-const spriteCache = new Map();
-function blitSprite(g, key, flash, x, y, px, py, w, h, fn) {
-  key += flash ? "F" : ""; let c = spriteCache.get(key);
-  if (!c) { c = mk(w, h); inkFlash = flash; fn(c.getContext("2d"), px, py); inkFlash = false; spriteCache.set(key, c); }
-  g.drawImage(c, x - px, y - py);
-}
-
-const R4 = c => [shadeCol(c, 0.5), shadeCol(c, 0.85), shadeCol(c, 1.2), shadeCol(c, 1.6)];   // shadow, mid, light, highlight
-const HB = { frames: {"stand":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xonmx............","...............xoomx............","..............xiiihnx...........",".............xhihghx............",".............xssshhx............","..............xwshh.x...........","..............xcbhxxixx.........","...........xxx.ccaiiiigx........","..........xiihxaaaiiihgx........",".........xiiaacccacihggx........",".........xiacccccacbbbx.........",".........xhccccbbcbaax..........","..........xabcccccbaax..........","...........xbccccbaamx..........","............xcfcbacbmx..........","...........x.ffdaaaanx..........","..........xccdddbbbmnx..........","........xxabadgaabbmnx..........",".......xihgbmagmabbmnx..........","......xigx.xaaaaaaamnx..........","......xhx.xoaamabbbbnx..........","......xhx.xmcamabbbbmx..........","......xhx.xmcamabbbbnx..........","......xhx.xncamabbbbnx..........",".....xiih.xmcbmabbb.x...........",".....xihhx.x.cabbbbx............","....xhiighx.xbacbabx............",".....xiggx...xgiiax.............",".....xhxx....xgigagx............","......x.......xcbagx............","..............xcchgx............","..............xhihghx...........","..............xghggkkx..........","...............xiggkkx..........","...............xigjljx..........","..............x.lkjljx..........",".............xlllkjkx...........",".............xlkjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk0":{"rows":["................................","................................","................................","................................","................................","................................","................................","................................",".................x..............","................xnx.............","...............xnmmx............","..............xiiihx............","..............xshhhx............","..............xwsshx............","..............xssshx............","..............xcchx.xxxx........",".........xxxx.xccb.xiiihx.......","........xiiihx.aabxiihhgx.......",".......xiihhaccccccaihhgx.......",".......xiicacccccccaabahx.......","........xgcaccccccbaabbx........",".........xcaaacccbbbabbx........",".........xcabaccccbbabbx........","..........xdddbcbcbbbbx.........","...........xdaaabbbabbx.........","............xcaaabbabbx.........","...........xochaaabdddx.........","...........xoagmaabadx..........","..........xoaaaaabbadx..........","..........xocamabbbamx..........","..........xocamabbbanx..........","..........xocamabbaanx..........","..........xocamabbbnmx..........","..........xnxamabbbxx...........","...........x.cibbbx.............","............xiihagx.............","............xccbagbx............","............xciggghhx...........","............xihggghhx...........","...........xiihggghhhx..........","..........x.iiggggghkkx.........",".........xlliigighgjkkx.........",".........xljlljhghglkjx.........",".........xlkkkxixx.lljx.........","..........xkkk.x..xllkx.........","...........xxx.....xljx.........","....................xx..........","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk1":{"rows":["................................","................................","................................","................................","................................","................................",".................x..............","................xnx.............","...............xnmmx............","..............xiiigx............","..............xhhhgx............","..............xssshx............","..............xwsshx............","...............xhhx.xxx.........",".........xxxxx.ccb.xiiix........","........xiiihhxaaaxiiihgx.......","........xiiiaacccccgiihgx.......","........xhccccbccccaihhgx.......",".........xcacbbcccbacbbx........",".........xcaabccbaaabbx.........",".........xcccaccccbabbx.........","..........xadaccbcaabbx.........",".........xccaabcababax..........","..........xabbacabacax..........","............xagaaafbmx..........","...........xoagmadddnnx.........","..........xobamaabamnnx.........","..........xmbamabbbbnnx.........","..........xaaamabbbbmnx.........",".........xocaaaabbbbomx.........",".........xocbmgbbbbbomx.........",".........xnccmabbbb.xx..........","..........x.agabbbbx............","...........xahagabx.............","...........xghgihbx.............","...........xghgigbx.............","...........xihgcbax.............","...........xihgihgx.............","..........xhihgghhx.............","...........xhgghghx.............","...........xhxhigjkx............",".............xhigkkx............","............xllljlkx............","...........xlkjjjlkx............","............xjkklljx............",".............xxxxkx.............",".................x..............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk2":{"rows":["................................","................................","................................","................................","................................","................................",".................x..............","................xox.............","...............xommx............","..............xiiihx............","..............xhhggx............","..............xssshx............","..............xwsshx............","...........xx..xhhhx............","..........xiix.ccb..xxx.........",".........xiiihxcabxiiiix........","........xiiiaaccccaiiihgx.......",".........xhcccccccbgiihgx.......",".........xcacbccccacbgggx.......","..........xabbccbaacba.x........","..........xcaccccacbbbx.........","..........xcccccbacabx..........","..........xffaccbcbannx.........","..........xfdacdfcamnnx.........",".........xccbadddaannnx.........",".........xcbaafmdabmnnx.........","..........xoccmaaaamnnx.........","..........xigamabbbbmnox........",".........xigamabbbbbnnox........","........xigaamabbbbbbnnx........","........xiaaamabbbbbxomx........","........xiaaaaabbbbb.xx.........","........xiiabbbbbbbbx...........","........xhghgbxbbabx............",".......xiigigbxhigbx............","......xiiiggabxhigbx............",".......xihggbhgxhbax............",".......xiggghhhxbcghx...........","........xxx.hhhxhighx...........","...........xhhhkhhghx...........","............xhkjhhhhx...........",".............xlkkhhx............","............xllkxkkx............","............xlljxjkkx...........","............xlllllkkx...........","............xkjlkjxx............",".............xxxxx..............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk3":{"rows":["................................","................................","................................","................................","................................","................................","................xxx.............","...............xmmmx............","..............xiiimx............",".............xiihggx............","..............xsshgx............",".............xwssshx............","...........xx.xshhhx............","..........xiix.xccx.xx..........",".........xiiiigccb.xiix.........",".........xiiaaacaaaiiihx........",".........xhaccccccaiiiggx.......","..........xacccccccchhgx........","..........xabccccccbaagx........","..........xcaccccccaa.x.........","...........xacaaccaamx..........","..........x.dffccaamnox.........",".......xxxccfdddaabnnnx.........","......xiigcadddaabannnx.........",".....xigxx.xmggmabannnx.........",".....xix..xoaamaaaammnx.........",".....xhx..xmaamabbccmnx.........",".....xix..xaaaaabbbbanx.........",".....xig.xoabmaabbbbanx.........","....xiihx.mabmaabbbbbnx.........","...xhiighxmbbmabbbbbbx..........","....xihghxmbbaaxbbbbx...........","....xigghxihbbx.bbbbx...........",".....xxxx.ghhx..xbbbx...........",".........xhhbbx.xhhhbx..........",".........xcabhx.xhhbbx..........",".........xighhx..xbbhx..........",".........xihghx..xhhhhx.........",".........xiighx..xhhhhx.........","..........xigx....xhhhx.........","..........xijx....xhhkx.........","..........xlljx....xkkkx........",".........xllljx....xkklx........","........xlljjx....xkkkx.........",".........xxxx.....xkkkx.........","..................xllx..........","...................xx...........","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk4":{"rows":["................................","................................","................................","................................","................................","................................","................................","................................","................xx..............","...............xomx.............","..............xooomx............","..............xiiihmx...........",".............xhshhgx............",".............xwsshgx............","..............xsshhx............","...........xxx.xcbx.............","..........xiiihccb.xxx..........","..........xiiggaaaciiix.........",".........xhgcccccciiihgx........","..........xcccccccciihgx........","....xxxxxx.ccccccccchghx........","...xiiihccxfcaacccaaabx.........","...xhgggcabfeecccaaanx..........","...xix.xxaddddabaabanox.........","...xigx..xxx.aaabbbnnnx.........","...xigx.....xccabbannnx.........","..xiihx.....xijabbannnx.........","..xiighx...xoamaabammnx.........","..xiihhx..xoaamabaccmnx.........","...xgghx..xmbbmababbanx.........","....xxx..xambamaabbbbnx.........",".........xaabaaabbbbbmx.........",".........xaabaaacabbbmx.........",".........xaabaaxcbbbbx..........",".........xghbbx.xbbbbx..........","........xhihhbx..xbabbx.........","........xcccax...xhihbbx........","........xiihax....xhbbhx........","........xiihgx....xbbhhhx.......","........xihghx.....xhhhhx.......","......xx.ihgx.......xhhhkx......",".....xllhihgx........xhkklx.....",".....xljjljx..........xkklx.....","......xkkkjx..........xlkkx.....",".......xkklx..........xlklx.....","........xxx...........xljx......",".......................xx.......","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk5":{"rows":["................................","................................","................................","................................","................................","................................",".................x..............","................xox.............","...............xnomx............","..............xiiihmx...........",".............xhhhghx............",".............xsssshx............","..............xwshhx............","...........xx..xihx.............","..........xiixxccb.xxxx.........",".........xiiiigcaabiiihx........",".........xiiccccccaiiiggx.......",".........xhaccccccciihhhx.......","..........xaccccccccbghx........","..........xabccccccaabx.........","...........xacaaccabmx..........","......xxxxcxdffccbaamx..........",".....xiiigcaeddaaabmnnx.........",".....xigggbadddabbannnx.........",".....xh.xxx.oagaabannnx.........",".....xhx...xmagmabbmnnx.........",".....xhx..xoaamaaaammnx.........",".....xigx.xmabmbbbbbmnx.........","....xiihx.xaaaacbbbbmnx.........","...xhiighxocamabbbbbnnx.........","....xihgixmcamabbbbbxnx.........","....xhhhhxocamaabbbb.x..........",".....xxxx.xcabbbbbbbx...........","..........xiabbbbbbbx...........","..........xigh.xigbx............","..........xhgb.xihhbx...........","..........xcba.xhhbbhx..........","..........xihgx.xbbhhx..........","..........xihgx.xhhhhx..........","..........xihgx..xhhhhx.........","..........xihgx...xhhkkx........",".........x.ihx.....xkklx........","........xllljx.....xkklx........",".......xlljjjx.....xkklx........","........xxjkkx.....xklx.........","..........xxx......xklx.........","....................xx..........","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk6":{"rows":["................................","................................","................................","................................","................................","................................",".................x..............","................xox.............","...............xommx............","..............xiiihx............","..............xhhhhx............","..............xssshx............","..............xwsshx............","...............xhhh.xx..........","..........xxxx.ccb.xiixx........",".........xiiihxaaaxiiihgx.......","........xiiiaabccaaiiihgx.......","........xiicccbcccbchhggx.......",".........xbccbbccbacbabx........",".........xcabbccbbcbaax.........","..........xcaccccacaax..........","..........xcacccacbamx..........","...........xaaaffbaanx..........","...........xaafddaamnnx.........","..........xccadddbbmnnx.........","........xxhgaagmaabmnnx.........",".......xihgccamaabamnnx.........",".......xigxmaamabbbannx.........",".......xigocaaaabbbbnnox........",".......xigocambabbbbxnmx........",".......xigmcbmbabbbbxomx........","......xiihxcaababbbx.xx.........","......xiiggccaabbbx.............","......xiihgicahgbbx.............",".......xgggxigihbx..............","........xxx.ighgbbx.............","...........xhhabbhx.............","...........xcbghhhhx............","...........xiihhhhhx............","...........xihhhhhhx............","............xihhxhkkx...........","............xihhxkkkx...........","............xllkxljkx...........","............xllkxljkx...........","...........xllkjllkx............","..........xlkjjxxkx.............","...........xxxx..x..............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"walk7":{"rows":["................................","................................","................................","................................","................................","................................","................xxx.............","...............xnmmx............","...............xiimx............","..............xihhgx............","..............xsssgx............","..............xwsshx............","..............xsshhx.x..........","..........xxx.xccb..xixx........",".........xiihx.cabxiiihgx.......","........xiiighccccciiihgx.......","........xiiacccccccaihggx.......","........xhacccccccbacbbx........",".........xcabbccbaaabax.........",".........xccacccccbabax.........","..........xccaccbcbaabx.........","..........xffdccababax..........","..........xcbdbcbbcbax..........","..........xcaaaaafeamx..........","...........xojgmffdmnx..........","..........xocaaaaaamnnx.........","..........xocamababannx.........","..........xobamabbbbnnx.........",".........xocbagbbbbbnnx.........",".........xoxamabbbbbonx.........",".........xoxgmabbbbxxx..........","..........x.igabbbx.............","...........xigihbbx.............","...........xigihbx..............","...........xihhbax..............","..........xiihabgax.............",".........xhiigggggx.............","..........xihgghggx.............","...........xggghhgx.............","............x.hhhhx.............",".............xlkjhkx............","..............xlkkkx............","............xllljlkx............","............xljjlljx............",".............xx.lkx.............","...............xkjx.............","................xx..............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"jump":{"rows":["................................","................................","................................","................................","................................",".........xx.....................","........xihx....................","........xihx....................","........xiix...xx...............","........xigax.xomx..............","........xicbax.ohmx.............",".......xhigcfdiiihx.............","........xihdfeghggx.............",".........xhxffasshx.............","...........xecbaggx.............","..........x.feaaacx.............",".........xiifedabbbxxx..........",".........xicedaaaaagiix.........","........xiccbaaaaaaiiigx........",".........xbaaaacaaciihgx........","..........xccccccbaihhhx........","..........xbbbccbaaaabx.........","...........xccccabbbmx..........","............xccccbbanx..........","............xccbbbbnnnx.........","............xcccbbamnox.........","............xaaaaaamnox.........","...........xmacacbbmnox.........","..........xmacccbbaannx.........",".........xagihbbbbbbnnx.........",".........xmgihaabbbxonnx........",".........xmghgbbbbx.xonx........",".........xmacbbh.x...xx.........","........xmgacbhhx...............","........xghhghghx...............","........xihhahghx...............",".........xabbghhx...............",".........xcbhgkkx...............","..........xhhglkkx..............","..........xhgjlkkx..............","...........xhlljx...............","............xjjjx...............","............xlljx...............","............xlkx................","...........xllkx................","............xkjx................",".............xx.................","................................"],"w":32,"h":48,"root_col":16,"wide":false},"fall":{"rows":["................................","................................","................................","................................","................................","................................","................................","...............xx...............","..............xmmx..............",".............xihhmx.............","............xiiihgx.............","............xsssghx.............","............xwssshx.............",".............xsshx..x...........","..........xx.xcca.xxixx.........","........xxihx.cccciiihgx........","...xxxxxiiiahcaacccihhgx........","..xiiiicadffeacccccihhgx........",".xihgghcadddedaabaababx.........",".xig.xxxxaadfccaccbbbx..........","..xhx....xcaadaabbbbx...........","..xhx.....x.cbbbbbbbx...........",".xihgx.....xcbbbbbbmx...........",".xiihhx.....xbbcbbbnx...........",".xiihhx.....xbacacbnx...........","..xhhhx....xoagmjcbmx...........","..xhxx.....xoagmaaamx...........","...x......xoaamaabcax...........","..........xmcbmabccax...........","..........xobbmabccbx...........","..........xoaamabbbbx...........","..........xoaamabbbx............","..........xnxaaabbbx............","...........x.aababx.............",".............xiihbx.............",".............xihgax.............",".............xccbahx............",".............xihgghx............",".............xihgghhx...........",".............xihghhhx...........",".............xihghhkkx..........",".............xig.xkjkx..........","............x.lj.xllkx..........","...........xllkk.xlljx..........","...........xkjkkx.lkx...........","............xxxx.xljx...........","..................xx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"crouch":{"rows":["................................","................................","................................","................................","................................","................................","................................","................................","................................","................................","................................","................................","...................x............","..................xnx...........","................xxommx..........","...............xiiiimx..........","...............xssihgx..........","...............xwsshhx..........","...............xssshhx..........","................xcbgx.xx........","...........xxxxxcaabiiihx.......","..........xiiacccccciiihgx......",".........xiiccccccccbbhhhx......",".........xiaccbccccbabahx.......",".......xx.haaaaaccbaabxx........","......xiihgcaeddabaaax..........","......xh.xabadacaabbanx.........","......xhx.xx.aababbbnnx.........","......xhx...xcbaabbmnnx.........","......xhx..x.agaaaamnnox........",".....xiih.xcgccccbbmnnox........",".....xiigxciigbbabbannox........","....xhiighaiigabbbbbomnx........",".....xigggaagabbbbbxonmx........",".....xixhggacbbhbbb.xomx........","......x.ighaaghh.xx.xoox........",".......xihhbhmhhx....xox........","........xbbbhhhhhx....x.........","........xbbhhxhkkx..............",".........xhhhgjkkx..............","..........xhghkkkx..............","...........xjllkx...............","...........xljjx................","...........xlkjx................","..........xllkx.................","..........xlkx..................","...........xx...................","................................"],"w":32,"h":48,"root_col":16,"wide":false},"windup":{"rows":["................................","................................","...................xx...........","..................xihx..........","..................xighx.........",".................xihxh.x........","................xccaxhhhx.......","...............x.caahihhx.......","..............xofeaxgiihix......",".............xoffdx.xhggx.......","............xogcedox.hxx........","............xiabahx..x..........","............xsccahx.............","............xsccagx.............",".............xccbax.............","............x.ccbax.............","...........xiiaciiix............","...........xigaiiiggx...........","...........xccaiiihgx...........","..........xcaccagghmox..........",".........x.aabbbaaammx..........","......xxxffcacabbbamnnx.........",".....xccbeeeacccbbannnx.........",".....xbabdebbcbcbbannnx.........","......xxxxx.xcbcbamnnnx.........","...........x.bbccamnnnx.........","..........xoxmjccaamnnx.........","..........xoxmaaaaamnox.........","..........xoxaaccbbmnox.........",".........xoxoabccbannnx.........",".........xoxmabcbbbxnnx.........",".........xoxoaccbbb.xnx.........",".........xoxoaccbbbx.x..........","..........x.xacbaabx............","............xicbbbb.x...........","............xiiaabbbbx..........","............xigaahbbhhx.........","............xccbbbbhhhhx........","............xcihhxbhhhh.x.......","............xiihg.xhhhhkkx......",".............xihgx.xxhkkkx......",".............xihgx....xkkx......",".............xihgx...xkkkx......","............x.lljx...xlkkx......","...........xlllllx...xlkx.......","..........xlljjjjx....xx........","...........xxxxxx...............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"strike":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","..................................................xx............",".................................................xomx...........","................................................xooomx..........","...............................................xiiiignx.........","...............................................xsshhgx..........",".........................xxxx.........x........xwsshhx..........","........................xiiihx...xxxxxixxxx....xsshhx...........",".......................xiiiggixxxiiiigihhacxxxx.xccgx...........","........................xiihhhgghgxxxxxxxbaaeedgaaaa.xx.........",".........................xgghxxxxx.......xxddddacccciihx........","..........................xxx..............xadaaabbaiigx........","...........................................xcccaaaabiigx........","...........................................xcccccaaahghx........","............................................xcccbaaaaamx........","............................................xcccccbbmmnx........","............................................xccccbabmnnx........","............................................xccccbamnnnox.......","............................................xccccbaxnnnnx.......","...........................................xoaaaccaxnnnox.......","..........................................xooaccccaxnnnox.......","..........................................xomccccaa.xnnox.......",".........................................xooaccbbba.xnnox.......",".........................................xombabbbbax.xmox.......",".........................................xomabbbbbbb.xnnx.......",".........................................xoabbbbbbbbx.xnox......",".........................................xicbbbbbbbbx..xx.......","........................................xiihba.xbbbbbxx.........","........................................xiibbax.xbbhbbbx........",".........................................xccbax..xhhbbhhx.......",".........................................xcihgx...xbbhhhhx......",".........................................xiihgx....xhhhhhx......",".........................................xiihgx.....xhhhhhxx....","..........................................xihgx......xxhhkklx...","..........................................xihgx........xkkklx...","........................................xx.llx..........xkklx...",".......................................xllllllx.........xkkx....",".......................................xjjjjjkx.........xkkx....","........................................xxxxxx..........xkkx....",".........................................................xx.....","................................................................"],"w":64,"h":48,"root_col":48,"wide":true},"cwind":{"rows":["................................","................................","................................","................................","................................","................................","................................","................................","..........................xx....",".........................xihx...","........................xihhhx..","......................xxchxghx..","..................xxxxfcbaxihix.",".................xoooffda.xiihgx",".................xocced.xxggihhx","................xigcbdox..xhighx","................xscbagx....xgxhx","...............xsscbax......x.x.","................xccbax..........","................xcccbx..........","..............xxagiiigx.........",".............xaccgiihgx.........","............xcccbaihhhx.........",".......xxxxx.cabaabahox.........","......xccbfffacbccaammx.........",".......xbbeeeacccbabmnnx........","........xxeeeaccbbaammnx........","..........xx.acccbammnnox.......","............xacccbaxnnnnx.......","........xxxxcaccaaaxnnnnox......",".......xiicccbbbbba.xnnnox......",".......xiigbbbbbbbax.xnnoox.....",".......xihaaaabbbbbx.xmnoox.....",".......xabbbhbbbbbx...xmnox.....","......xiiabhhgabbx.....xnox.....",".....xiigaghhhbxx......xnnox....",".....xihgbmhhhx.........xoox....","......x.bbhhhhkx.........xx.....",".......xbihhgkkkx...............","........xhhggllkx...............",".........xgilkkx................","..........xlkjjx................","..........xjllkx................","...........xlkjx................","..........xlljx.................","..........xlkx..................","...........xx...................","................................"],"w":32,"h":48,"root_col":16,"wide":false},"cstrike":{"rows":["................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","................................................................","............................xxx.....................xxxx........","...........................xiihx......xxxx.........xommmx.......","...........................xiig.xxxxxxiiiixx......xiiihmx.......","..........................xhiighhihhihggxhghxx....xsihgmx.......","...........................xiggxxxxxxxxx.x.bcaxx.xwsshgx........","...........................xhxx...........xbbaffx.xsshgx........","............................x..............x.ddeex.chhx.........","............................................xiddabcaax..........","............................................xicaaaabbiix........","............................................xcccaaabaiihx.......","............................................xccccabbaiiggx......","...........................................x.ccccbaaahhgx.......","..........................................xccfaccccbabhhx.......",".........................................xcbaedcccbbbmmnx.......","..........................................xbfeabccbbmnnnx.......","...........................................xxbaaccabnnnnox......",".......................................xxxxcccbaaca.xnnnox......","......................................xiicccbaabbaa.xnnnnox.....","......................................xihcccbbbbbabx.xnnoox.....","......................................xigcbbbbbbbabx..xnooox....","......................................xhcchabbbbbbx....xooox....",".....................................xiicchhgaabbx.....xnoox....",".....................................xiigghhhbbxx.......xnox....",".....................................xigamhhhhx..........xoox...","......................................xbccghhkx...........xx....",".......................................xbihgkkkx................","........................................xhghllkx................",".........................................xllkjkx................",".........................................xlkkkljx...............",".........................................xk.xlkx................","..........................................x.lljx................","...........................................xljx.................","...........................................xkx..................","............................................x...................","................................................................"],"w":64,"h":48,"root_col":48,"wide":true},"climb0":{"rows":["................................","................................","................................","...............xx...............","..............xcbx..............","..............xcax..............","............xxfebx..............","...........xccfdmx..............","...........xcdediox.............","...........xccaiihx.............","...........xccgihggx............","...........xcbgihgx.............","..........xccbahhhx.............",".........xcccbaccabxxxx.........","........xiiicaxbcabagghx........",".......xiiihhhaaaaahiihhx.......",".......xiihhhgbccmaahhhhx.......","........xhhhbbbbmonaabhhx.......",".........xbbbbbbonoaabbx........","..........xbbbbaonomaxx.........","...........xbbbaonnmx...........","...........xcbbaonnmx...........","............xccbonnmx...........","............xccbmnnmx...........","...........xaccamonmx...........","..........xcaccaaonmx...........",".........xcccccbamonx...........",".........xcccaabaaonax..........",".........xcbbbbbbconax..........",".........xcbabbbccmmax..........",".........xiihgxacbaax...........",".........xiihgxbcbabx...........",".........xiihg.xcbbbx...........","..........xiig.xcbbbx...........","..........xilk.xccbx............","..........xlll.xcccax...........","..........xlkk.xccbax...........","..........xlkk.xiihgx...........","..........xljkx.iihgx...........","..........xkjx..xihgx...........","...........xx...xihgx...........","................xlkjx...........","................xllkx...........","................xlkkx...........","...............xlkkkx...........","...............xkkkx............","................xxx.............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"climb1":{"rows":["................................","................................","................................","...............xx...............","..............xcbx..............","..............xcax..............","..............xcadx.............","...............xmdx.............","..............xigddx............",".............xiiihax............",".............xiihhabx...........","............xfihhgabbx..........","............xcghghbbbx..........",".........xxxcbacbbabcaxx........","........xiiibbbcbaaccbihx.......",".......xiihhhbcaabaciiihx.......",".......xiihggbccmmbahhhggx......",".......xhhhbbcconnmbachhx.......","........xbbaccaonnmaaaax........",".........xxbccbonnmab.x.........","...........xbbbmnnoabx..........","...........xbbbmnnoax...........","............xcbmonnmx...........","............xccaonnnx...........","............xcaaonnmx...........","...........xccaamoomx...........","..........xccaabaooaax..........","..........xcccbbamoax...........","..........xccbbaaaomx...........","..........xccbbbaaomx...........","..........xccbabhg.x............","..........xccbaahgx.............","..........xccbaaggx.............","...........xcbagghx.............","...........xccaijkx.............","...........xccbbkkx.............","...........xccbakkkx............","...........xiihhkkx.............","...........xiihgkkx.............","...........xiihlkkx.............","............xig.xx..............","............xljx................","............xllx................","............xlljx...............","...........xlljx................","...........xljkx................","............xxx.................","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle0":{"rows":["................................","................................","................................","................................","................................","................................","................................",".................x..............","................xox.............","...............xnomx............","..............xiiihnx...........",".............xhhhghx............",".............xssshhx............","..............xwshhx............","..............xchhx.xxx.........","...........xxx.ccaiiiigx........","..........xiihxaaaiiihgx........",".........xiigacccachhggx........",".........xiacccccacbbbx.........",".........xhcccccccbaax..........","..........xabcccccbaax..........","...........xbccccbaamx..........","............xafcbaaamx..........","..........xxffedaaaamx..........",".........xcccddabbbmnx..........",".......xxicabdgaabbmnx..........","......xihgaboagmabbmnx..........",".....xih.x.xoaamaaamnx..........",".....xigx.xoaaaababbx...........",".....xigx.xoaaaabbbbx...........",".....xigx.xoaaaabbbbx...........",".....xihx..xaaaabbbbx...........","....xiihx..xcbaabbbbx...........","...xhiighx..xcabbbbx............","....xihghx..xbacbabx............","....xigghx...xgiiax.............",".....xxxx....xgihaax............","..............xcbagx............","..............xcchgx............","..............xhihghx...........","..............xghhgkkx..........","...............xhhgkkx..........","...............xhgjljx..........","...............xkkjljx..........","..............xllljlx...........",".............xlkjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle1":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xonmx............","...............xoomx............","..............xiiihnx...........",".............xhhhghx............",".............xssshhx............","..............xwshhx............","..............xccgx.xxx.........","...........xxx.ccaiiiihx........","..........xiihxaaaiiihgx........",".........xiigacccacihhgx........",".........xiacccccacbbax.........",".........xhcccccccbaax..........","..........xabcccccbaax..........","...........xbcaccbaamx..........","............xffcbacbmx..........",".........xxcfeddaaaamx..........","........xccbdddabbbmnx..........","......xxihbaxagaabbmnx..........",".....xihgxx.nagmabbmnx..........",".....xix...xmaamaaamnx..........",".....xigx.xoaaaabbbbnx..........",".....xigx.xoaamabbbbmx..........",".....xigx.xnaamabbbbnx..........","....xiihx.xnaamabbbbnx..........","....xiigh.xncbaabbbbx...........","....xiihhx.x.cabbbbx............",".....xgghx..xbacbabx............","......xxx....xgiiax.............",".............xgihaax............","..............xcbagx............","..............xcchgx............","..............xghhghx...........","..............xhiggkkx..........","...............xiggkkx..........","...............xigjljx..........","...............xlkjljx..........","..............xllkjlx...........",".............xlkjjjkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle2":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xommx............","..............x.oimx............",".............xiiiihx............","..............xshhhx............",".............xwsshhx............","..............xsshh.xx..........","..............xccaxxiix.........","..........xxxx.ccaiiihgx........",".........xiiihhaaaiiihgx........",".........xiiaacccacihggx........",".........xiccccccacbbbx.........",".........xgcccccccbabx..........","..........xcbcccccbabx..........","...........xbcaccbaamx..........","..........x.fffbbacbmx..........",".........xccfdddaaaamx..........",".......xxicaadaabbbmnx..........","......xihgabxagaabbmnx..........",".....xig.x.xmagmabbmnx..........",".....xigx.xoaaaaaaamnx..........",".....xigx.xocamabbbbnx..........",".....xihx.xmcamabbbbmx..........",".....xihg.xocamabbbbnx..........",".....xiih.xmcamabbbbnx..........","....xhihhx.mcbmabbb.x...........",".....xihhi.x.cababbx............",".....xhhhhx.xbacabbx............","......xxxx...xgiiax.............",".............xgihagx............","..............xcbagx............","..............xbchgx............","..............xiigghx...........","..............xihggkkx..........","...............xiggkkx..........","...............xigjljx..........","...............xlkjljx..........","..............xllkjlx...........",".............xlkjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle3":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xnmmx............","..............xiiimnx...........",".............xiihhhx............",".............xssshhx............",".............xwsshhx............","..............xshh..xx..........","..............xccaxiiix.........","..........xxxx.ccaiiihgx........",".........xiiihcaaaiiihgx........",".........xiiaccccacchggx........",".........xiccccccacbbbx.........",".........xbcccccccbaax..........","..........xcbcccccbabx..........","...........xbcaccbcamx..........","............xffdbacbmx..........","..........xcfeddaaamnx..........","........xxcbadaabbbmnnx.........",".......xihbaoagaabbmnnx.........","......xigx.xmagmabbmnx..........",".....xihx.xocaaaaaamnnx.........","......xhx.xocamabbbbnnx.........","......xhx.xocamabbbbmnx.........","......xhx.xocamabbbbonx.........",".....xiihx.mcamabbbbxnx.........",".....xiighxmcamabbbx.x..........",".....xiihh.x.bababbx............",".....xigghx.xbacabbx............","......xhxx...xgihbx.............",".......x.....xgihagx............","..............xcbagx............","..............xbchgx............","..............xiigghx...........","..............xihggkkx..........","...............xiggkkx..........","...............xigjljx..........","..............x.lkjljx..........",".............xlllkjkx...........",".............xljjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle4":{"rows":["................................","................................","................................","................................","................................","................................",".................x..............","................xox.............","...............xnmmx............","..............xiiimnx...........",".............xiihhhx............",".............xssshhx............",".............xwsshhx............","..............xshh..xx..........","..............xccaxiiix.........","..........xxxx.caaiiihgx........",".........xiiihcccaiihhhx........",".........xiiaccccaccaghx........",".........xiccccccacbabx.........",".........xbcccccccbaax..........","..........xcbcccccaabx..........","...........xbccacacamx..........","............xcfebacamx..........","..........xxffddaaamnx..........",".........xccbddabbbnnnx.........","........xigbaagaabbmnnx.........",".......xihxbmagmabbmnx..........","......xigx.ocaaaaaamnx..........","......xix.xocamabbbbnnx.........","......xig.xocamabbbbmnx.........","......xig.xocamabbbbonx.........","......xigx.mcamabbbbxnx.........","......xihhxmcamabbbx.x..........",".....xiihh..xbababbx............",".....xhihhix.bacabbx............","......xhhhx..xgihbx.............","......xhxx...xgigagx............",".......x......xcbagx............","..............xbchgx............","..............xhigghx...........","..............xhiggkkx..........","...............xiggkkx..........","...............xigjljx..........","..............x.lkjljx..........",".............xlllkjkx...........",".............xljjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle5":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xnmmx............","..............xoiimnx...........",".............xiihhhx............",".............xsshhhx............",".............xwsshhx............","..............xshhx.xx..........","..............xccaiiiix.........","..........xxxx.ccbiiihgx........",".........xiiihcaaaiihhgx........",".........xiiaccccacbagx.........",".........xiccccccacbabx.........",".........xhccccbbcbaax..........","..........xcbcccacaabx..........","...........xbccacacamx..........","............xcffbacamx..........","...........x.ffdaaamnx..........","..........xcceddbbannx..........",".........xccaagaabbmnx..........","........xihabagmabbmnx..........",".......xigxocaaaaaamnx..........","......xih.xocamabbbbnx..........","......xig.xmcamabbbbmx..........","......xig.xocamabbbbnx..........","......xig.xmcamabbbbnx..........","......xihx.mcbmabbb.x...........",".....xiihh.x.bababbx............","....xhiighx.xbacabbx............",".....xiihhx..xgiiax.............","......xgghx..xgigagx............",".......xxx....xcbagx............","..............xcchgx............","..............xhihghx...........","..............xghggkkx..........","...............xiggkkx..........","...............xigjljx..........","..............x.lkjljx..........",".............xlllkjkx...........",".............xljjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle6":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xommx............","..............xoohmx............",".............xiiiihnx...........",".............xsshhhx............",".............xwsshhx............","..............xsshh.xx..........","..............xccaxiiix.........","...........xxx.ccbiiihgx........","..........xiihcaaaiiihgx........",".........xiigacccacbgghx........",".........xiccccccacbbbx.........",".........xgccccbbcbabx..........","..........xcbcccacbaax..........","...........xbccccccamx..........","............xcdccacamx..........","............xffdaaamnx..........","...........xcfddabbnnx..........",".........xxcbddaabbmnx..........","........xihbbagmabbmnx..........",".......xih.xaaamaaamnx..........","......xig.xoaaaababbnx..........","......xig.xoaamabbbbmx..........","......xigx.mcamabbbbnx..........","......xix.xnaamabbbbnx..........","......xih.xmcbaabbb.x...........",".....xiihx.x.cabbbbx............","....xiihgx..xbacbabx............",".....xihghx..xgiiax.............",".....xhggx...xgihagx............",".....xhxx.....xcbagx............","......x.......xcchgx............","..............xiigghx...........","..............xhhhgkkx..........","...............xhggkkx..........","...............xhgjljx..........","...............xkkjljx..........","..............xllkjlx...........",".............xlkjjkkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false},"idle7":{"rows":["................................","................................","................................","................................","................................","................................","................................","................xxx.............","...............xonmx............","...............xnomx............","..............xiiihnx...........",".............xhhhggx............",".............xssshhx............","..............xwshh.x...........","..............xchgxiixx.........","...........xxx.ccaiiihgx........","..........xiihxaaaiiihgx........",".........xiigacccachgghx........",".........xiacccccacbbbx.........",".........xhccccbbcbabx..........","..........xabcccccbaax..........","...........xbcccccaamx..........","............xcdccaaamx..........","...........x.ffdaaamnx..........","..........xcceddabbnnx..........",".........xccadgaabbmnx..........",".......xxiganagmabbmnx..........","......xihg.xoaamaaamnx..........","......xh.x.oaaaababbx...........","......xhx.xoaaaabbbbx...........","......xhx.xoaaaabbbbx...........",".....xihx..xaaaabbbbx...........",".....xihx..xcbaabbbbx...........","....xiihhx..xcabbbbx............","...xhiighx..xbacbabx............","....xihghx...xgiiax.............",".....xgghx...xgihaax............","......xxx.....xcbagx............","..............xcchgx............","..............xiigghx...........","..............xhihgkkx..........","...............xhhgkkx..........","...............xhgjljx..........","...............xkkjljx..........","..............xllljlx...........",".............xlkjjjkx...........","..............xxxxxx............","................................"],"w":32,"h":48,"root_col":16,"wide":false}} };
-// palette: five 3-tone ramps. skin, armour (changes with armour level), weathered steel, dark leather, dim crimson; s = shadowed face, w = eye
-function heroPal(aCol) {
-  const skin = ["#42301e", "#6e6238", "#9e8c48"], steel = ["#3c4658", "#6a7a8c", "#b0bccc"], leather = ["#2a1a14", "#4a3022", "#6a4a32"], crimson = ["#4a1218", "#7a1f2a", "#963040"];
-  const mixc = (c, d, t) => { const u = parseInt(c.slice(1), 16), v = parseInt(d.slice(1), 16), m = (sh) => Math.round(((u >> sh) & 255) * (1 - t) + ((v >> sh) & 255) * t); return "rgb(" + m(16) + "," + m(8) + "," + m(0) + ")"; };
-  const arm = [shadeCol(aCol, 0.6), shadeCol(aCol, 1.1), mixc(aCol, "#a8b4c0", 0.45)];
-  const p = { x: OUTL, X: "#2a1008", s: "#120c0c", w: "#d0c8b8" };
-  [skin, arm, steel, leather, crimson].forEach((r, i) => "abcdefghijklmno".slice(i * 3, i * 3 + 3).split("").forEach((ch, j) => p[ch] = r[j]));
-  return p;
-}
-/* ---- the hero: baked from a posed 3D model of an original muscular warrior (see the render pipeline), 32x48 per frame ----
-   Each frame is a palette-indexed bitmap. Strike frames are 64 wide so the chain has room; root_col says where the body's centre column is. */
 function phHero(g, name, ox) {
-  const f = HB.frames[name] || HB.frames.stand, P = heroPal(ARMOUR[G ? G.armour : 0].col);
-  stamp(g, ox + 16 - f.root_col, 0, f.rows, P);
-}
-// Placeholder tiles: big rounded cobblestone cave walls (quiet and cool, so the figures pop), brighter rock platforms with
-// organic mossy tops and stalactite fringes hanging from every ledge and ceiling.
-function hexRGB(c) { const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
-function hash2(a, b) { let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
-const cobbleCache = new Map();
-// A seamless 128x128 texture of rounded stones: nearest-two-seed distances give curved mortar, flat 3-tone shading lit from the top left.
-function cobbleTex(col, cell, seed, chips) {
-  const key = col + "|" + cell + "|" + seed; if (cobbleCache.has(key)) return cobbleCache.get(key);
-  const S = 128, n = Math.max(2, Math.round(S / cell)), cs = S / n, c = mk(S, S), g = c.getContext("2d"), img = g.createImageData(S, S), d = img.data, rgb = hexRGB(col);
-  const seeds = []; for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) seeds.push([(i + 0.5 + (hash2(i, j + seed) - 0.5) * 0.7) * cs, (j + 0.5 + (hash2(i + 91, j + seed) - 0.5) * 0.7) * cs]);
-  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
-    let d1 = 1e9, d2 = 1e9, sx = 0, sy = 0; const ci = Math.floor(x / cs), cj = Math.floor(y / cs);
-    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
-      const gi = ci + di, gj = cj + dj, wi = ((gi % n) + n) % n, wj = ((gj % n) + n) % n, s = seeds[wj * n + wi];
-      const dx = x + 0.5 - (s[0] + Math.floor(gi / n) * S), dy = (y + 0.5 - (s[1] + Math.floor(gj / n) * S)) * 1.12, dd = Math.hypot(dx, dy);
-      if (dd < d1) { d2 = d1; d1 = dd; sx = dx; sy = dy; } else if (dd < d2) d2 = dd;
-    }
-    const ratio = d1 / d2; let f;
-    if (ratio > 0.72) f = 0.4;                                                   // mortar
-    else {
-      const lit = -(sx * 0.62 + sy * 0.78) / Math.max(d1 + 3, 6);
-      f = lit > 0.3 ? 1.3 : (lit < -0.32 || ratio > 0.62) ? 0.7 : 0.98;
-      if (chips && hash2(x * 3, y * 5 + seed) > 0.987) f *= 1.2;
-    }
-    const k = (y * S + x) * 4; d[k] = Math.min(255, rgb[0] * f); d[k + 1] = Math.min(255, rgb[1] * f); d[k + 2] = Math.min(255, rgb[2] * f); d[k + 3] = 255;
+  if (name.startsWith("die")) { const n = +name.slice(-1); g.save(); g.translate(ox, 0); g.fillStyle = n < 2 ? "#c0c4cc" : "#ddd"; if (n < 2) g.fillRect(10, 6 + n * 6, 12, 26 - n * 6); else g.fillRect(2, 26, 28, 5); g.restore(); return; }
+  const crouch = name.startsWith("c") && !name.startsWith("climb");
+  const top = crouch ? 16 : 0, body = "#c0c4cc", skin = "#e0a060", dark = "#303040";
+  g.save(); g.translate(ox, 0);
+  g.fillStyle = body; g.fillRect(10, top + 4, 12, crouch ? 8 : 14);           // body
+  g.fillStyle = "#808490"; g.fillRect(11, top, 10, 5);                         // helmet
+  g.fillStyle = "#ffd040"; g.fillRect(15, top - 1, 2, 2);
+  if (!name.startsWith("climb")) { g.fillStyle = "#3040a0"; g.fillRect(4, top + 5, 6, 10); g.fillStyle = "#ffd040"; g.fillRect(6, top + 7, 2, 6); } // shield (front = left)
+  if (!crouch) {
+    const step = { walk0: 0, walk1: 2, walk2: 0, walk3: -2 }[name] || 0, air = name === "jump" || name === "fall";
+    g.fillStyle = skin; g.fillRect(11 + step, 18, 4, air ? 8 : 12); g.fillRect(18 - step, 18, 4, air ? 10 : 12);
+    g.fillStyle = dark; g.fillRect(10 + step, 29, 6, 3); g.fillRect(17 - step, 29, 6, 3);
   }
-  g.putImageData(img, 0, 0); cobbleCache.set(key, c); return c;
+  if (name.includes("strike")) { const y = crouch ? 22 : 12, n = +name.slice(-1) || 3, end = -16 * (n + 1) + 8; g.fillStyle = skin; g.fillRect(-2, y, 12, 3); g.fillStyle = "#aab"; g.fillRect(end, y + 1, -end, 1); g.fillStyle = "#ddd"; g.beginPath(); g.arc(end, y + 1, 5, 0, 7); g.fill(); }
+  if (name.includes("wind")) { g.fillStyle = skin; g.fillRect(20, top + 1, 3, 8); }
+  g.restore();
 }
-// stalactites hanging from y0: each is a tapering curved spike with a lit left side, a shadow right side and a dark outline
-function teeth(g, Z, tx, ty, y0, col) {
-  const t = tri(col || Z.solid);
-  for (let i = 0; i < 4; i++) {
-    const w = 3 + Math.floor(hash2(tx * 7 + i, ty) * 3), len = 3 + Math.floor(hash2(tx + i * 3, ty * 5 + 1) * (y0 ? 7 : 11)), cx = 2 + i * 4 + Math.floor((hash2(tx + i, ty + 3) - 0.5) * 2);
-    for (let yy = 0; yy < len; yy++) {
-      const half = (w / 2) * Math.pow(1 - yy / len, 0.85), x0 = Math.round(cx - half), x1 = Math.round(cx + half);
-      for (let xx = x0 - 1; xx <= x1 + 1; xx++) {
-        if (xx < 0 || xx > 15 || y0 + yy > 15) continue;
-        g.fillStyle = (xx < x0 || xx > x1) ? OUTL : ((xx - x0) <= (x1 - x0) * 0.34 ? t[1] : (xx - x0) >= (x1 - x0) * 0.7 ? t[2] : t[0]);
-        g.fillRect(xx, y0 + yy, 1, 1);
-      }
-    }
-    if (y0 + len <= 15) { g.fillStyle = OUTL; g.fillRect(Math.round(cx), y0 + len, 1, 1); }
-  }
+// Placeholder art for characters and objects (original, simple)
+const PH_COL = { skeleton: "#e8e0c8", mummy: "#c8c0a0", snake: "#c050a0", plant: "#d080c0", firedemon: "#e06020", fireball: "#ffa030", bat: "#a040a0", witch: "#c050c0", skull: "#9090a8", bluefire: "#40a0ff", orc: "#b05030", pot: "#a06838", key: "#e0c040", chest: "#c07020", frozen: "#b8b8c8", fire: "#ff8020", rock: "#806048", berry: "#e03040", pinwheel: "#f0a020", barrel: "#a06020" };
+function phObj(g, kind, frame, ox, oy, parts) {
+  g.fillStyle = kind === "frozen" && frame !== "stone" ? "#c060c0" : PH_COL[kind];
+  for (const [, dx, dy] of parts) g.fillRect(ox + dx + 2, oy + dy + (kind === "fire" ? 0 : 2), 12, kind === "fire" ? 16 : 12);
+  if (kind === "orc" && !frame.startsWith("die")) { g.fillStyle = "#ffe040"; g.fillRect(ox + 20, oy + 7, 3, 3); }
+  if (kind === "chest") { g.fillStyle = "#402010"; g.fillRect(ox + 4, oy + 14, 24, 2); }
 }
-function ledgeSlab(g, Z, tx, ty) {
-  const t = tri(Z.ledge);
-  for (let px = 0; px < 16; px++) {
-    const wx = tx * 16 + px, h = 5 + Math.round(Math.sin(wx * 0.5) * 0.8);
-    g.fillStyle = OUTL; g.fillRect(px, 0, 1, h + 2); g.fillStyle = t[0]; g.fillRect(px, 0, 1, h); g.fillStyle = t[1]; g.fillRect(px, 0, 1, 1); g.fillStyle = t[2]; g.fillRect(px, h - 1, 1, 1);
-  }
-  teeth(g, Z, tx, ty, 6, Z.ledge);
-}
-function phTile(g, Z, kind, tx, ty, zi) {
-  const ox = (tx & 7) * 16, oy = (ty & 7) * 16;
-  g.drawImage(cobbleTex(Z.wall, 24, zi * 7 + 1, false), ox, oy, 16, 16, 0, 0, 16, 16);
-  g.fillStyle = "rgba(0,0,0,.3)"; g.fillRect(0, 0, 16, 16);                         // keep the backdrop quiet
-  if (kind === "fill" || kind === "surf") g.drawImage(cobbleTex(Z.solid, 18, zi * 7 + 3, true), ox, oy, 16, 16, 0, 0, 16, 16);
-  if (kind === "surf") {                                                             // irregular moss / crystal cap, continuous across tiles
-    const a = tri(Z.ledge);
-    for (let px = 0; px < 16; px++) {
-      const wx = tx * 16 + px, h = 3 + Math.round(Math.abs(Math.sin(wx * 0.55 + hash2(tx >> 1, ty) * 6)) * 2.4 + Math.sin(wx * 0.23) * 0.7);
-      g.fillStyle = a[0]; g.fillRect(px, 0, 1, h); g.fillStyle = a[1]; g.fillRect(px, 0, 1, 1); g.fillStyle = OUTL; g.fillRect(px, h, 1, 1);
-    }
-  }
-  if (kind === "ledge" || kind === "ledgechain") ledgeSlab(g, Z, tx, ty);
-  if (kind === "under") teeth(g, Z, tx, ty, 0);
-}
-// Art for the new progression objects. Original shapes, used in both art modes.
-const EXTRA_ART = new Set(["key", "boots", "shop", "lock"]), extraCache = new Map();
-function extraArt(name) {
-  if (extraCache.has(name)) return extraCache.get(name);
-  const c = mk(16, 16), g = c.getContext("2d");
-  if (name === "key") { g.fillStyle = "#a07010"; g.fillRect(2, 3, 6, 6); g.fillStyle = "#ffd040"; g.fillRect(3, 2, 4, 1); g.fillRect(2, 3, 1, 4); g.fillRect(7, 3, 1, 4); g.fillRect(3, 7, 4, 1); g.fillRect(8, 5, 6, 2); g.fillRect(11, 7, 2, 3); g.fillRect(13, 7, 1, 2); g.fillStyle = "#a07010"; g.fillRect(8, 7, 3, 1); }
-  else if (name === "boots") { g.fillStyle = "#5a3a1e"; g.fillRect(5, 5, 5, 8); g.fillRect(5, 11, 9, 3); g.fillStyle = "#8a5a2e"; g.fillRect(5, 5, 5, 2); g.fillStyle = "#f0f0ff"; g.fillRect(2, 4, 3, 2); g.fillRect(0, 6, 4, 2); g.fillRect(2, 8, 3, 2); g.fillStyle = "#a0a8d0"; g.fillRect(1, 5, 1, 1); g.fillRect(0, 7, 1, 1); }
-  else if (name === "shop") { g.fillStyle = "#6a4aa0"; g.fillRect(5, 6, 6, 9); g.fillStyle = "#e0b890"; g.fillRect(6, 3, 4, 4); g.fillStyle = "#e8e8f0"; g.fillRect(5, 7, 6, 4); g.fillRect(6, 11, 4, 2); g.fillStyle = "#101010"; g.fillRect(7, 4, 1, 1); g.fillRect(9, 4, 1, 1); g.fillStyle = "#ffd040"; g.fillRect(12, 8, 2, 3);
-    g.fillStyle = "#9aa0b0"; for (let x = 1; x < 16; x += 4) g.fillRect(x, 1, 1, 15); g.fillRect(1, 1, 14, 1); g.fillRect(1, 14, 14, 1); }
-  else if (name === "lock") { g.fillStyle = "rgba(0,0,0,.35)"; g.fillRect(0, 0, 16, 16); g.fillStyle = "#c0c4cc"; g.fillRect(5, 2, 6, 2); g.fillRect(4, 3, 2, 5); g.fillRect(10, 3, 2, 5); g.fillStyle = "#e0a820"; g.fillRect(3, 7, 10, 8); g.fillStyle = "#a07010"; g.fillRect(3, 14, 10, 1); g.fillStyle = "#101010"; g.fillRect(7, 9, 2, 3); }
-  extraCache.set(name, c); return c;
-}
-// Placeholder enemy art: original designs built from curved forms. Sprites are cached by frame.
-function drawCrawler(g, x, y, k, f) {
-  const C = tri("#7a3a9a"), B = tri("#4a2a64"), H = tri("#a45cc4"), SP = tri("#e0b8f4");
-  for (const lx of [3, 7, 11, 14]) inkPart(g, Sh.cap(x + lx, y + 11, x + lx + (((k + lx) & 1) ? -1.5 : 1.5), y + 15, 1.7, 1.1), B);
-  for (const sx of [4, 8, 12]) inkPart(g, Sh.cap(x + sx, y + 5.5, x + sx + 0.8, y + 0.5, 2.1, 0.4), SP);
-  inkPart(g, Sh.ell(x + 8, y + 9, 8, 6), C); g.fillStyle = "#f0d4fa"; g.fillRect(x + 4, y + 5, 2, 2); g.fillRect(x + 6, y + 4, 2, 1); g.fillStyle = C[3]; g.fillRect(x + 11, y + 11, 3, 2);
-  g.fillStyle = "#2a0e3e"; for (let px = 3; px < 14; px++) g.fillRect(x + px, y + 13 - (Math.abs(px - 8) > 4 ? 1 : 0), 1, 1);
-  g.fillStyle = C[1]; g.fillRect(x + 4, y + 5, 4, 1); g.fillRect(x + 3, y + 6, 1, 1);
-  const hx = f > 0 ? x + 14 : x + 2;
-  inkPart(g, Sh.ell(hx, y + 10, 4.6, 4.3), H);
-  const ex = f > 0 ? hx + 0.5 : hx - 3.5;
-  g.fillStyle = "#fff"; g.fillRect(Math.round(ex), y + 8, 3, 3); g.fillStyle = "#ff3030"; g.fillRect(Math.round(ex) + (f > 0 ? 1 : 0), y + 9, 2, 2); g.fillStyle = OUTL; g.fillRect(Math.round(ex) + (f > 0 ? 2 : 0), y + 9, 1, 1);
-  g.fillStyle = OUTL; g.fillRect(f > 0 ? hx - 1 : hx - 4, y + 12, 5, 2); g.fillStyle = "#fff"; g.fillRect(f > 0 ? hx : hx - 3, y + 12, 1, 1); g.fillRect(f > 0 ? hx + 2 : hx - 1, y + 12, 1, 1);
-}
-function drawBat(g, x, y, up, f) {
-  const M = tri("#7a3a9a"), B = tri("#5a3a80"), bone = tri("#c8a0f0"), bx = x + 8, by = y + 8;
-  const wing = up ? [[-3, -1], [-6, -5], [-11, -7], [-16, -6], [-13, -3], [-14, 0], [-10, -1], [-10, 3], [-6, 1], [-5, 4], [-3, 3]] : [[-3, 0], [-7, 2], [-11, 6], [-14, 12], [-11, 10], [-10, 13], [-7, 9], [-6, 12], [-4, 8], [-3, 6]];
-  for (const s of [-1, 1]) {
-    inkPart(g, Sh.poly(wing.map(p => [bx - p[0] * s * -1 + 0, by + p[1]]).map((p, i) => [bx + wing[i][0] * s, by + wing[i][1]])), M);
-    inkPart(g, Sh.cap(bx + wing[0][0] * s, by + wing[0][1], bx + wing[3][0] * s, by + wing[3][1], 0.9, 0.6), bone);
-  }
-  inkPart(g, Sh.cap(bx - 2.5, by - 1, bx - 3.5, by - 6, 1.8, 0.5), B); inkPart(g, Sh.cap(bx + 2.5, by - 1, bx + 3.5, by - 6, 1.8, 0.5), B);
-  inkPart(g, Sh.ell(bx, by + 1, 3.9, 4.8), B);
-  g.fillStyle = "#ff3030"; g.fillRect(bx - 2, by - 1, 2, 2); g.fillRect(bx + 1, by - 1, 2, 2); g.fillStyle = OUTL; g.fillRect(bx - 1, by, 1, 1); g.fillRect(bx + 1, by, 1, 1);
-  g.fillStyle = "#fff"; g.fillRect(bx - 1, by + 3, 1, 2); g.fillRect(bx + 1, by + 3, 1, 2);
-}
-function drawSkeleton(g, x, y, f, k, walk) {
-  const Bn = tri("#e8e4d0"), S = tri("#a8b0c0"), G2 = tri("#d8a838"), cx = x + 8;
-  for (const [hx, kk] of [[6, walk && k ? 3 : 0], [10, walk && !k ? 3 : 0]]) {
-    inkPart(g, Sh.cap(x + hx, y + 21, x + hx - 0.5, y + 25.5, 2.7, 2.1), Bn); inkPart(g, Sh.ell(x + hx - 0.5, y + 25.6, 2.3, 2.1), Bn);
-    inkPart(g, Sh.cap(x + hx - 0.5, y + 26, x + hx - 0.8, y + 29.5 - kk, 2.1, 1.6), Bn); inkPart(g, Sh.ell(x + hx - 1.2, y + 30.8 - kk, 3.4, 1.7), Bn);
-  }
-  inkPart(g, Sh.ell(cx, y + 20, 5.6, 2.9), Bn);
-  inkPart(g, Sh.cap(cx, y + 9, cx, y + 20, 1.3, 1.3), tri("#b0ac98"));
-  inkPart(g, Sh.ell(cx, y + 14, 6.6, 5.6), Bn);
-  g.fillStyle = OUTL; for (let r = 0; r < 3; r++) for (let dx = -5; dx <= 5; dx++) if (Math.abs(dx) > 0) g.fillRect(cx + dx, y + 11 + r * 3 + Math.round(dx * dx / 13), 1, 1);
-  inkPart(g, Sh.ell(cx, y + 4.6, 5.1, 4.9), Bn);
-  inkPart(g, Sh.ell(cx, y + 9.2, 3.3, 1.6), Bn);
-  g.fillStyle = OUTL; g.fillRect(cx - 4, y + 3, 3, 3); g.fillRect(cx + 1, y + 3, 3, 3); g.fillRect(cx, y + 6, 1, 2);
-  g.fillStyle = "#ff5030"; g.fillRect(cx + (f > 0 ? 2 : -3), y + 4, 1, 1); g.fillRect(cx + (f > 0 ? -3 : 2), y + 4, 1, 1);
-  const ax = f > 0 ? x + 13.5 : x + 2.5;
-  inkPart(g, Sh.cap(ax, y + 10, ax + f * 2.5, y + 15.5, 1.8, 1.4), Bn); inkPart(g, Sh.ell(ax + f * 2.7, y + 16, 1.8, 1.8), Bn);
-  inkPart(g, Sh.cap(ax + f * 3, y + 16, ax + f * 3.6, y + 1.5, 1.5, 0.9), S); inkPart(g, Sh.cap(ax + f * 3 - 2.5, y + 15.5, ax + f * 3 + 2.5, y + 15.5, 1, 1), G2);
-}
-function drawKnight(g, x, y, f, lm) {
-  const S = tri("#aab2c8"), D = tri("#6a7490"), Pl = tri("#d03030"), Bl = tri("#2f4fa8"), Go = tri("#f0c040"), Bo = tri("#3a2a1e"), cx = x + 8;
-  inkPart(g, Sh.cap(x + 6, y + 21, x + 5.5, y + 29 - lm, 3.2, 2.6), D); inkPart(g, Sh.ell(x + 5, y + 30.6 - lm, 4, 2.2), Bo);
-  inkPart(g, Sh.cap(x + 10, y + 21, x + 10.5, y + 29 + lm - 1, 3.2, 2.6), D); inkPart(g, Sh.ell(x + 11, y + 30.6, 4, 2.2), Bo);
-  inkPart(g, Sh.ell(cx, y + 15, 7.6, 7.4), S);
-  g.fillStyle = Go[0]; for (let px = -6; px <= 6; px++) g.fillRect(cx + px, y + 20 + Math.round(px * px / 30), 1, 2);
-  inkPart(g, Sh.ell(x + 1.5, y + 10, 4, 4.2), S); inkPart(g, Sh.ell(x + 14.5, y + 10, 4, 4.2), S);
-  inkPart(g, Sh.ell(cx, y + 4.6, 4.8, 5.2), S);
-  g.fillStyle = OUTL; g.fillRect(f > 0 ? cx : cx - 4, y + 4, 5, 2); g.fillStyle = "#ff5030"; g.fillRect(f > 0 ? cx + 3 : cx - 3, y + 4, 1, 1);
-  inkPart(g, Sh.cap(cx, y - 1, cx - f * 5, y - 2, 2.2, 1.2), Pl); inkPart(g, Sh.cap(cx - f * 5, y - 2, cx - f * 6, y + 3, 1.6, 0.8), Pl);
-  // kite shield on the facing side
-  const sx = f > 0 ? x + 14 : x + 2, rx = 6.4, cyS = y + 14, sw = (px, py, ex) => px;
-  const kite = ex => ({ bb: [sx - rx + ex, y + 5 + ex, sx + rx - ex, y + 25 - ex], test: (px, py) => { const a = (px + .5 - sx) / (rx - ex), t = py + .5; if (t < y + 5 + ex || t > y + 25 - ex) return false; if (t <= y + 15) return Math.abs(a) <= 1; const b = (t - (y + 15)) / (10 - ex); return a * a + b * b <= 1; }, norm: (px, py) => [(px + .5 - sx) / rx, (py + .5 - (y + 15)) / 10] });
-  inkPart(g, kite(0), Go); inkPart(g, kite(1.3), Bl, true);
-  g.fillStyle = Go[0]; g.fillRect(sx, y + 8, 1, 14); g.fillRect(sx - 3, y + 13, 7, 2);
-}
-function drawDropper(g, x, y, st) {
-  const R = tri("#8a8e9a"), Hn = tri("#a6aab8");
-  inkPart(g, Sh.cap(x + 8, y - 4, x + 8, y + 1, 1.6, 1.6), tri("#9aa2b8")); inkPart(g, Sh.ell(x + 8, y - 3.5, 2.4, 2.4), tri("#c0c6d8"));   // iron bracket and ring
-  inkPart(g, Sh.cap(x + 3, y + 4, x + 1, y - 1, 2.4, 0.7), Hn); inkPart(g, Sh.cap(x + 13, y + 4, x + 15, y - 1, 2.4, 0.7), Hn);
-  inkPart(g, Sh.sq(x + 8, y + 8, 7.4, 6.4, 3.2), R); g.fillStyle = R[1]; g.fillRect(x + 3, y + 3, 3, 2); g.fillStyle = R[3]; g.fillRect(x + 11, y + 11, 3, 2);
-  g.fillStyle = tri("#8a8e9a")[3]; g.fillRect(x + 8, y + 2, 1, 3); g.fillRect(x + 9, y + 4, 1, 2);
-  g.fillStyle = OUTL; g.fillRect(x + 3, y + 5, 4, 3); g.fillRect(x + 9, y + 5, 4, 3);
-  g.fillStyle = st === 1 ? "#ff3030" : "#ffd030"; g.fillRect(x + 4, y + 6, 2, 2); g.fillRect(x + 10, y + 6, 2, 2);
-  inkPart(g, Sh.ell(x + 8, y + 12, 5, 2.6), tri("#1a1a24"));
-  g.fillStyle = "#e8eaf4"; for (const v of [4, 6, 8, 10, 12]) g.fillRect(x + v, y + 10, 1, 2 + ((v >> 1) & 1));
-}
-const ENEMY_ART = {
-  crawler: (g, e, x, y, t, f) => blitSprite(g, "cr" + ((t >> 3) & 1) + (e.dir > 0 ? 1 : 0), f, x, y, 8, 6, 30, 26, (c, px, py) => drawCrawler(c, px, py, (t >> 3) & 1, e.dir > 0 ? 1 : -1)),
-  bat: (g, e, x, y, t, f) => { const up = ((t >> 3) & 1) === 0; blitSprite(g, "bt" + (up ? 1 : 0), f, x, y, 20, 10, 48, 36, (c, px, py) => drawBat(c, px, py, up)); },
-  skeleton: (g, e, x, y, t, f) => { const k = (t >> 4) & 1, w = e.moving ? 1 : 0, d = e.dir > 0 ? 1 : -1; blitSprite(g, "sk" + k + w + d, f, x, y, 8, 6, 32, 42, (c, px, py) => drawSkeleton(c, px, py, d, k, w)); },
-  knight: (g, e, x, y, t, f) => { const lm = (t >> 4) & 1, d = e.dir > 0 ? 1 : -1; blitSprite(g, "kn" + lm + d, f, x, y, 10, 8, 38, 46, (c, px, py) => drawKnight(c, px, py, d, lm)); },
-  dropper: (g, e, x, y, t, f) => {
-    const len = e.y - e.hy; for (let yy = 0; yy < len; yy += 3) { g.fillStyle = OUTL; g.fillRect(x + 6, y - len + yy, 4, 3); g.fillStyle = (yy / 3) & 1 ? "#cfd4e4" : "#6a7088"; g.fillRect(x + 7, y - len + yy, 2, 2); }
-    blitSprite(g, "dr" + (e.st === 1 ? 1 : 0), f, x, y, 4, 4, 24, 24, (c, px, py) => drawDropper(c, px, py, e.st === 1 ? 1 : 0));
-  },
-};
 
 /* ======================================================================
    4. WORLD GENERATION — seeded, so the same seed builds the same world
@@ -437,11 +445,9 @@ let world;   // { seed, tiles, roomOf, rooms, items, spawns, start }
 
 function generateWorld(seed) {
   const R = rng(seed), ri = (a, b) => a + Math.floor(R() * (b - a + 1));
-  // hash-based choice for new features, so they never change the rest of an existing seed's world
-  const hh = (a, b, c) => (Math.imul((a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ seed, 2654435761) >>> 0) / 4294967296;
   const ci = (cx, cy) => cy * GW + cx;
   // ---- 4a. maze of cells: E = open to the right, S = open below ----
-  const E = new Uint8Array(GW * GH), EX = new Uint8Array(GW * GH), S = new Uint8Array(GW * GH), seen = new Uint8Array(GW * GH);
+  const E = new Uint8Array(GW * GH), S = new Uint8Array(GW * GH), seen = new Uint8Array(GW * GH);
   const sx = GW >> 1, stack = [[sx, 0]]; seen[ci(sx, 0)] = 1;
   while (stack.length) {
     const [cx, cy] = stack[stack.length - 1], lab = ZONES[zoneOfCellY(cy)].lab, opts = [];
@@ -456,7 +462,7 @@ function generateWorld(seed) {
   }
   for (let cy = 0; cy < GH; cy++) for (let cx = 0; cx < GW; cx++) {      // extra loops
     const L = ZONES[zoneOfCellY(cy)].loop;
-    if (cx < GW - 1 && R() < L) { if (!E[ci(cx, cy)]) EX[ci(cx, cy)] = 1; E[ci(cx, cy)] = 1; }   // EX = an extra loop, safe to lock
+    if (cx < GW - 1 && R() < L) E[ci(cx, cy)] = 1;
     if (cy < GH - 1 && R() < L * 0.6) S[ci(cx, cy)] = 1;
   }
   // ---- 4b. merge cells into rectangular rooms ----
@@ -487,8 +493,16 @@ function generateWorld(seed) {
       for (let k = 0; k < 2; k++) { const s = x0 + ri(3, 12); if (Math.abs(s - g) > 1) for (let y = y0 + 7; y <= y0 + 9; y++) set(s, y, SOLID); }
       for (let k = 0; k < 2; k++) { const s = x0 + ri(3, 12); if (Math.abs(s - g) > 1) for (let y = y0 + 3; y <= y0 + 5; y++) set(s, y, SOLID); }
     } else {
+      // Room styles for single-height rooms: two levels, a low crawlway, or a tall open cave.
+      r.style = r.h > 1 ? "vault" : r.id === 0 ? "open" : (() => { const v = R(); return v < 0.5 ? "two" : v < 0.72 ? "low" : "open"; })();
+      if (r.style === "two") {                   // a rock shelf splits the screen into two levels, joined by chains
+        const my = y0 + ri(5, 7); r.mid = my;
+        for (let x = x0 + 1; x < x0 + w - 1; x++) set(x, my, SOLID);
+        for (let c = 0; c < r.w; c++) { const g = x0 + c * CW + ri(3, 12); for (let y = my; y < floor; y++) chainCell(g, y); }
+      }
+      if (r.style === "low") for (let y = y0 + 1; y <= floor - 4; y++) for (let x = x0 + 1; x < x0 + w - 1; x++) set(x, y, SOLID);   // barely taller than the hero
       for (let k = 0; k < r.w * 2; k++) {        // floor bumps
-        const bw = ri(2, 3), bh = ri(1, 2), bx = x0 + ri(4, w - 8);
+        const bw = ri(2, 3), bh = r.style === "low" ? 1 : ri(1, 2), bx = x0 + ri(4, w - 8);
         for (let j = 1; j <= bh; j++) for (let i = 0; i < bw; i++) set(bx + i, floor - j, SOLID);
       }
       if (r.h >= 2) {                            // ladder of overlapping ledges, floor to ceiling
@@ -513,8 +527,6 @@ function generateWorld(seed) {
       for (let i = 0; i < 5; i++) { const x = start + dir * i; if (get(x, fy) === EMPTY) set(x, fy, LEDGE); inner = x; }
       const chx = inner + dir; for (let y = fy; y < rf; y++) chainCell(chx, y);
     }
-    // some extra loops are locked: the spanning tree stays open, so the world is always finishable
-    if (EX[ci(cx, cy)] && hh(cx, cy, 5) < 0.45) for (let y = fy - 3; y <= fy - 1; y++) set(wx, y, LOCK);
   }
   // shafts between rooms (up/down): a chain through the floor
   for (let cy = 0; cy < GH - 1; cy++) for (let cx = 0; cx < GW; cx++) {
@@ -523,58 +535,99 @@ function generateWorld(seed) {
     for (let y = fy - 2; y < fy; y++) if (get(x, y) === SOLID) set(x, y, EMPTY);
     for (let y = fy; y < below.ty + below.th - 1; y++) chainCell(x, y);
   }
-  // ---- 4d. treasure, shrines and enemies ----
-  const items = [], spawns = [];
+  // ---- 4c+. pools of water and bridges over chasms ----
+  for (const r of rooms) {
+    if (ZONES[r.zone].lab || r.style === "low") continue;
+    const floor = r.ty + r.th - 1, chance = (r.zone === 3 ? 0.75 : 0.3) + (r.h > 1 ? 0.3 : 0);
+    if (R() < chance) for (let tries = 0; tries < 8; tries++) {   // a pool sunk one tile into the floor
+      const len = ri(3, Math.min(8, r.tw - 10)), x = r.tx + ri(4, r.tw - 5 - len); let ok = true;
+      for (let i = -1; i <= len; i++) if (get(x + i, floor) !== SOLID || get(x + i, floor + 1) !== SOLID || get(x + i, floor - 1) !== EMPTY) ok = false;
+      if (ok) { for (let i = 0; i < len; i++) set(x + i, floor, WATER); break; }
+    }
+    if (r.h > 1 && R() < 0.75) {               // a thin bridge across a vaulted cavern
+      const k = ri(1, Math.max(1, Math.floor((r.th - 6) / 3))), y = floor - 3 * k - 1;
+      if (y > r.ty + 3) for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) if (get(x, y) === EMPTY) set(x, y, BRIDGE);
+    }
+  }
+  // ---- 4d. treasure, shrines, traps and enemies ----
+  const items = [], spawns = [], traps = [];
   const standSpots = r => { const out = []; for (let y = r.ty + 1; y < r.ty + r.th - 1; y++) for (let x = r.tx + 2; x < r.tx + r.tw - 2; x++) { const b = get(x, y + 1); if (get(x, y) === EMPTY && get(x, y - 1) === EMPTY && (b === SOLID || b === LEDGE)) out.push([x, y]); } return out; };
-  const zoneFirst = new Set(); let relicDone = false;
+  const zoneFirst = new Set();
   for (const r of rooms) {
     const spots = standSpots(r); if (!spots.length) continue;
+    const id = n => r.id * 100 + n;
     const take = () => spots.splice(Math.floor(R() * spots.length), 1)[0];
-    const n = 2 + r.w * r.h * 2;
-    for (let k = 0; k < n && spots.length; k++) { const [x, y] = take(); const big = R() < 0.12 + r.zone * 0.02; items.push({ id: r.id * 100 + k, kind: "coin", art: big ? "coin100" : "coin10", value: big ? 100 : 10, x: x * TS, y: y * TS }); }
-    if (spots.length && R() < 0.5) { const [x, y] = take(); items.push({ id: r.id * 100 + 50, kind: "jar", art: "jar", x: x * TS, y: y * TS }); }
-    if (spots.length && R() < 0.12) { const [x, y] = take(); items.push({ id: r.id * 100 + 51, kind: "potion", art: "potion", x: x * TS, y: y * TS }); }
-    const firstOfZone = !zoneFirst.has(r.zone) && r.id > 0;
-    if (spots.length && (r.id === 0 || firstOfZone || R() < 0.06)) { zoneFirst.add(r.zone); const [x, y] = take(); items.push({ id: r.id * 100 + 52, kind: "shrine", art: "shrineA", x: x * TS, y: y * TS }); }
-    // ---- progression objects (all chosen by hash) ----
-    const floorOnly = () => spots.filter(([, y]) => y === r.ty + r.th - 2);
-    const takeFloor = salt => { const f = floorOnly(); if (!f.length) return null; const sp = f[Math.floor(hh(r.id, salt, 5) * f.length)]; spots.splice(spots.indexOf(sp), 1); return sp; };
-    const takeAny = salt => { if (!spots.length) return null; return spots.splice(Math.floor(hh(r.id, salt, 6) * spots.length), 1)[0]; };
-    if (r.id > 0 && (firstOfZone || (r.zone >= 1 && hh(r.id, 1, 3) < 0.08))) { const sp = takeFloor(1); if (sp) items.push({ id: r.id * 100 + 53, kind: "shop", art: "shop", x: sp[0] * TS, y: sp[1] * TS }); }
-    if (r.zone === 1 && !relicDone && r.id > 0) { const sp = takeFloor(2); if (sp) { relicDone = true; items.push({ id: r.id * 100 + 54, kind: "relic", art: "boots", x: sp[0] * TS, y: sp[1] * TS }); } }
-    if (r.id > 0 && hh(r.id, 2, 3) < 0.07) { const sp = takeAny(3); if (sp) items.push({ id: r.id * 100 + 55, kind: "key", art: "key", x: sp[0] * TS, y: sp[1] * TS }); }
-    if (r.zone >= 1 && !ZONES[r.zone].lab && hh(r.id, 3, 3) < 0.2) {   // a high ledge with treasure: needs the double jump
-      const vx = r.tx + 3 + Math.floor(hh(r.id, 4, 3) * Math.max(1, r.tw - 8)), vy = r.ty + r.th - 1 - 6;
-      let clear = vy > r.ty + 3; for (let i = -1; i < 5; i++) for (let j = -3; j <= 0; j++) if (get(vx + i, vy + j) !== EMPTY) clear = false;
-      if (clear) { for (let i = 0; i < 4; i++) set(vx + i, vy, LEDGE); items.push({ id: r.id * 100 + 60, kind: "coin", art: "coin100", value: 100, x: vx * TS + 8, y: (vy - 1) * TS }, { id: r.id * 100 + 61, kind: "coin", art: "coin100", value: 100, x: vx * TS + 24, y: (vy - 1) * TS }); }
+    const has = (x, y) => spots.some(([a, b]) => a === x && b === y);
+    const takeWide = only => {   // a spot 2 tiles wide, for 32-px-wide things
+      const ok = spots.filter(([x, y]) => has(x + 1, y) && (!only || only(x, y))); if (!ok.length) return null;
+      const s = ok[Math.floor(R() * ok.length)]; for (const dx of [0, 1]) { const i = spots.findIndex(([a, b]) => a === s[0] + dx && b === s[1]); if (i >= 0) spots.splice(i, 1); } return s;
+    };
+    const onFloor = (x, y) => y === r.ty + r.th - 2;
+    // Treasure lives in clay pots. Each pot's contents are decided here, so a world always has the same pots.
+    const n = 1 + r.w * r.h + (R() < 0.5 ? 1 : 0);
+    for (let k = 0; k < n && spots.length; k++) {
+      const [x, y] = take(), v = R(), z = r.zone * 0.03;
+      const prize = v < 0.62 ? (() => { const c = R(); const val = c < 0.45 - z ? 10 : c < 0.78 - z ? 50 : c < 0.95 - z / 2 ? 100 : 500; return { kind: "coin", art: "coin" + val, value: val }; })()
+        : v < 0.77 ? { kind: "key", art: "key" } : v < 0.89 ? { kind: "potion", art: "potion" } : { kind: "acid" };
+      items.push({ id: id(k), kind: "pot", hp: CFG.potHits, prize, x: x * TS, y: y * TS });
     }
+    if (spots.length && R() < 0.12) { const [x, y] = take(); items.push({ id: id(51), kind: "potion", art: "potion", x: x * TS, y: y * TS }); }
+    const firstOfZone = !zoneFirst.has(r.zone) && r.id > 0;
+    if (spots.length && (r.id === 0 || firstOfZone || R() < 0.06)) { zoneFirst.add(r.zone); const [x, y] = take(); items.push({ id: id(52), kind: "shrine", art: "shrineA", x: x * TS, y: y * TS }); }
+    if (r.id > 0 && R() < 0.16) { const s = takeWide(); if (s) items.push({ id: id(53), kind: "chest", x: s[0] * TS, y: (s[1] - 1) * TS }); }
+    if (r.id > 0 && R() < 0.08) { const s = takeWide(); if (s) items.push({ id: id(54), kind: "frozen", x: s[0] * TS, y: (s[1] - 1) * TS }); }
+    if (R() < 0.14) {           // treasure hidden inside a wall, next to somewhere you can stand
+      const walls = []; for (const [x, y] of spots) for (const d of [-1, 1]) if (get(x + d, y) === SOLID && x + d > r.tx && x + d < r.tx + r.tw - 1) walls.push([x + d, y, -d]);
+      if (walls.length) { const [x, y, side] = walls[Math.floor(R() * walls.length)]; items.push({ id: id(55), kind: "secret", prize: ["berry", "barrel", "pinwheel"][Math.floor(R() * 3)], side, x: x * TS, y: y * TS }); }
+    }
+    if (r.id > 0 && R() < 0.12) { const fl = spots.filter(([x, y]) => onFloor(x, y)); if (fl.length) { const [x] = fl[Math.floor(R() * fl.length)]; traps.push({ room: r.id, kind: "rock", x: x * TS - 8, y: (r.ty + 1) * TS }); } }
     if (r.id > 0) {
-      const floorSpots = spots.filter(([, y]) => y === r.ty + r.th - 2);
-      const en = Math.min(floorSpots.length, ri(0, 1 + Math.floor(r.zone / 2)) + (r.w > 2 ? 1 : 0));
+      const en = ri(0, 1 + Math.floor(r.zone / 2)) + (r.w > 2 ? 1 : 0);
+      const mix = ZONES[r.zone].enemies; let witch = false;
       for (let k = 0; k < en; k++) {
-        const [x, y] = floorSpots.splice(Math.floor(R() * floorSpots.length), 1)[0];
-        // the type comes from a hash, not from R(), so adding enemy types never changes the rest of the world
-        const hv = (Math.imul((x * 73856093) ^ (y * 19349663) ^ seed, 2654435761) >>> 0) / 4294967296, mix = ZONES[r.zone].enemies, tot = mix.reduce((a, m) => a + m[1], 0);
-        let type = mix[0][0], acc = 0; for (const [n, w] of mix) { acc += w; if (hv * tot < acc) { type = n; break; } }
-        let sx = x * TS, sy = y * TS;
-        if (type === "skeleton" || type === "knight") sy -= 16;
-        else if (type === "bat") { if (get(x, y - 2) === EMPTY && get(x, y - 3) === EMPTY) sy = (y - 3) * TS; else type = "crawler"; }
-        else if (type === "dropper") { let cy = y; while (cy > r.ty && get(x, cy) !== SOLID) cy--; if (y - cy >= 3 && get(x, cy) === SOLID) sy = (cy + 1) * TS; else type = "crawler"; }
-        spawns.push({ room: r.id, type, x: sx, y: sy, hp: ENEMIES[type].hp + Math.floor(r.zone / 3) });
+        const type = mix[Math.floor(R() * mix.length)], T = ENEMY_TYPES[type], hp = T.fixedHp ? T.hp : T.hp + Math.floor(r.zone / 2);
+        if (T.perRoom) { if (witch) continue; witch = true; spawns.push({ room: r.id, type, x: r.tx * TS, y: r.ty * TS, hp }); continue; }
+        const s = T.air ? (spots.length ? take() : null) : takeWide(onFloor); if (!s) break;
+        let y = T.air ? Math.max(r.ty + 1, s[1] - T.air) : s[1] - 1;
+        if (T.air) while (y < s[1] && (get(s[0], y) !== EMPTY || get(s[0] + 1, y) !== EMPTY)) y++;   // keep flyers out of the rock
+        spawns.push({ room: r.id, type, x: s[0] * TS, y: y * TS, hp });
       }
     }
   }
+  // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
+  const decor = [];
+  for (const r of rooms) {
+    r.dark = r.id > 0 && R() < 0.22 + r.zone * 0.06;
+    const vineChance = (r.dark ? 0.16 : 0.05) + (r.zone === 1 || r.zone === 3 ? 0.08 : 0);
+    const torches = r.dark ? (R() < 0.3 ? 1 : 0) : r.w * r.h + (R() < 0.5 ? 1 : 0);
+    const torchSpots = [];
+    for (let y = r.ty + 1; y < r.ty + r.th - 1; y++) for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) {
+      const t = get(x, y), above = get(x, y - 1), below = get(x, y + 1);
+      if (t === EMPTY && (above === SOLID || above === LEDGE) && R() < vineChance) {
+        let len = 0; const max = ri(2, 6); while (len < max && get(x, y + len) === EMPTY) len++;
+        if (len >= 2) decor.push({ kind: "vine", x: x * TS, y: y * TS, len, seed: Math.floor(R() * 1000) });
+      }
+      // edge of a drop: standing surface below, empty to one side with nothing under it
+      if (t === EMPTY && (below === SOLID || below === LEDGE) && above === EMPTY) {
+        const edge = [-1, 1].some(d => get(x + d, y + 1) === EMPTY && get(x + d, y + 2) === EMPTY);
+        if ((edge && R() < 0.65) || R() < 0.03) decor.push({ kind: R() < 0.55 ? "bush" : "flower", x: x * TS, y: y * TS, seed: Math.floor(R() * 1000) });
+        if (get(x, y - 1) === EMPTY && get(x, y - 2) === EMPTY && get(x - 1, y - 2) === EMPTY && get(x + 1, y - 2) === EMPTY) torchSpots.push([x, y - 2]);
+      }
+    }
+    for (let k = 0; k < torches && torchSpots.length; k++) { const [x, y] = torchSpots.splice(Math.floor(R() * torchSpots.length), 1)[0]; decor.push({ kind: "torch", x: x * TS, y: y * TS, seed: Math.floor(R() * 1000) }); }
+  }
   const st = rooms[0];
-  return { seed, tiles: T, roomOf, rooms, items, spawns, start: { x: (st.tx + st.tw / 2) * TS - 16, y: (st.ty + st.th - 1) * TS - 32 } };
+  return { seed, tiles: T, roomOf, rooms, items, spawns, traps, decor, start: { x: (st.tx + st.tw / 2) * TS - 16, y: (st.ty + st.th - 1) * TS - 32 } };
 }
 
 /* ======================================================================
    5. WORLD QUERIES (used by physics)
    ====================================================================== */
 const tileAt = (x, y) => (x < 0 || y < 0 || x >= WT || y >= HT) ? SOLID : world.tiles[y * WT + x];
-const solid = (x, y) => { const t = tileAt(x, y); return t === SOLID || t === LOCK; };
+const solid = (x, y) => tileAt(x, y) === SOLID;
 const isChain = (x, y) => { const t = tileAt(x, y); return t === CHAIN || t === LEDGECHAIN; };
-const oneway = (x, y) => { const t = tileAt(x, y); return t === LEDGE || t === LEDGECHAIN || (t === CHAIN && !isChain(x, y - 1)); };
+const oneway = (x, y) => { const t = tileAt(x, y); return t === LEDGE || t === LEDGECHAIN || t === BRIDGE || (t === CHAIN && !isChain(x, y - 1)); };
+const isWater = (x, y) => tileAt(x, y) === WATER;
 const roomAtPx = (px, py) => { const cx = Math.floor(px / (CW * TS)), cy = Math.floor(py / (CH * TS)); if (cx < 0 || cy < 0 || cx >= GW || cy >= GH) return null; return world.rooms[world.roomOf[cy * GW + cx]]; };
 
 /* ======================================================================
@@ -582,28 +635,30 @@ const roomAtPx = (px, py) => { const cx = Math.floor(px / (CW * TS)), cy = Math.
    ====================================================================== */
 let G;   // everything that changes while playing
 const SAVE_KEY = "btdepths.save.v1";
-const maxHP = () => CFG.maxHP + ARMOUR[G.armour].hp;
 function newGame(seed, saved) {
   world = generateWorld(seed);
   G = {
-    hero: { x: world.start.x, y: world.start.y, vx: 0, vy: 0, dir: -1, ground: true, climb: false, crouch: false, atk: 0, anim: 0, climbDist: 0, hp: CFG.maxHP, inv: 0, chainTop: 0, drop: 0, coyote: 0, buf: 0, used2: false, jumpFrame: -1 },
-    zenny: 0, got: new Set(), visited: new Set(), shrine: { ...world.start }, room: null, enemies: [], shots: [], popups: [], particles: [],
-    cam: { x: 0, y: 0 }, frame: 0, mode: "play", banner: null, bannerT: 0, dead: 0, debug: false, pause: 0, shake: 0,
-    keyCount: 0, armour: 0, flail: 1, abilities: new Set(), opened: new Set(), shopSel: 0, shopMsg: "", shopMsgT: 0, lockMsg: 0,
+    hero: { x: world.start.x, y: world.start.y, vx: 0, vy: 0, dir: -1, ground: true, climb: false, crouch: false, atk: 0, anim: 0, climbDist: 0, hp: CFG.maxHP, inv: 0, chainTop: 0, drop: 0 },
+    zenny: 0, keys: 0, maxHP: CFG.maxHP, fires: [], traps: [], shots: [], confuse: 0, got: new Set(), visited: new Set(), shrine: { ...world.start }, room: null, enemies: [], popups: [], particles: [],
+    cam: { x: 0, y: 0 }, frame: 0, mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
   };
   if (saved) {
-    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny;
+    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.maxHP = saved.maxHP || CFG.maxHP;
     G.got = new Set(saved.got); G.visited = new Set(saved.visited); G.shrine = saved.shrine;
-    G.keyCount = saved.keyCount | 0; G.armour = saved.armour | 0; G.flail = saved.flail || 1; G.abilities = new Set(saved.abilities || []); G.opened = new Set(saved.opened || []);
-    for (const i of G.opened) world.tiles[i] = EMPTY;
   }
-  for (const it of world.items) it.gone = G.got.has(it.id);
+  if (saved && hitsSolid(G.hero, G.hero.x, G.hero.y)) {   // the world's layout changed since this save: start at the entrance
+    Object.assign(G.hero, { x: world.start.x, y: world.start.y }); G.shrine = { ...world.start };
+  }
+  for (const it of world.items) {   // things already used stay used; opened chests and freed men stay in place
+    const used = G.got.has(it.id);
+    if (it.kind === "chest") { it.open = used; it.t = used ? 99 : 0; } else if (it.kind === "frozen") it.thawed = used; else it.gone = used;
+  }
   enterRoom(roomAtPx(G.hero.x + 16, G.hero.y + 16), true);
-  $("seedLbl").textContent = "World seed " + seed + " · v" + VERSION;
+  $("seedLbl").textContent = "World seed " + seed;
 }
 function save() {
   const h = G.hero;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, got: [...G.got], visited: [...G.visited], shrine: G.shrine, keyCount: G.keyCount, armour: G.armour, flail: G.flail, abilities: [...G.abilities], opened: [...G.opened] })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
 }
 function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
 
@@ -615,8 +670,10 @@ function enterRoom(r, instant) {
   const oldZone = G.room ? G.room.zone : -1;
   G.room = r;
   for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) G.visited.add((r.y + j) * GW + r.x + i);
-  G.enemies = world.spawns.filter(s => s.room === r.id).map(s => ({ ...s, dir: s.x % 32 ? 1 : -1, vy: 0, hurt: 0, alive: true, t: 0, st: 0, hx: s.x, hy: s.y }));
+  G.enemies = world.spawns.filter(s => s.room === r.id).map(s => ({ ...s, x0: s.x, y0: s.y, dir: (s.x >> 4) & 1 ? 1 : -1, state: ENEMY_TYPES[s.type].start, t: 0, cd: 40 + ((s.x >> 4) % 5) * 15, anim: 0, hurtT: 0, alive: true, frame: "" }));
   G.shots = [];
+  G.traps = world.traps.filter(t => t.room === r.id).map(t => ({ ...t, state: "wait", vy: 0 }));
+  G.fires = [];
   if (r.zone !== oldZone) { G.banner = ZONES[r.zone].name; G.bannerT = 150; }
   if (instant) snapCamera();
 }
@@ -629,27 +686,12 @@ const KEYMAP = { ArrowLeft:"left", ArrowRight:"right", ArrowUp:"up", ArrowDown:"
 addEventListener("keydown", e => { const k = KEYMAP[e.code]; if (!k || !G) return; e.preventDefault(); if (!keys[k]) pressed[k] = true; keys[k] = true; });
 addEventListener("keyup", e => { const k = KEYMAP[e.code]; if (k) { keys[k] = false; e.preventDefault(); } });
 addEventListener("blur", () => { for (const k in keys) keys[k] = false; });
-function setKey(k, down) { if (!G) return; if (down && !keys[k]) pressed[k] = true; keys[k] = down; }
-// touch controls: multi-touch, each button holds its key while a finger is on it
-function setupTouch() {
-  document.body.classList.add("touch"); $("touch").hidden = false; fit();
-  for (const b of document.querySelectorAll("#touch .tb")) {
-    const k = b.dataset.k, ids = new Set();
-    const on = e => { e.preventDefault(); for (const t of e.changedTouches) ids.add(t.identifier); b.classList.add("on"); setKey(k, true); };
-    const off = e => { e.preventDefault(); for (const t of e.changedTouches) ids.delete(t.identifier); if (!ids.size) { b.classList.remove("on"); setKey(k, false); } };
-    b.addEventListener("touchstart", on, { passive: false }); b.addEventListener("touchend", off, { passive: false }); b.addEventListener("touchcancel", off, { passive: false });
-  }
-  document.addEventListener("touchmove", e => e.preventDefault(), { passive: false });
-}
-if ("ontouchstart" in window || navigator.maxTouchPoints > 1) { if (document.readyState === "loading") addEventListener("DOMContentLoaded", setupTouch); else setupTouch(); }
-// gamepad: stick or d-pad to move, A jump, X/B flail, Y/Select map
-const padPrev = {};
-function pollPad() {
-  const gp = navigator.getGamepads ? [...navigator.getGamepads()].find(g => g && g.connected) : null; if (!gp) return;
-  const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
-  const want = { left: ax < -0.4 || b(14), right: ax > 0.4 || b(15), up: ay < -0.5 || b(12), down: ay > 0.5 || b(13), jump: b(0), attack: b(2) || b(1) || b(7), map: b(3) || b(8) };
-  for (const k in want) if (want[k] !== !!padPrev[k]) { padPrev[k] = want[k]; setKey(k, want[k]); }
-}
+document.querySelectorAll("#touch [data-k]").forEach(b => {
+  const k = b.dataset.k, on = e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} if (!keys[k]) pressed[k] = true; keys[k] = true; b.classList.add("on"); };
+  const off = e => { e.preventDefault(); keys[k] = false; b.classList.remove("on"); };
+  b.addEventListener("pointerdown", on); ["pointerup", "pointercancel", "lostpointercapture"].forEach(t => b.addEventListener(t, off));
+  b.addEventListener("contextmenu", e => e.preventDefault());
+});
 const clearPressed = () => { for (const k in pressed) pressed[k] = false; };
 
 /* ======================================================================
@@ -685,17 +727,9 @@ function onFloor(h) {
 }
 
 function updateHero() {
-  const h = G.hero, dirIn = (keys.right ? 1 : 0) - (keys.left ? 1 : 0); let cc = Math.floor((h.x + 16) / TS);
+  const h = G.hero, cc = Math.floor((h.x + 16) / TS);
+  let dirIn = (keys.right ? 1 : 0) - (keys.left ? 1 : 0); if (G.confuse > 0) { G.confuse--; dirIn = -dirIn; }   // witch fire swaps left and right
   if (h.inv) h.inv--;
-  // jump buffer and coyote time
-  if (pressed.jump) h.buf = CFG.jumpBuffer; else if (h.buf) h.buf--;
-  if (h.ground) h.coyote = CFG.coyote; else if (h.coyote) h.coyote--;
-  // a little slack when lining up with a chain
-  if (!h.climb) {
-    const rows = []; for (let r = Math.floor((h.y + 4) / TS); r <= Math.floor((h.y + 32) / TS); r++) rows.push(r);
-    const has = c => rows.some(r => isChain(c, r));
-    if (!has(cc)) for (const c of [cc - 1, cc + 1]) if (has(c) && Math.abs(h.x + 16 - (c * TS + 8)) <= 8 + CFG.grabRange) { cc = c; break; }
-  }
   // start climbing
   if (!h.climb && h.atk === 0) {
     let on = false; for (let r = Math.floor((h.y + 4) / TS); r <= Math.floor((h.y + 31) / TS); r++) if (isChain(cc, r)) on = true;
@@ -707,7 +741,7 @@ function updateHero() {
   }
   if (h.climb) {
     const dy = (keys.down ? 1 : 0) - (keys.up ? 1 : 0);
-    if (pressed.jump) { h.climb = false; h.buf = 0; h.jumpFrame = G.frame; h.vy = dirIn ? -3.2 : 0; if (dirIn) h.dir = dirIn; sfx("jump"); }
+    if (pressed.jump) { h.climb = false; h.vy = dirIn ? -3.2 : 0; if (dirIn) h.dir = dirIn; }
     else {
       if (dy < 0) { if (h.y + 31 <= h.chainTop * TS) { h.y = h.chainTop * TS - 32; h.climb = false; h.ground = true; } else { h.y -= CFG.climbSpeed; h.climbDist++; } }
       if (dy > 0) {
@@ -720,36 +754,34 @@ function updateHero() {
   }
   // crouch and attack
   h.crouch = h.ground && keys.down && h.atk === 0 ? true : (h.atk > 0 ? h.crouch : false);
-  if (pressed.attack && h.atk === 0) h.atk = 1;
+  if (pressed.attack && h.atk === 0) { h.atk = 1; h.swing = (h.swing || 0) + 1; }
   if (h.atk > 0 && ++h.atk > CFG.attackLength) h.atk = 0;
   // walk
   const locked = (h.atk > 0 && h.ground) || h.crouch;
-  if (!locked) { h.vx = h.knock ? h.vx : dirIn * CFG.walkSpeed; if (dirIn && !h.knock) h.dir = dirIn; } else { h.vx = 0; if (dirIn && h.crouch && h.atk === 0) h.dir = dirIn; }
+  const wade = isWater(cc, Math.floor((h.y + 31) / TS)) ? 0.55 : 1;   // wading through a pool
+  if (!locked) { h.vx = h.knock ? h.vx : dirIn * CFG.walkSpeed * wade; if (dirIn && !h.knock) h.dir = dirIn; } else { h.vx = 0; if (dirIn && h.crouch && h.atk === 0) h.dir = dirIn; }
   if (h.knock) h.knock--;
   // jump / drop through
-  if (h.buf && (h.ground || h.coyote) && !h.crouch) { h.vy = -CFG.jumpSpeed; h.ground = false; h.buf = 0; h.coyote = 0; h.jumpFrame = G.frame; sfx("jump"); }
+  if (pressed.jump && h.ground && !h.crouch) { h.vy = -CFG.jumpSpeed; h.ground = false; }
   else if (pressed.jump && h.ground && h.crouch) {
     const r = Math.floor((h.y + 32) / TS); let ok = true;
     for (let c = Math.floor((h.x + BOX.x) / TS); c <= Math.floor((h.x + BOX.x + BOX.w - 1) / TS); c++) if (solid(c, r)) ok = false;
     if (ok) { h.drop = 8; h.ground = false; h.crouch = false; h.y += 1; }
   }
-  if (h.ground || h.climb) h.used2 = false;
-  if (pressed.jump && !h.ground && !h.coyote && !h.used2 && !h.knock && h.jumpFrame !== G.frame && G.abilities.has("boots")) { h.vy = -CFG.jumpSpeed * 0.9; h.used2 = true; h.buf = 0; dust(h.x + 16, h.y + 31); sfx("jump"); }
   if (!keys.jump && h.vy < -CFG.shortHop) h.vy = -CFG.shortHop;
   h.vy = Math.min(h.vy + CFG.gravity, CFG.maxFall);
   if (h.drop) h.drop--;
-  const wasAir = !h.ground, fall = h.vy;
   moveX(h, h.vx); moveY(h, h.vy);
   if (h.ground && !onFloor(h)) h.ground = false;
-  if (wasAir && h.ground && fall > 2.5) { dust(h.x + 16, h.y + 31); sfx("land"); h.landT = 6; }
-  if (h.landT > 0) h.landT--;
   if (h.vx !== 0 && h.ground) h.anim++; else if (h.ground) h.anim = 0;
-  h.idleT = (h.ground && !h.climb && h.vx === 0 && h.atk === 0 && !h.crouch) ? (h.idleT || 0) + 1 : 0;   // drives the slow breathing loop
 }
-// The flail's hit box while the strike frames are showing
+// How far the flail is out: 0 = winding up, 1-3 = chain links out (as in the arcade game)
+function atkStage(a) { if (a <= 6) return 0; if (a <= 8) return 1; if (a <= 10) return 2; if (a <= 20) return 3; if (a <= 23) return 2; return 1; }
+// The flail's hit box: from the hand out to the ball
 function flailBox() {
-  const h = G.hero; if (!(h.atk >= CFG.strikeFrom && h.atk <= CFG.strikeTo)) return null;
-  const rx = FLAIL[G.flail].reach; return { x: h.dir < 0 ? h.x - 34 - rx : h.x + 34, y: h.y + (h.crouch ? 12 : 0), w: 32 + rx, h: h.crouch ? 20 : 32 };
+  const h = G.hero; if (!h.atk) return null; const s = atkStage(h.atk); if (!s) return null;
+  const reach = 16 * (s + 1), y = h.y + (h.crouch ? 12 : 4);
+  return { x: h.dir < 0 ? h.x - reach : h.x + 32, y, w: reach, h: 20 };
 }
 const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 const heroBox = () => { const h = G.hero; return { x: h.x + BOX.x, y: h.y + 32 - boxH(h), w: BOX.w, h: boxH(h) }; };
@@ -757,157 +789,260 @@ const heroBox = () => { const h = G.hero; return { x: h.x + BOX.x, y: h.y + 32 -
 /* ======================================================================
    10. ITEMS, ENEMIES, EFFECTS
    ====================================================================== */
-function tryLock() {
-  const h = G.hero, dirIn = (keys.right ? 1 : 0) - (keys.left ? 1 : 0); if (G.lockMsg) G.lockMsg--; if (!dirIn || h.climb) return;
-  const x = dirIn > 0 ? Math.floor((h.x + BOX.x + BOX.w) / TS) : Math.floor((h.x + BOX.x - 1) / TS);
-  for (let r = Math.floor((h.y + 4) / TS); r <= Math.floor((h.y + 31) / TS); r++) if (tileAt(x, r) === LOCK) {
-    if (G.keyCount > 0) {
-      G.keyCount--; for (let yy = r - 3; yy <= r + 3; yy++) if (tileAt(x, yy) === LOCK) { world.tiles[yy * WT + x] = EMPTY; G.opened.add(yy * WT + x); }
-      popup(x * TS + 8, r * TS, "Unlocked"); sfx("unlock"); save();
-    } else if (!G.lockMsg) { popup(x * TS + 8, r * TS, "Locked: need a key"); G.lockMsg = 90; }
-    return;
-  }
-}
-// shops: a caged wise man. Press up next to him.
-function nearShop() {
-  const h = G.hero; if (!G.room) return null;
-  for (const it of world.items) if (it.kind === "shop" && Math.abs(it.x + 8 - (h.x + 16)) < 24 && Math.abs(it.y + 16 - (h.y + 32)) < 10) return it;
-  return null;
-}
-function shopRows() {
-  const rows = [{ id: "potion", label: "Potion  +3 life", price: PRICES.potion }, { id: "key", label: "Key", price: PRICES.key }];
-  if (G.flail < 3) rows.push({ id: "flail", label: "Flail  level " + (G.flail + 1), price: PRICES.flail[G.flail + 1] });
-  if (G.armour < 4) rows.push({ id: "armour", label: "Armour  level " + (G.armour + 1), price: PRICES.armour[G.armour] });
-  return rows;
-}
-function openShop() { G.mode = "shop"; G.shopSel = 0; G.shopMsg = ""; G.shopMsgT = 0; sfx("shrine"); }
-function shopUpdate() {
-  const rows = shopRows(); if (G.shopMsgT) G.shopMsgT--;
-  if (pressed.up) G.shopSel = (G.shopSel + rows.length - 1) % rows.length;
-  if (pressed.down) G.shopSel = (G.shopSel + 1) % rows.length;
-  G.shopSel = Math.min(G.shopSel, rows.length - 1);
-  if (pressed.attack || pressed.map || pressed.enter) { G.mode = "play"; return; }
-  if (!pressed.jump) return;
-  const r = rows[G.shopSel], h = G.hero; const say = t => { G.shopMsg = t; G.shopMsgT = 90; };
-  if (G.zenny < r.price) { say("Not enough zenny"); sfx("no"); return; }
-  if (r.id === "potion" && h.hp >= maxHP()) { say("Your life is full"); return; }
-  G.zenny -= r.price; sfx("coin");
-  if (r.id === "potion") h.hp = Math.min(maxHP(), h.hp + 3);
-  if (r.id === "key") G.keyCount++;
-  if (r.id === "flail") G.flail++;
-  if (r.id === "armour") { G.armour++; h.hp = maxHP(); }
-  say("Bought: " + r.label);
-}
+const ADVICE = ["Strike the walls. Some of them hide treasure.", "Keys open chests. Pots often hide keys.", "Crouch and swing to hit low foes.", "Shrines keep your journey safe.", "The deeper you go, the tougher the orcs.", "Watch the ceiling. Rocks fall without warning."];
 function updateItems() {
-  const hb = heroBox(), fb = flailBox(), r = G.room;
+  const hb = heroBox(), fb = flailBox(), r = G.room, h = G.hero;
   for (const it of world.items) {
     if (it.gone || it.x < r.tx * TS - 32 || it.x > (r.tx + r.tw) * TS + 32 || it.y < r.ty * TS - 32 || it.y > (r.ty + r.th) * TS + 32) continue;
     if (it.falling) { it.vy += 0.2; it.y += it.vy; const c = Math.floor((it.x + 8) / TS), rr = Math.floor((it.y + 16) / TS); if (it.vy > 0 && (solid(c, rr) || oneway(c, rr))) { it.y = rr * TS - 16; it.falling = false; } }
-    const box = { x: it.x + 2, y: it.y + 2, w: 12, h: 13 };
-    if (it.kind === "jar" && fb && overlap(fb, box)) {
-      it.gone = true; G.got.add(it.id); burst(it.x + 8, it.y + 8, "#e0a050"); G.pause = CFG.hitPause; sfx("jar");
-      world.items.push({ id: -1, kind: "coin", art: "coin50", value: 50, x: it.x, y: it.y, vy: -3, falling: true });
+    const big = it.kind === "chest" || it.kind === "frozen";
+    const box = big ? { x: it.x + 4, y: it.y + 8, w: 24, h: 24 } : { x: it.x + 2, y: it.y + 2, w: 12, h: 13 };
+    if (it.kind === "secret") {
+      if (fb && overlap(fb, { x: it.x, y: it.y, w: 16, h: 16 })) {
+        it.gone = true; G.got.add(it.id); burst(it.x + 8, it.y + 8, "#ffe080"); popup(it.x + 8, it.y - 4, "Secret!");
+        world.items.push({ id: -1, kind: "treasure", art: it.prize, x: it.x + it.side * TS, y: it.y, vy: -3, falling: true });
+      }
+      continue;
     }
+    if (it.kind === "pot") {
+      if (it.shake) it.shake--;
+      if (fb && overlap(fb, box) && it.lastSwing !== h.swing) {   // one knock per swing
+        it.lastSwing = h.swing; it.hp--; it.shake = 12;
+        for (let i = 0; i < 4; i++) G.particles.push({ x: it.x + 8, y: it.y + 6, vx: (Math.random() - .5) * 2.5, vy: -Math.random() * 2, t: 18, color: "#b07848" });
+        if (it.hp <= 0) { it.gone = true; G.got.add(it.id); burst(it.x + 8, it.y + 8, "#d09060"); potPrize(it); }
+      }
+      continue;
+    }
+    if (it.kind === "chest") { updateChest(it, box, hb); continue; }
+    if (it.kind === "frozen") { updateFrozen(it, box, hb); continue; }
     if (!overlap(hb, box)) continue;
-    if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; sfx("coin"); popup(it.x + 8, it.y, "+" + it.value); }
-    if (it.kind === "potion") { it.gone = true; G.got.add(it.id); G.hero.hp = Math.min(maxHP(), G.hero.hp + 3); sfx("potion"); popup(it.x + 8, it.y, "+3 life"); }
-    if (it.kind === "key") { it.gone = true; G.got.add(it.id); G.keyCount++; sfx("coin"); popup(it.x + 8, it.y, "+Key"); }
-    if (it.kind === "relic") { it.gone = true; G.got.add(it.id); G.abilities.add("boots"); sfx("shrine"); popup(it.x + 8, it.y - 6, "Double jump!"); save(); }
-    if (it.kind === "shrine" && (G.shrine.x !== it.x || G.shrine.y !== it.y - 16)) {
-      G.shrine = { x: it.x - 8, y: it.y - 16 }; G.hero.hp = maxHP(); popup(it.x + 8, it.y - 6, "Saved"); sfx("shrine"); save();
+    if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; popup(it.x + 8, it.y, "+" + it.value); }
+    if (it.kind === "potion") { it.gone = true; if (it.id >= 0) G.got.add(it.id); h.hp = Math.min(G.maxHP, h.hp + 3); popup(it.x + 8, it.y, "+3 life"); }
+    if (it.kind === "key") { it.gone = true; G.keys++; popup(it.x + 8, it.y, "Key"); }
+    if (it.kind === "treasure") {
+      it.gone = true;
+      if (it.art === "berry") { G.zenny += 500; popup(it.x + 8, it.y, "+500"); }
+      if (it.art === "barrel") { G.zenny += 200; popup(it.x + 8, it.y, "+200"); }
+      if (it.art === "pinwheel") { G.maxHP++; h.hp = G.maxHP; popup(it.x + 8, it.y, "Life up!"); }
+    }
+    if (it.kind === "shrine" && (G.shrine.x !== it.x - 8 || G.shrine.y !== it.y - 16)) {
+      G.shrine = { x: it.x - 8, y: it.y - 16 }; h.hp = G.maxHP; popup(it.x + 8, it.y - 6, "Saved"); save();
     }
   }
 }
-const eBox = e => { const d = ENEMIES[e.type]; return { x: e.x + 1, y: e.y + 2, w: d.w - 2, h: d.h - 2 }; };
-function freeBox(x, y, w, h) { for (let ty = Math.floor(y / TS); ty <= Math.floor((y + h - 1) / TS); ty++) for (let tx = Math.floor(x / TS); tx <= Math.floor((x + w - 1) / TS); tx++) if (solid(tx, ty)) return false; return true; }
-// walk forward; turn round at walls and ledge ends. Returns true if it moved.
-function walkTurn(e, spd) {
-  const d = ENEMIES[e.type], nx = e.x + e.dir * spd, col = Math.floor((e.dir > 0 ? nx + d.w - 1 : nx) / TS), foot = Math.floor((e.y + d.h) / TS);
-  if (solid(col, Math.floor((e.y + d.h - 4) / TS)) || solid(col, Math.floor((e.y + 4) / TS)) || !(solid(col, foot) || oneway(col, foot))) { e.dir = -e.dir; e.moving = false; return false; }
-  e.x = nx; e.moving = true; return true;
+const drop = (it, kind, art, extra) => world.items.push({ id: -1, kind, art, x: it.x, y: it.y, vy: -3, falling: true, ...extra });
+function potPrize(it) {
+  const p = it.prize || { kind: "coin", art: "coin50", value: 50 };
+  if (p.kind !== "acid") drop(it, p.kind, p.art, p.value ? { value: p.value } : {});
+  else { popup(it.x + 8, it.y - 4, "Acid!"); for (let i = 0; i < 12; i++) G.particles.push({ x: it.x + 8, y: it.y + 4, vx: (Math.random() - .5) * 3, vy: -Math.random() * 2.5, t: 35, color: "#60e060" }); const h = G.hero; if (!h.inv && Math.abs(h.x + 16 - it.x - 8) < 40) hurtHero(h.x + 16 > it.x + 8 ? 1 : -1); }
 }
-// fly towards a point, stopping at walls
-function flyTo(e, tx, ty, sp) {
-  const d = ENEMIES[e.type], dx = tx - e.x, dy = ty - e.y, m = Math.hypot(dx, dy) || 1, k = Math.min(1, sp / m);
-  const nx = e.x + dx * k, ny = e.y + dy * k;
-  if (freeBox(nx, e.y, d.w, d.h)) e.x = nx;
-  if (freeBox(e.x, ny, d.w, d.h)) e.y = ny;
-  if (Math.abs(dx) > 1) e.dir = dx > 0 ? 1 : -1;
+function updateChest(it, box, hb) {
+  if (it.open) { if (++it.t === 30) chestPrize(it); return; }
+  if (!overlap(hb, box)) { it.near = false; return; }
+  if (it.near) return; it.near = true;
+  if (G.keys > 0) { G.keys--; it.open = true; it.t = 0; G.got.add(it.id); } else popup(it.x + 16, it.y, "Locked");
 }
-const BEHAVE = {
-  crawler(e) { walkTurn(e, ENEMIES.crawler.speed); },
-  bat(e, h) {          // st 0 hovers, 1 swoops at the hero, 2 flies back home
-    const d = ENEMIES.bat, dist = Math.hypot(h.x + 16 - (e.x + 8), h.y + 16 - (e.y + 6)); e.t++;
-    if (e.st === 0) { flyTo(e, e.hx + Math.sin(e.t / 30) * 32, e.hy + Math.sin(e.t / 17) * 6, 0.6); if (dist < d.sight) { e.st = 1; e.t = 0; } }
-    else if (e.st === 1) { flyTo(e, h.x + 8, h.y + 10, d.speed); if (e.t > d.swoopFrames) { e.st = 2; e.t = 0; } }
-    else { flyTo(e, e.hx, e.hy, d.speed * 0.8); if (Math.hypot(e.x - e.hx, e.y - e.hy) < 4) { e.st = 0; e.t = 0; } }
-  },
-  skeleton(e, h) {
-    const d = ENEMIES.skeleton, dx = h.x + 16 - (e.x + 8), dy = h.y + 16 - (e.y + 16);
-    if (Math.abs(dx) < d.sight && Math.abs(dy) < 28) {
-      e.dir = dx > 0 ? 1 : -1; e.moving = false;
-      if (++e.t >= d.throwEvery) { e.t = 0; G.shots.push({ x: e.x + 8 + e.dir * 6, y: e.y + 8, vx: e.dir * 1.4, vy: -3, t: 0 }); sfx("throw"); }
-    } else { e.t = Math.max(0, e.t - 1); walkTurn(e, d.speed); }
-  },
-  knight(e, h) {
-    const d = ENEMIES.knight, dx = h.x + 16 - (e.x + 8), dy = h.y + 16 - (e.y + 16);
-    if (Math.abs(dx) < d.sight && Math.abs(dy) < 28) {
-      const side = dx > 0 ? 1 : -1;      // slow to turn round, so you can get behind it
-      if (side !== e.dir) { e.turn = (e.turn | 0) + 1; if (e.turn >= d.turnFrames) { e.dir = side; e.turn = 0; } } else e.turn = 0;
-      walkTurn(e, Math.abs(dx) > 20 && side === e.dir ? d.speed : 0);
-    } else walkTurn(e, d.speed * 0.7);
-  },
-  dropper(e, h) {      // st 0 waits, 1 falls, 2 rests on the floor, 3 climbs back up
-    const d = ENEMIES.dropper;
-    if (e.st === 0) { if (Math.abs(h.x + 16 - (e.x + 8)) < 14 && h.y + 16 > e.y && h.y - e.y < 180) { e.st = 1; e.vy = 0; } }
-    else if (e.st === 1) {
-      e.vy = Math.min(5, e.vy + d.fallAccel); const ny = e.y + e.vy, row = Math.floor((ny + 16) / TS), c = Math.floor((e.x + 8) / TS);
-      if (solid(c, row) || oneway(c, row)) { e.y = row * TS - 16; e.st = 2; e.t = 0; G.shake = Math.max(G.shake, 4); sfx("thud"); } else e.y = ny;
-    }
-    else if (e.st === 2) { if (++e.t > d.restFrames) e.st = 3; }
-    else { e.y -= d.speed; if (e.y <= e.hy) { e.y = e.hy; e.st = 0; } }
-  },
+function chestPrize(it) {
+  const r = Math.random(), at = { x: it.x + 8, y: it.y };
+  if (r < 0.55) { const v = [100, 500, 1000][Math.floor(Math.random() * 3)]; drop(at, "coin", "coin" + v, { value: v }); }
+  else if (r < 0.75) drop(at, "potion", "potion");
+  else { popup(it.x + 16, it.y - 4, "Trap!"); [-40, -20, 36, 56].forEach((dx, i) => G.fires.push({ x: it.x + dx, y: it.y + 32 - 48, delay: i * 18, t: 0 })); }
+}
+function updateFrozen(it, box, hb) {
+  if (it.thawT) { if (++it.thawT === 40) frozenGift(it); return; }
+  if (it.thawed || !overlap(hb, box)) return;
+  it.thawT = 1; G.got.add(it.id);
+}
+function frozenGift(it) {
+  it.thawed = true; const r = Math.random(), at = { x: it.x + 8, y: it.y };
+  G.bannerT = 200;
+  if (r < 0.3) { const v = r < 0.1 ? 500 : 100; drop(at, "coin", "coin" + v, { value: v }); G.banner = "Thank you! Take this zenny."; }
+  else if (r < 0.5) { G.hero.hp = G.maxHP; G.banner = "Thank you! Let me heal you."; }
+  else if (r < 0.7) { drop(at, "key", "key"); G.banner = "Thank you! This key may help."; }
+  else G.banner = ADVICE[Math.floor(Math.random() * ADVICE.length)];
+}
+function updateTraps() {
+  const h = G.hero, hb = heroBox();
+  for (const t of G.traps) {
+    if (t.state === "wait") { if (Math.abs(h.x - t.x) < 22 && h.y > t.y) { t.state = "fall"; t.vy = 0; } continue; }
+    if (t.state !== "fall") continue;
+    t.vy = Math.min(t.vy + 0.3, 6); t.y += t.vy;
+    if (!h.inv && G.mode === "play" && overlap(hb, { x: t.x + 4, y: t.y + 4, w: 24, h: 26 })) { hurtHero(h.x > t.x ? 1 : -1); t.state = "gone"; burst(t.x + 16, t.y + 20, "#a08060"); continue; }
+    const c = Math.floor((t.x + 16) / TS), rr = Math.floor((t.y + 31) / TS);
+    if (solid(c, rr) || oneway(c, rr)) { t.state = "gone"; burst(t.x + 16, t.y + 26, "#a08060"); }
+  }
+  G.fires = G.fires.filter(f => {
+    if (f.delay > 0) { f.delay--; return true; }
+    f.t++;
+    if (f.t > 10 && f.t < 70 && !h.inv && G.mode === "play" && overlap(hb, { x: f.x + 3, y: f.y + 6, w: 10, h: 42 })) { hurtHero(h.x + 16 > f.x + 8 ? 1 : -1); if (f.blue) { G.confuse = 240; popup(h.x + 16, h.y - 4, "Confused!"); } }
+    return f.t < 80;
+  });
+}
+/* ---- Enemies: one table of stats, one behaviour function per type ----
+   start = first state; air = tiles above the floor it spawns at; perRoom = at most one per room. */
+const ENEMY_TYPES = {
+  orc:       { hp: 5, coin: 100, start: "walk", stagger: 34, counter: true },
+  skeleton:  { hp: 3, coin: 10,  start: "bones", fixedHp: true },   // always 3 hits, then it falls back into bones
+  mummy:     { hp: 3, coin: 100, start: "walk" },
+  snake:     { hp: 2, coin: 50,  start: "idle" },
+  plant:     { hp: 2, coin: 50,  start: "hide" },
+  firedemon: { hp: 3, coin: 100, start: "fly", air: 3 },
+  bat:       { hp: 1, coin: 10,  start: "hidden", air: 4, small: true },
+  skull:     { hp: 99, coin: 0,  start: "spin", air: 2, armoured: true },
+  witch:     { hp: 2, coin: 100, start: "away", perRoom: true },
 };
-function updateEnemies() {
-  const hb = heroBox(), fb = flailBox(), h = G.hero;
-  for (const e of G.enemies) {
-    if (!e.alive) continue;
-    if (e.hurt) e.hurt--;
-    BEHAVE[e.type](e, h);
-    const d = ENEMIES[e.type], box = eBox(e);
-    if (fb && !e.hurt && overlap(fb, box)) {
-      // knights block from the front, unless the flail reaches their legs (a crouching strike) or you are behind them
-      const blocked = d.block && ((h.x + 16 > e.x + 8) ? 1 : -1) === e.dir && !h.crouch;
-      if (blocked) { e.hurt = 12; G.pause = CFG.hitPause; sfx("block"); burst(e.x + (e.dir > 0 ? 16 : 0), e.y + 10, "#ccd"); }
-      else {
-        e.hp -= FLAIL[G.flail].dmg; e.hurt = 20; G.pause = CFG.hitPause; sfx("hit");
-        if (e.type !== "dropper" && e.type !== "bat") { const nx = e.x + (h.dir > 0 ? 6 : -6); if (freeBox(nx, e.y, d.w, d.h)) e.x = nx; }
-        if (e.hp <= 0) { e.alive = false; G.shake = Math.max(G.shake, CFG.shakeKill); burst(e.x + d.w / 2, e.y + d.h / 2, "#c080e0"); world.items.push({ id: -1, kind: "coin", art: d.drop[0], value: d.drop[1], x: e.x, y: e.y + d.h - 16, vy: -2.5, falling: true }); }
+function moveEnemyX(e, dx) {
+  const nx = e.x + dx, ahead = Math.floor((nx + (dx > 0 ? 27 : 4)) / TS), foot = Math.floor((e.y + 32) / TS);
+  if (solid(ahead, Math.floor((e.y + 4) / TS)) || solid(ahead, Math.floor((e.y + 28) / TS)) || !(solid(ahead, foot) || oneway(ahead, foot))) return false;
+  e.x = nx; return true;
+}
+const near = (e, d, dyMax = 20) => { const h = G.hero; return Math.abs(h.x - e.x) < d && Math.abs(h.y - e.y) < dyMax; };
+const faceHero = e => { e.dir = G.hero.x > e.x ? 1 : -1; };
+function shoot(x, y, vx, vy, art) { G.shots.push({ x, y, vx, vy, art, t: 0 }); }
+function hitArea(e, box) { const h = G.hero; if (!h.inv && G.mode === "play" && overlap(heroBox(), box)) hurtHero(e.dir || (h.x > e.x ? 1 : -1)); }
+const BEHAVIOUR = {
+  orc(e, zone) {      // walks, turns to face you, winds up and swings the axe
+    const h = G.hero, level = Math.abs(h.y - e.y) < 20, dx = h.x - e.x;
+    if (e.state === "walk") {
+      if (level && Math.abs(dx) < 120) faceHero(e);
+      if (level && Math.abs(dx) < 52 && !e.cd) { e.state = "windup"; e.t = 0; }
+      else { if (!moveEnemyX(e, e.dir * (0.45 + zone * 0.05))) e.dir = -e.dir; e.anim++; }
+      e.frame = "walk" + ((e.anim >> 3) & 3);
+    } else if (e.state === "windup") {
+      e.frame = "windup";
+      if (e.lunge && Math.abs(h.x - e.x) > 30) moveEnemyX(e, e.dir * 2.6);   // a counter-attack closes the gap fast
+      if (e.t > 22) { e.state = "strike"; e.t = 0; }
+    }
+    else if (e.state === "strike") { e.frame = "strike"; hitArea(e, { x: e.dir > 0 ? e.x + 26 : e.x - 16, y: e.y + 2, w: 22, h: 24 }); if (e.t > 14) { e.state = "walk"; e.cd = 60; e.lunge = false; } }
+  },
+  skeleton(e) {       // a pile of bones that rises when you come near, walks at you, and falls apart again when hit
+    const rise = ["bones", "rise0", "rise1", "rise2"];
+    if (e.state === "bones") { e.frame = "bones"; e.vulnerable = false; if (near(e, 90, 40) && e.t > 60) { e.state = "rise"; e.t = 0; } return; }
+    if (e.state === "rise") { e.frame = rise[Math.min(3, e.t >> 3)]; if (e.t > 32) { e.state = "walk"; e.hp = e.maxHp; } return; }
+    if (e.state === "collapse") { e.frame = rise[Math.max(0, 3 - (e.t >> 3))]; if (e.t > 32) { e.state = "bones"; e.t = 0; } return; }
+    e.vulnerable = true; faceHero(e); if (!moveEnemyX(e, e.dir * 0.6)) e.dir = -e.dir; e.anim++; e.frame = "walk" + ((e.anim >> 4) & 1);
+  },
+  mummy(e) {          // slow walker that spits high and low
+    const h = G.hero, level = Math.abs(h.y - e.y) < 24;
+    if (e.state === "spit") { e.frame = e.t < 12 ? "spit0" : "spit1"; if (e.t === 14) { e.high = !e.high; shoot(e.x + (e.dir > 0 ? 28 : -10), e.y + (e.high ? 4 : 16), e.dir * 2, 0, "fireball"); } if (e.t > 26) { e.state = "walk"; e.cd = 110; } return; }
+    if (level && Math.abs(h.x - e.x) < 160) faceHero(e);
+    if (level && Math.abs(h.x - e.x) < 150 && !e.cd) { e.state = "spit"; e.t = 0; return; }
+    if (!moveEnemyX(e, e.dir * 0.3)) e.dir = -e.dir; e.anim++; e.frame = "walk" + ((e.anim >> 4) & 3);
+  },
+  snake(e) {          // coiled on the floor; strikes when you get close
+    if (e.state === "bite") { e.frame = "bite" + Math.min(2, e.t >> 3); if (e.t > 8) hitArea(e, { x: e.dir > 0 ? e.x + 20 : e.x - 12, y: e.y + 4, w: 24, h: 24 }); if (e.t > 30) { e.state = "idle"; e.cd = 50; } return; }
+    faceHero(e); e.anim++; e.frame = "idle" + ((e.anim >> 4) % 3);
+    if (near(e, 56) && !e.cd) { e.state = "bite"; e.t = 0; }
+  },
+  plant(e) {          // hidden in the floor; sprouts and bites when you are close
+    if (e.state === "hide") { e.frame = "hide"; e.vulnerable = false; if (near(e, 44, 30)) { e.state = "rise"; e.t = 0; } return; }
+    e.vulnerable = true;
+    if (e.state === "rise") { e.frame = e.t < 8 ? "rise0" : "rise1"; if (e.t > 16) { e.state = "bud"; e.t = 0; } return; }
+    if (e.state === "bud") { e.frame = (e.t >> 4) & 1 ? "bud1" : "bud0"; if (near(e, 40, 30) && e.t > 30) { e.state = "bite"; e.t = 0; } if (!near(e, 90, 60) && e.t > 90) { e.state = "hide"; } return; }
+    e.frame = (e.t >> 3) & 1 ? "bite1" : "bite0"; hitArea(e, { x: e.x - 4, y: e.y + 4, w: 40, h: 28 }); if (e.t > 32) { e.state = "bud"; e.t = 0; }
+  },
+  firedemon(e) {      // hovers and throws fireballs (only along the 8 main directions)
+    e.y = e.y0 + Math.sin((G.frame + e.x0) / 30) * 6;
+    if (e.state === "cast") {
+      e.frame = (e.t >> 3) & 1 ? "cast1" : "cast0";
+      if (e.t === 20) { const h = G.hero, a = Math.round(Math.atan2(h.y - e.y, h.x - e.x) / (Math.PI / 4)) * (Math.PI / 4); shoot(e.x + 8, e.y + 8, Math.cos(a) * 1.8, Math.sin(a) * 1.8, "fireball"); }
+      if (e.t > 34) { e.state = "fly"; e.cd = 90; } return;
+    }
+    e.anim++; e.frame = "fly" + ((e.anim >> 3) & 3);
+    if (near(e, 170, 140) && !e.cd) { e.state = "cast"; e.t = 0; }
+  },
+  bat(e) {            // pops out of the wall when you pass, then swoops at you
+    const h = G.hero;
+    if (e.state === "hidden") { e.frame = null; e.vulnerable = false; if (near(e, 100, 120)) { e.state = "emerge"; e.t = 0; } return; }
+    e.vulnerable = true;
+    if (e.state === "emerge") { e.frame = "e" + Math.min(2, e.t >> 3); if (e.t > 24) { e.state = "fly"; e.t = 0; } return; }
+    if (e.state === "retreat") {
+      // after a strike the bat peels away and loops round in a wide circle before diving again
+      const k = Math.min(1, e.t / 90), ang = e.a0 + e.spin * Math.PI * 1.15 * k, sp = 1.7;
+      e.x += Math.cos(ang) * sp; e.y += Math.sin(ang) * sp;
+      if (e.t > 90) { e.state = "fly"; e.t = 0; }
+    } else {
+      const tx = h.x + 8, ty = h.y + 4 + Math.sin(e.t / 14) * 26;
+      e.x += Math.sign(tx - e.x) * 1.1; e.y += Math.max(-1.2, Math.min(1.2, (ty - e.y) * 0.05));
+      if (overlap(heroBox(), enemyBox(e))) {   // contact: bite, then retreat
+        hitArea(e, enemyBox(e));
+        const away = e.x + 8 < h.x + 16 ? -1 : 1;
+        e.state = "retreat"; e.t = 0; e.a0 = Math.atan2(-0.7, away); e.spin = away > 0 ? -1 : 1;
       }
     }
-    if (e.alive && !h.inv && overlap(hb, box)) hurtHero(e.x + d.w / 2 < h.x + 16 ? 1 : -1, d.dmg);
+    const r = G.room; e.x = Math.max(r.tx * TS + 16, Math.min((r.tx + r.tw) * TS - 32, e.x)); e.y = Math.max(r.ty * TS + 16, Math.min((r.ty + r.th) * TS - 32, e.y));
+    e.frame = "f" + ((e.t >> 2) & 3);
+  },
+  skull(e) {          // spins and drifts back and forth; it cannot be destroyed
+    e.anim++; e.frame = "s" + ((e.anim >> 3) % 5);
+    const nx = e.x + e.dir * 0.7, c = Math.floor((nx + (e.dir > 0 ? 30 : 2)) / TS), r = G.room;
+    if (solid(c, Math.floor((e.y + 16) / TS)) || nx < r.tx * TS + 16 || nx > (r.tx + r.tw) * TS - 48) e.dir = -e.dir; else e.x = nx;
+    e.y = e.y0 + Math.sin(e.anim / 25) * 8;
+  },
+  witch(e) {          // appears near you, raises blue fire that muddles your sense of direction, then vanishes
+    const h = G.hero;
+    if (e.state === "away") { e.frame = null; e.vulnerable = false; if (e.t > 150 && G.mode === "play" && h.ground) { e.x = h.x + (Math.random() < 0.5 ? -70 : 70); e.y = h.y; if (hitsSolid(h, e.x, e.y) || !onFloorAt(e.x + 16, e.y + 32)) { e.t = 100; return; } faceHero(e); e.state = "appear"; e.t = 0; } return; }
+    e.vulnerable = e.state !== "appear";
+    if (e.state === "appear") { e.frame = e.t < 10 ? "appear0" : "appear1"; if (e.t > 20) { e.state = "cast"; e.t = 0; } return; }
+    if (e.state === "cast") { e.frame = "cast"; if (e.t === 16) [-28, 0, 28].forEach((dx, i) => G.fires.push({ x: h.x + 8 + dx, y: h.y + 32 - 48, delay: i * 14, t: 0, blue: true })); if (e.t > 40) { e.state = "idle"; e.t = 0; } return; }
+    e.frame = (e.t >> 4) & 1 ? "idle1" : "idle0"; if (e.t > 90) { e.state = "vanish"; e.t = 0; }
+    if (e.state === "vanish") { e.frame = "appear1"; }
+    if (e.state === "vanish" || e.t > 90) { e.state = "away"; e.t = 0; }
+  },
+};
+const onFloorAt = (px, py) => { const c = Math.floor(px / TS), r = Math.floor(py / TS); return solid(c, r) || oneway(c, r); };
+function enemyBox(e) { return ENEMY_TYPES[e.type].small ? { x: e.x + 2, y: e.y + 2, w: 12, h: 12 } : { x: e.x + 7, y: e.y + 3, w: 18, h: 29 }; }
+function updateEnemies() {
+  const fb = flailBox(), h = G.hero, zone = G.room.zone;
+  for (const e of G.enemies) {
+    if (!e.alive) continue;
+    const T = ENEMY_TYPES[e.type]; if (e.maxHp === undefined) e.maxHp = e.hp;
+    e.t++; if (e.cd) e.cd--;
+    if (e.state === "die") { e.frame = e.t < 12 ? "die0" : e.t < 24 ? "die1" : "die2"; if (e.t > 56) e.alive = false; continue; }
+    if (e.vulnerable === undefined) e.vulnerable = true;
+    if (e.hurtT) {
+      e.hurtT--; if (!T.air && e.hurtT > (T.stagger || 14) - 6) moveEnemyX(e, e.knock);
+      if (e.type === "orc") e.frame = "hurt";
+      // Orcs: keep the hits coming. If the next blow is late, he recovers and swings straight back.
+      if (!e.hurtT && T.counter) { faceHero(e); e.state = "windup"; e.t = 12; e.lunge = true; }
+    }
+    else BEHAVIOUR[e.type](e, zone);
+    if (!e.frame) continue;
+    const body = enemyBox(e);
+    if (fb && !e.hurtT && overlap(fb, body)) {
+      if (T.armoured || !e.vulnerable) { if (!e.clang) { e.clang = true; burst(body.x + body.w / 2, body.y + 8, "#c8c8d8"); } }
+      else {
+        e.hp--; burst(body.x + body.w / 2, body.y + 10, "#ffd080");
+        if (e.hp > 0) { e.hurtT = T.stagger || 14; e.knock = h.dir * 1.5; }
+        else if (e.type === "orc") { e.state = "die"; e.t = 0; }
+        else if (e.type === "skeleton") { e.state = "collapse"; e.t = 0; e.vulnerable = false; }
+        else { e.alive = false; burst(body.x + body.w / 2, body.y + 12, "#ffffff"); burst(body.x + body.w / 2, body.y + 12, "#ffb040"); }
+        if (e.hp <= 0 && T.coin) { const v = T.coin * (zone > 3 ? 2 : 1); drop({ x: body.x + body.w / 2 - 8, y: body.y }, "coin", "coin" + (v >= 100 ? 100 : v >= 50 ? 50 : 10), { value: v }); }
+      }
+    }
+    if (!fb) e.clang = false;
+    if (e.alive && e.vulnerable !== false && e.state !== "die" && e.state !== "collapse") hitArea(e, body);
   }
-  for (const s of G.shots) {       // thrown bones
-    s.t++; s.vy += 0.12; s.x += s.vx; s.y += s.vy;
-    const sb = { x: s.x - 3, y: s.y - 3, w: 6, h: 6 };
-    if (solid(Math.floor(s.x / TS), Math.floor(s.y / TS)) || s.t > 240) s.t = 999;
-    else if (fb && overlap(fb, sb)) { s.t = 999; burst(s.x, s.y, "#e0dcc8"); sfx("block"); }
-    else if (!h.inv && overlap(hb, sb)) { s.t = 999; hurtHero(s.vx > 0 ? 1 : -1); }
-  }
-  G.shots = G.shots.filter(s => s.t < 999);
+  // shots (fireballs, spit): fly straight, break on walls, can be knocked out of the air by the flail
+  G.shots = G.shots.filter(b => {
+    b.x += b.vx; b.y += b.vy; b.t++;
+    const box = { x: b.x + 3, y: b.y + 3, w: 10, h: 10 };
+    if (fb && overlap(fb, box)) { burst(b.x + 8, b.y + 8, "#ffb040"); return false; }
+    if (!h.inv && G.mode === "play" && overlap(heroBox(), box)) { hurtHero(b.vx >= 0 ? 1 : -1); return false; }
+    return b.t < 240 && !solid(Math.floor((b.x + 8) / TS), Math.floor((b.y + 8) / TS));
+  });
 }
-function hurtHero(fromDir, dmg) {
-  const h = G.hero; h.hp -= Math.max(1, (dmg || 1) - ARMOUR[G.armour].red); h.inv = CFG.invulnFrames; h.knock = 12; h.vx = fromDir * 1.6; h.vy = -2.5; h.ground = false; h.climb = false; h.atk = 0; G.shake = CFG.shakeHit; sfx("hurt");
-  if (h.hp <= 0) { G.mode = "dead"; G.dead = 120; }
+function hurtHero(fromDir) {
+  const h = G.hero; h.hp--; h.inv = CFG.invulnFrames; h.knock = 12; h.vx = fromDir * 1.6; h.vy = -2.5; h.ground = false; h.climb = false; h.atk = 0;
+  if (h.hp <= 0) { G.mode = "dead"; G.dead = 150; h.vx = 0; }
 }
-function dust(x, y) { for (let i = 0; i < 6; i++) G.particles.push({ x: x + (Math.random() - .5) * 10, y, vx: (i < 3 ? -1 : 1) * (0.3 + Math.random() * 0.8), vy: -Math.random() * 0.6, t: 12 + Math.random() * 6, color: "#b8b0a0" }); }
 const popup = (x, y, text) => G.popups.push({ x, y, text, t: 45 });
 function burst(x, y, color) { for (let i = 0; i < 12; i++) G.particles.push({ x, y, vx: (Math.random() - .5) * 3, vy: -Math.random() * 3, t: 30 + Math.random() * 15, color }); }
 
 /* ======================================================================
    11. CAMERA — stays inside the current room
    ====================================================================== */
-function camTarget() { const r = G.room, h = G.hero; return { x: Math.max(r.tx * TS, Math.min((r.tx + r.tw) * TS - 256, h.x + 16 - 128)), y: Math.max(r.ty * TS, Math.min((r.ty + r.th) * TS - 224, h.y + 16 - 120)) }; }
+function camTarget() { const r = G.room, h = G.hero; return { x: Math.max(r.tx * TS, Math.min((r.tx + r.tw) * TS - VW, h.x + 16 - VW / 2)), y: Math.max(r.ty * TS, Math.min((r.ty + r.th) * TS - VH, h.y + 16 - 120)) }; }
 function snapCamera() { const t = camTarget(); G.cam.x = t.x; G.cam.y = t.y; }
 function updateCamera() { const t = camTarget(); G.cam.x += (t.x - G.cam.x) * 0.25; G.cam.y += (t.y - G.cam.y) * 0.18; if (Math.abs(t.x - G.cam.x) < 0.5) G.cam.x = t.x; if (Math.abs(t.y - G.cam.y) < 0.5) G.cam.y = t.y; }
 
@@ -919,17 +1054,14 @@ function update() {
   if (pressed.debug) G.debug = !G.debug;
   if (pressed.map) G.mode = G.mode === "map" ? "play" : (G.mode === "play" ? "map" : G.mode);
   if (G.mode === "map") { clearPressed(); return; }
-  if (G.mode === "shop") { shopUpdate(); clearPressed(); return; }
   if (G.mode === "dead") {
-    if (--G.dead <= 0) { const h = G.hero; Object.assign(h, { x: G.shrine.x, y: G.shrine.y, vx: 0, vy: 0, hp: maxHP(), inv: 90, climb: false, atk: 0 }); G.mode = "play"; G.room = null; enterRoom(roomAtPx(h.x + 16, h.y + 16), true); }
+    { const h = G.hero; h.climb = false; h.atk = 0; h.crouch = false; h.vy = Math.min(h.vy + CFG.gravity, CFG.maxFall); moveY(h, h.vy); updateCamera(); }   // the body falls to the floor
+    if (--G.dead <= 0) { const h = G.hero; Object.assign(h, { x: G.shrine.x, y: G.shrine.y, vx: 0, vy: 0, hp: G.maxHP, inv: 90, climb: false, atk: 0 }); G.mode = "play"; G.room = null; enterRoom(roomAtPx(h.x + 16, h.y + 16), true); }
     clearPressed(); return;
   }
-  if (G.pause > 0) { G.pause--; clearPressed(); return; }
-  if (G.shake) G.shake--;
-  updateHero(); tryLock();
-  if (pressed.up && !G.hero.climb && nearShop()) { openShop(); clearPressed(); return; }
+  updateHero();
   const r = roomAtPx(G.hero.x + 16, G.hero.y + 20); if (r && r !== G.room) enterRoom(r, false);
-  updateItems(); updateEnemies();
+  updateItems(); updateEnemies(); updateTraps();
   G.popups = G.popups.filter(p => (p.y -= 0.5, --p.t > 0));
   G.particles = G.particles.filter(p => (p.x += p.vx, p.y += p.vy, p.vy += 0.15, --p.t > 0));
   if (G.bannerT) G.bannerT--;
@@ -941,99 +1073,161 @@ function update() {
    13. DRAWING
    ====================================================================== */
 const scr = $("screen"), ctx = scr.getContext("2d");
+// Which piece of the ground kit a tile gets, from its neighbours:
+// top = rock surface you walk on, mid = the row under it, fill = deep rock, under = rock tips hanging below a ledge or ceiling.
 function tileKind(x, y) {
   const t = tileAt(x, y);
-  if (t === LOCK) return "fill";
-  if (t === SOLID) return solid(x, y - 1) ? "fill" : "surf";
+  if (t === SOLID) return !solid(x, y - 1) ? "top" : !solid(x, y - 2) ? "mid" : "fill";
   if (t === LEDGE) return "ledge";
+  if (t === BRIDGE) return "bridge";
   if (t === CHAIN) return "chain";
   if (t === LEDGECHAIN) return "ledgechain";
-  return tileAt(x, y - 1) === SOLID ? "under" : "wall";
+  const a = tileAt(x, y - 1); return (a === LEDGE || a === LEDGECHAIN || a === SOLID) ? "under" : "wall";
+}
+// which sides of a rock tile face open space (1 = left, 2 = right), for the worn edges
+function tileOpen(x, y) {
+  const t = tileAt(x, y), rockish = v => v === SOLID || (t !== SOLID && (v === LEDGE || v === LEDGECHAIN));
+  if (t !== SOLID && t !== LEDGE && t !== LEDGECHAIN) return 0;
+  return (rockish(tileAt(x - 1, y)) ? 0 : 1) | (rockish(tileAt(x + 1, y)) ? 0 : 2);
 }
 function heroFrame() {
   const h = G.hero;
-  if (h.climb) return (Math.floor(h.climbDist / 8) % 2) ? "climb1" : "climb0";
-  if (h.atk > 0) { const s = h.atk >= CFG.strikeFrom && h.atk <= CFG.strikeTo; return h.crouch ? (s ? "cstrike" : "cwind") : (s ? "strike" : "windup"); }
+  if (G.mode === "dead") { const t = 150 - G.dead; return t < 12 ? "die0" : t < 24 ? "die1" : t < 40 ? "die2" : t < 60 ? "die3" : "die4"; }
+  if (h.climb) return ["climb0", "climb1", "climb2", "climb1"][Math.floor(h.climbDist / 6) % 4];
+  if (h.atk > 0) { const s = atkStage(h.atk); return s ? (h.crouch ? "cstrike" : "strike") + s : (h.crouch ? "cwind" : "windup"); }
   if (h.crouch) return "crouch";
-  if (!h.ground) return h.vy < 0 ? "jump" : "fall";
-  if (h.vx !== 0) return "walk" + (Math.floor(h.anim / 3.5) % 8);
-  return "idle" + (Math.floor((h.idleT || 0) / 20) % 8);                 // standing still: breathing, shoulders, cape and flail sway
+  if (!h.ground) return "jump";
+  if (h.vx !== 0) return ["stand", "walk1", "walk2", "walk1"][Math.floor(h.anim / 6) % 4];
+  return "stand";
 }
 function draw() {
   ctx.imageSmoothingEnabled = false;
   if (G.mode === "map") return drawMap();
-  const sh = G.shake ? Math.min(2, Math.ceil(G.shake / 3)) : 0, cx = Math.round(G.cam.x) + (sh ? Math.round((Math.random() - .5) * 2 * sh) : 0), cy = Math.round(G.cam.y) + (sh ? Math.round((Math.random() - .5) * 2 * sh) : 0), x0 = Math.floor(cx / TS), y0 = Math.floor(cy / TS);
-  for (let y = y0; y <= y0 + 14; y++) for (let x = x0; x <= x0 + 16; x++) {
+  const cx = Math.round(G.cam.x), cy = Math.round(G.cam.y), x0 = Math.floor(cx / TS), y0 = Math.floor(cy / TS);
+  for (let y = y0; y <= y0 + 14; y++) for (let x = x0; x <= x0 + (VW >> 4); x++) {
     const zc = Math.floor(y / CH), zone = zoneOfCellY(Math.max(0, Math.min(GH - 1, zc)));
-    ctx.drawImage(Art.tile(zone, tileKind(x, y), x, y), x * TS - cx, y * TS - cy);
-    if (tileAt(x, y) === LOCK) ctx.drawImage(extraArt("lock"), x * TS - cx, y * TS - cy);
+    ctx.drawImage(Art.tile(zone, tileKind(x, y), ((x % 24) + 24) % 24, y, tileOpen(x, y)), x * TS - cx, y * TS - cy);
+  }
+  const zone = G.room.zone, put = (f, x, y) => ctx.drawImage(f.img, Math.round(x) - f.ox - cx, Math.round(y) - f.oy - cy);
+  const lights = [];
+  for (const d of world.decor) {
+    if (d.x < cx - 32 || d.x > cx + 272 || d.y < cy - 96 || d.y > cy + 240) continue;
+    if (d.kind === "vine") drawVine(ctx, d.x - cx, d.y - cy, d.len, d.seed, G.frame, zone);
+    else if (d.kind === "torch") { drawTorch(ctx, d.x - cx, d.y - cy, G.frame + d.seed); lights.push([d.x + 8, d.y + 4, LOOK.torchLight + Math.sin((G.frame + d.seed) / 5) * 4, 1]); }
+    else ctx.drawImage(plantArt(d.kind, d.seed, zone), d.x - cx, d.y - cy);
   }
   for (const it of world.items) {
-    if (it.gone || it.x < cx - 16 || it.x > cx + 256 || it.y < cy - 16 || it.y > cy + 224) continue;
+    if (it.gone || it.kind === "secret" || it.x < cx - 32 || it.x > cx + VW || it.y < cy - 32 || it.y > cy + 224) continue;
+    if (it.kind === "chest") { put(Art.obj("chest", !it.open ? "shut" : it.t < 10 ? "open1" : it.t < 30 ? "open2" : "open", 0, zone), it.x, it.y); continue; }
+    if (it.kind === "frozen") { const f = it.thawed ? ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3] : it.thawT ? ((it.thawT >> 2) & 1 ? "stone" : "man0") : "stone"; put(Art.obj("frozen", f, 0, zone), it.x, it.y); continue; }
+    if (it.kind === "pot" || it.kind === "key") { put(Art.obj(it.kind, "idle", 0, zone), it.x + (it.shake ? Math.round(Math.sin(it.shake * 1.7) * 2) : 0), it.y); continue; }
+    if (it.kind === "treasure") { put(Art.obj(it.art, "idle", 0, zone), it.x, it.y); continue; }
     const bob = it.kind === "coin" && !it.falling ? Math.round(Math.sin((G.frame + it.x) / 12) * 1.5) : 0;
     const art = it.kind === "shrine" ? ((G.frame >> 3) & 1 ? "shrineA" : "shrineB") : it.art;
-    ctx.drawImage(EXTRA_ART.has(art) ? extraArt(art) : Art.item(art), Math.round(it.x) - cx, Math.round(it.y) - cy + bob);
+    ctx.drawImage(Art.item(art), Math.round(it.x) - cx, Math.round(it.y) - cy + bob);
   }
-  for (const e of G.enemies) if (e.alive) ENEMY_ART[e.type](ctx, e, Math.round(e.x) - cx, Math.round(e.y) - cy, G.frame, e.hurt > 0 && (e.hurt & 2));
-  for (const sh of G.shots) { ctx.save(); ctx.translate(Math.round(sh.x) - cx, Math.round(sh.y) - cy); ctx.rotate(sh.t / 3); ctx.fillStyle = "#e0dcc8"; ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-5, -2, 2, 4); ctx.fillRect(3, -2, 2, 4); ctx.restore(); }
+  for (const t of G.traps) if (t.state !== "gone") put(Art.obj("rock", "idle", 0, zone), t.x, t.y);
+  for (const e of G.enemies) if (e.alive && e.frame && !(e.state === "die" && e.t > 40 && (G.frame & 2)) && !(e.hurtT && (G.frame & 2))) put(Art.obj(e.type, e.frame, e.dir, zone), e.x, e.y);
+  for (const b of G.shots) put(Art.obj(b.art, "idle", 0, zone), b.x, b.y);
   const h = G.hero;
-  if (G.mode !== "dead") {                      // a soft warm light around the hero so he stands out from dark rock
-    const gx = Math.round(h.x + 16 - cx), gy = Math.round(h.y + 8 - cy), gr = ctx.createRadialGradient(gx, gy, 3, gx, gy, 50);
-    gr.addColorStop(0, "rgba(255,214,150,.22)"); gr.addColorStop(1, "rgba(255,214,150,0)");
-    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = gr; ctx.fillRect(gx - 50, gy - 50, 100, 100); ctx.restore();
-  }
-  if (G.mode !== "dead" && !(h.inv && (G.frame & 4))) {
-    const fn = heroFrame(), f = Art.hero(fn, h.dir);
-    const bob = (fn === "walk2" || fn === "walk6") ? 1 : 0;                     // weight: the body dips as each foot lands
-    const land = h.landT > 0 ? Math.min(2, Math.ceil(h.landT / 2)) : 0;         // brief squash after a hard landing
-    const lunge = (h.atk >= CFG.strikeFrom && h.atk <= CFG.strikeTo) ? 2 * (h.dir < 0 ? -1 : 1) : 0;
-    ctx.drawImage(f.img, Math.round(h.x) - f.ox - cx + lunge, Math.round(h.y) - cy + bob + land - (f.oy || 0));
-  }
+  if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); ctx.drawImage(f.img, Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); }
+  for (const f of G.fires) if (!f.delay) put(Art.obj(f.blue ? "bluefire" : "fire", f.t <= 10 ? "small" : (f.t >> 2) & 1 ? "f1" : "f0", 0, zone), f.x, f.y);
+  if (G.confuse > 0 && (G.frame & 16)) { ctx.fillStyle = "#80c0ff"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center"; ctx.fillText("CONFUSED", VW / 2, 52); }
+  drawWater(cx, cy);
   for (const p of G.particles) { ctx.fillStyle = p.color; ctx.fillRect(Math.round(p.x) - cx, Math.round(p.y) - cy, 2, 2); }
   ctx.font = "bold 8px monospace"; ctx.textAlign = "center";
   for (const p of G.popups) { ctx.fillStyle = "#000"; ctx.fillText(p.text, p.x - cx + 1, p.y - cy + 1); ctx.fillStyle = "#ffe680"; ctx.fillText(p.text, p.x - cx, p.y - cy); }
-  const ns = G.mode === "play" ? nearShop() : null;
-  if (ns) { ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#000"; ctx.fillText("UP: SHOP", ns.x + 9 - cx, ns.y - 3 - cy); ctx.fillStyle = "#ffe680"; ctx.fillText("UP: SHOP", ns.x + 8 - cx, ns.y - 4 - cy); }
+  // lights: the hero, torches, fire, fireballs and shrines push back the dark
+  for (const f of G.fires) if (!f.delay) lights.push([f.x + 8, f.y + 30, 60, 1]);
+  for (const b of G.shots) lights.push([b.x + 8, b.y + 8, 34, 0.9]);
+  for (const it of world.items) if (it.kind === "shrine" && !it.gone && Math.abs(it.x - cx - VW / 2) < 200 && Math.abs(it.y - cy - 112) < 180) lights.push([it.x + 8, it.y + 8, 50, 0.8]);
+  drawLighting(cx, cy, lights);
   drawHUD();
-  ctx.font = "7px monospace"; ctx.textAlign = "left"; ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.fillText("v" + VERSION, 4, 221);
-  if (G.mode === "shop") drawShop();
   if (G.debug) drawDebug();
+}
+// ---- atmosphere drawing (all original art) ----
+const lightCanvas = mk(256, 224), lgx = lightCanvas.getContext("2d");   // resized with the view in fit()
+function drawLighting(cx, cy, lights) {
+  const h = G.hero, dim = G.room.dark;
+  lgx.globalCompositeOperation = "source-over"; lgx.clearRect(0, 0, VW, VH);
+  lgx.fillStyle = `rgba(3,2,8,${dim ? LOOK.darkDim : LOOK.darkLit})`; lgx.fillRect(0, 0, VW, VH);
+  lgx.globalCompositeOperation = "destination-out";
+  const hole = (x, y, r, a) => { const gr = lgx.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); gr.addColorStop(1, "rgba(0,0,0,0)"); lgx.fillStyle = gr; lgx.fillRect(x - r, y - r, r * 2, r * 2); };
+  hole(h.x + 16 - cx, h.y + 14 - cy, dim ? LOOK.heroLightDim : LOOK.heroLight, 0.95);
+  for (const [x, y, r, a] of lights) hole(x - cx, y - cy, r, a);
+  ctx.drawImage(lightCanvas, 0, 0);
+  // warm glow on top
+  ctx.globalCompositeOperation = "lighter";
+  for (const [x, y, r] of lights) { const gr = ctx.createRadialGradient(x - cx, y - cy, 0, x - cx, y - cy, r * 0.45); gr.addColorStop(0, "rgba(255,150,60,.22)"); gr.addColorStop(1, "rgba(255,120,40,0)"); ctx.fillStyle = gr; ctx.fillRect(x - cx - r, y - cy - r, r * 2, r * 2); }
+  ctx.globalCompositeOperation = "source-over";
+}
+function drawTorch(g, x, y, t) {
+  g.fillStyle = "#3a2a1a"; g.fillRect(x + 6, y + 8, 4, 8); g.fillStyle = "#6a5030"; g.fillRect(x + 5, y + 7, 6, 2);
+  const f = (t >> 2) % 3, fl = [[0, 0], [1, -1], [-1, 1]][f];
+  g.fillStyle = "#ff6a10"; g.fillRect(x + 5 + fl[0], y + 2, 6, 5);
+  g.fillStyle = "#ffb030"; g.fillRect(x + 6 + fl[1], y + 1 - (f === 1 ? 1 : 0), 4, 5);
+  g.fillStyle = "#fff0a0"; g.fillRect(x + 7, y + 3, 2, 3);
+}
+const VINE_COL = [["#2c5a24", "#4c8a34"], ["#2c6a2a", "#5aa040"], ["#4a5a24", "#7a8a3a"], ["#1c4a40", "#3a8070"], ["#3a4a30", "#5a6a48"], ["#2a4a5a", "#4a8aa0"], ["#4a3a1a", "#7a6a2a"], ["#3a2a4a", "#6a5a8a"]];
+function drawVine(g, x, y, len, seed, t, zone) {
+  const [dark, light] = VINE_COL[zone], n = len * 16 - 3;
+  for (let i = 0; i < n; i++) {
+    const sway = Math.round(Math.sin(t / 45 + seed + i / 9) * (i / n) * 2.5), px = x + 8 + sway + Math.round(Math.sin(i / 5 + seed) * 1.5);
+    g.fillStyle = dark; g.fillRect(px, y + i, 1, 1);
+    if ((i + seed) % 5 === 0) { const s = (i >> 2) & 1 ? 1 : -1; g.fillStyle = light; g.fillRect(px + s, y + i, 2 * s, 2); g.fillStyle = dark; g.fillRect(px + s * 2, y + i + 1, s, 1); }
+  }
+}
+const FLOWER_COL = ["#ff6a9a", "#ffe060", "#f0f0ff", "#80b0ff", "#ff9040", "#c080ff"];
+function plantArt(kind, seed, zone) {
+  const key = "plant" + kind + (seed % 12) + zone; if (Art.cache.has(key)) return Art.cache.get(key);
+  const c = mk(16, 16), g = c.getContext("2d"), [dark, light] = VINE_COL[zone], fc = FLOWER_COL[(seed + zone) % FLOWER_COL.length];
+  if (kind === "bush") {
+    const blobs = [[4, 11, 4], [9, 10, 5], [13, 12, 3], [7, 13, 3]];
+    for (const [bx, by, r] of blobs) { g.fillStyle = dark; g.beginPath(); g.arc(bx, by + 1, r, 0, 7); g.fill(); }
+    for (const [bx, by, r] of blobs) { g.fillStyle = light; g.fillRect(bx - 1, by - r + 2, 2, 1); }
+    g.fillStyle = fc; for (let k = 0; k < 1 + seed % 3; k++) g.fillRect(3 + ((seed * (k + 3)) % 10), 9 + ((seed >> k) % 4), 2, 2);
+  } else {
+    for (let k = 0; k < 2 + seed % 2; k++) {
+      const fx = 3 + ((seed * (k + 2)) % 10), top = 8 + ((seed >> (k + 1)) % 4);
+      g.fillStyle = dark; g.fillRect(fx, top + 2, 1, 16 - top - 2); g.fillRect(fx - 1, 13, 1, 1);
+      g.fillStyle = fc; g.fillRect(fx - 1, top, 3, 2); g.fillStyle = "#fff6c0"; g.fillRect(fx, top, 1, 1);
+    }
+  }
+  Art.cache.set(key, c); return c;
+}
+function drawWater(cx, cy) {
+  const x0 = Math.floor(cx / TS), y0 = Math.floor(cy / TS);
+  for (let y = y0; y <= y0 + 14; y++) for (let x = x0; x <= x0 + (VW >> 4); x++) {
+    if (!isWater(x, y)) continue;
+    const px = x * TS - cx, py = y * TS - cy;
+    ctx.fillStyle = "rgba(10,24,48,.78)"; ctx.fillRect(px, py + 3, 16, 13);
+    ctx.fillStyle = "rgba(40,80,120,.55)"; ctx.fillRect(px, py + 2, 16, 2);
+    for (let i = 0; i < 16; i++) { const wv = Math.sin((x * 16 + i) / 3 + G.frame / 14) + Math.sin((x * 16 + i) / 7 - G.frame / 23); if (wv > 1.1) { ctx.fillStyle = "rgba(150,190,230,.55)"; ctx.fillRect(px + i, py + 2, 1, 1); } }
+    if (!isWater(x - 1, y) || !isWater(x + 1, y)) { const e = !isWater(x - 1, y) ? 0 : 15, lap = (G.frame >> 4) & 1; ctx.fillStyle = "rgba(170,200,230,.5)"; ctx.fillRect(px + e, py + 1 + lap, 1, 2); }
+  }
 }
 function drawHUD() {
   const h = G.hero;
-  ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(3, 3, Math.max(92, 10 + maxHP() * 9), 34);
-  ctx.font = "bold 8px monospace"; ctx.textAlign = "left"; ctx.fillStyle = "#cfd6e8"; ctx.fillText("KEY " + G.keyCount + "  ARM " + G.armour + "  FLAIL " + G.flail + (G.abilities.has("boots") ? "  JUMP+" : ""), 6, 34);
+  ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(3, 3, Math.max(92, 8 + G.maxHP * 9), 36);
   ctx.drawImage(Art.item("hudCoin"), 4, 3); ctx.textAlign = "left"; ctx.font = "bold 9px monospace"; ctx.fillStyle = "#ffe680"; ctx.fillText("ZENNY " + G.zenny, 21, 14);
-  for (let i = 0; i < maxHP(); i++) { ctx.fillStyle = i < h.hp ? "#e04050" : "#40303a"; ctx.fillRect(6 + i * 9, 18, 7, 6); }
+  if (Art.mode === "rom") { const k = Art.obj("key", "idle", 0, G.room.zone); ctx.drawImage(k.img, 4, 25, 12, 12); } else { ctx.fillStyle = PH_COL.key; ctx.fillRect(6, 28, 8, 6); }
+  ctx.fillStyle = "#ffe680"; ctx.fillText("x " + G.keys, 21, 35);
+  for (let i = 0; i < G.maxHP; i++) { ctx.fillStyle = i < h.hp ? "#e04050" : "#40303a"; ctx.fillRect(6 + i * 9, 18, 7, 6); }
   // minimap: 5 x 3 cells around the hero
-  const hcx = Math.floor((h.x + 16) / (CW * TS)), hcy = Math.floor((h.y + 16) / (CH * TS)), mx = 256 - 5 * 8 - 4, my = 4;
+  const hcx = Math.floor((h.x + 16) / (CW * TS)), hcy = Math.floor((h.y + 16) / (CH * TS)), mx = VW - 5 * 8 - 4, my = 4;
   ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(mx - 1, my - 1, 5 * 8 + 2, 3 * 6 + 2);
   for (let j = -1; j <= 1; j++) for (let i = -2; i <= 2; i++) {
     const x = hcx + i, y = hcy + j; if (x < 0 || y < 0 || x >= GW || y >= GH || !G.visited.has(y * GW + x)) continue;
     ctx.fillStyle = (i === 0 && j === 0 && (G.frame & 16)) ? "#fff" : ZONES[zoneOfCellY(y)].ledge; ctx.fillRect(mx + (i + 2) * 8, my + (j + 1) * 6, 7, 5);
   }
-  if (G.bannerT) { const a = Math.min(1, G.bannerT / 30); ctx.globalAlpha = a; ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(0, 92, 256, 24); ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = "bold 11px monospace"; ctx.fillText(G.banner, 128, 108); ctx.globalAlpha = 1; }
-  if (G.mode === "dead") { ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(0, 96, 256, 28); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 11px monospace"; ctx.fillText("Back to the last shrine…", 128, 114); }
-}
-function drawShop() {
-  const rows = shopRows(), x = 40, y = 52, w = 176, hgt = 22 + rows.length * 16 + 22;
-  ctx.fillStyle = "rgba(0,0,0,.82)"; ctx.fillRect(x, y, w, hgt); ctx.strokeStyle = "#d4a843"; ctx.strokeRect(x + .5, y + .5, w - 1, hgt - 1);
-  ctx.textAlign = "left"; ctx.font = "bold 9px monospace"; ctx.fillStyle = "#ffe680"; ctx.fillText("WISE MAN", x + 8, y + 13); ctx.textAlign = "right"; ctx.fillText("ZENNY " + G.zenny, x + w - 8, y + 13);
-  ctx.font = "9px monospace";
-  rows.forEach((r, i) => {
-    const yy = y + 22 + i * 16, sel = i === G.shopSel;
-    if (sel) { ctx.fillStyle = "rgba(212,168,67,.3)"; ctx.fillRect(x + 4, yy - 1, w - 8, 14); }
-    ctx.textAlign = "left"; ctx.fillStyle = G.zenny >= r.price ? "#fff" : "#8a8a96"; ctx.fillText((sel ? "> " : "  ") + r.label, x + 8, yy + 9);
-    ctx.textAlign = "right"; ctx.fillText(String(r.price), x + w - 8, yy + 9);
-  });
-  ctx.textAlign = "center"; ctx.font = "8px monospace"; ctx.fillStyle = G.shopMsgT ? "#ffb070" : "#aab";
-  ctx.fillText(G.shopMsgT ? G.shopMsg : "Up/Down choose   Jump buy   Flail close", x + w / 2, y + hgt - 7);
+  if (G.bannerT) { const a = Math.min(1, G.bannerT / 30); ctx.globalAlpha = a; ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(0, 92, VW, 24); ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = VW < 256 ? "bold 9px monospace" : "bold 11px monospace"; ctx.fillText(G.banner, VW / 2, 108); ctx.globalAlpha = 1; }
+  if (G.mode === "dead" && G.dead < 70) { ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(0, 96, VW, 28); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 10px monospace"; ctx.fillText("Back to the last shrine…", VW / 2, 114); }
 }
 function drawMap() {
-  ctx.fillStyle = "#0b0c12"; ctx.fillRect(0, 0, 256, 224);
-  const s = 6, sy = 5, ox = (256 - GW * s) / 2, oy = 34, h = G.hero;
-  ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = "bold 10px monospace"; ctx.fillText("MAP", 128, 14);
-  ctx.font = "8px monospace"; ctx.fillStyle = "#aab"; ctx.fillText(G.room ? ZONES[G.room.zone].name : "", 128, 26);
+  ctx.fillStyle = "#0b0c12"; ctx.fillRect(0, 0, VW, VH);
+  const s = Math.min(6, Math.floor(VW / GW)), sy = 5, ox = (VW - GW * s) / 2, oy = 34, h = G.hero;
+  ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = "bold 10px monospace"; ctx.fillText("MAP", VW / 2, 14);
+  ctx.font = "8px monospace"; ctx.fillStyle = "#aab"; ctx.fillText(G.room ? ZONES[G.room.zone].name : "", VW / 2, 26);
   for (const r of world.rooms) {
     let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (G.visited.has((r.y + j) * GW + r.x + i)) seen = true;
     if (!seen && !G.debug) continue;
@@ -1041,37 +1235,73 @@ function drawMap() {
   }
   const hcx = (h.x + 16) / (CW * TS), hcy = (h.y + 16) / (CH * TS);
   if (G.frame & 16) { ctx.fillStyle = "#fff"; ctx.fillRect(ox + hcx * s - 1, oy + hcy * sy - 1, 3, 3); }
-  ctx.fillStyle = "#aab"; ctx.fillText("Press M to close", 128, 216);
+  ctx.fillStyle = "#aab"; ctx.fillText("Press M to close", VW / 2, 216);
 }
 function drawDebug() {
   const h = G.hero, r = G.room;
-  ctx.textAlign = "left"; ctx.font = "8px monospace"; ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(0, 196, 256, 28); ctx.fillStyle = "#8f8";
+  ctx.textAlign = "left"; ctx.font = "8px monospace"; ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(0, 196, VW, 28); ctx.fillStyle = "#8f8";
   ctx.fillText(`room ${r.id} ${r.w}x${r.h} zone ${r.zone} cell ${Math.floor((h.x + 16) / 256)},${Math.floor((h.y + 16) / 224)}`, 3, 206);
   ctx.fillText(`x ${h.x.toFixed(1)} y ${h.y.toFixed(1)} vy ${h.vy.toFixed(2)} ground ${h.ground} climb ${h.climb}`, 3, 216);
 }
-function fit() { const tc = document.body.classList.contains("touch"), s = Math.max(1, tc ? Math.min(innerWidth / 256, (innerHeight - 4) / 224) : Math.floor(Math.min((innerWidth - 24) / 256, (innerHeight - 190) / 224))); scr.style.width = 256 * s + "px"; scr.style.height = 224 * s + "px"; }
-addEventListener("resize", fit);
+// Size the game screen so everything else on the page (title, touch controls, buttons) still fits on screen.
+// Only the window's own size counts, so pinching or double-tapping can never change it.
+let lastFit = "";
+function fit(force) {
+  const vw = innerWidth, vh = innerHeight, phone = matchMedia("(pointer:coarse)").matches, upright = phone && vh > vw;
+  const key = vw + "x" + vh; if (key === lastFit && !force) return; lastFit = key;
+  const want = upright ? 208 : 256;
+  if (want !== VW) { VW = want; scr.width = VW; lightCanvas.width = VW; if (G && G.room) snapCamera(); }
+  for (let pass = 0; pass < 2; pass++) {
+    const other = document.body.offsetHeight - scr.offsetHeight;   // height of everything except the game screen
+    let s = Math.max(0.5, Math.min((vw - (phone ? 0 : 24)) / VW, (vh - other - 6) / VH));
+    if (s >= 2 && !phone) s = Math.floor(s);
+    scr.style.width = Math.floor(VW * s) + "px"; scr.style.height = Math.floor(VH * s) + "px";
+  }
+}
+addEventListener("resize", () => fit());
+addEventListener("orientationchange", () => setTimeout(() => fit(true), 250));
+// no double-tap or pinch zoom on the game page
+document.addEventListener("dblclick", e => e.preventDefault(), { passive: false });
+document.addEventListener("gesturestart", e => e.preventDefault(), { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener("touchend", e => { const now = Date.now(); if (now - lastTouchEnd < 350) e.preventDefault(); lastTouchEnd = now; }, { passive: false });
 
 /* ======================================================================
    14. START-UP
    ====================================================================== */
 let running = false, last = 0, acc = 0;
-function loop(t) { pollPad(); acc += Math.min(100, t - last); last = t; while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; } draw(); requestAnimationFrame(loop); }
+function loop(t) { acc += Math.min(100, t - last); last = t; while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; } draw(); requestAnimationFrame(loop); }
 function begin() {
   const urlSeed = +new URLSearchParams(location.search).get("seed"), saved = loadSave();
   if (urlSeed) newGame(urlSeed, saved && saved.seed === urlSeed ? saved : null);
   else if (saved) newGame(saved.seed, saved);
   else newGame((Math.random() * 1e9) | 0, null);
-  $("stage").hidden = false;
-  fit(); scr.focus();
+  $("load").hidden = true; $("stage").hidden = false;
+  $("status").textContent = Art.mode === "rom" ? "Using graphics from your Black Tiger files." : "Using placeholder art.";
+  fit(true); scr.focus();
   if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
 }
-let newArmed = 0;
-$("newWorld").onclick = () => {
-  if (!newArmed) { newArmed = 1; $("newWorld").textContent = "Tap again to erase progress"; setTimeout(() => { newArmed = 0; $("newWorld").textContent = "New world"; }, 3000); return; }
-  newArmed = 0; $("newWorld").textContent = "New world"; try { localStorage.removeItem(SAVE_KEY); } catch (e) {} newGame((Math.random() * 1e9) | 0, null); scr.focus();
-};
-Art.mode = "placeholder"; begin();
+async function startWithFiles(f, restored) {
+  const missing = NAMES.filter(n => !f[n]); if (missing.length) throw new Error("These files are missing:\n" + missing.join(", ") + "\nUse the Black Tiger zip from MAME (blktiger.zip).");
+  const bad = Object.values(NEED).flat().filter(([n, c]) => crc32(f[n]) !== c).map(r => r[0]); if (bad.length) throw new Error("These files are a different version than expected:\n" + bad.join(", "));
+  Art.loadRom(f);
+  if ($("remember").checked && !restored) { const keep = {}; NAMES.forEach(n => keep[n] = f[n]); await idbPut(keep); }
+  begin();
+}
+async function handle(list) {
+  $("msg").className = ""; $("msg").textContent = "Reading…";
+  try { const wanted = new Set(NAMES), f = {}; for (const file of list) { if (/\.zip$/i.test(file.name)) Object.assign(f, await readZip(await file.arrayBuffer(), wanted)); else if (wanted.has(file.name)) f[file.name] = new Uint8Array(await file.arrayBuffer()); } await startWithFiles(f, false); }
+  catch (e) { $("msg").className = "err"; $("msg").textContent = e.message; }
+}
+$("ver").textContent = "v" + VERSION; document.title = "Black Tiger: The Depths v" + VERSION;
+$("openBtn").onclick = () => $("fileIn").click();
+$("fileIn").onchange = e => { const l = [...e.target.files]; e.target.value = ""; if (l.length) handle(l); };
+$("newWorld").onclick = () => { if (!confirm("Start a new world? Your current progress will be lost.")) return; try { localStorage.removeItem(SAVE_KEY); } catch (e) {} newGame((Math.random() * 1e9) | 0, null); scr.focus(); };
+["dragenter", "dragover"].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $("load").classList.add("over"); }));
+document.addEventListener("dragleave", e => { if (e.target === document.documentElement) $("load").classList.remove("over"); });
+document.addEventListener("drop", e => { e.preventDefault(); $("load").classList.remove("over"); const l = [...(e.dataTransfer ? e.dataTransfer.files : [])]; if (l.length) handle(l); });
+(async () => { const s = await idbGet(); if (s && NAMES.every(n => s[n])) { try { await startWithFiles(s, true); } catch (e) {} } })();
 </script>
+
 </body>
 </html>
