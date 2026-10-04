@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.29">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.29">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.30">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.30">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.29</title>
+<title>Black Tiger: The Depths v0.30</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -137,7 +137,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.29";   // bump by 0.01 with every change
+const VERSION = "0.30";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1890,29 +1890,33 @@ function outlineCanvas(c, col) {
 
 
 function lanternBody(seed) {
-  return baked("lantern" + (seed % 4), 16, 26, (R) => {
-    const o = "#2a0608", d = "#6a0e12", m = "#b01c1c", l = "#e04630", h = "#ff9a70", gold = "#b8923a", gold2 = "#e8c868";
-    R(5, 0, 6, 1, o); R(4, 1, 8, 3, gold); R(4, 1, 8, 1, gold2); R(4, 3, 8, 1, "#6a4e18");
-    epx0(R, 8, 13, 6, 8, (u, v) => { const e = u * u + v * v > 0.8; return e ? o : (u < -0.3 && v < -0.2) ? l : u > 0.45 ? d : m; });
-    for (const y of [8, 12, 16, 19]) R(3, y, 10, 1, d);                        // paper ribs
-    for (const x of [6, 10]) R(x, 5, 1, 17, "rgba(40,6,8,.55)");
-    R(5, 6, 1, 2, h); R(4, 8, 1, 2, l);
-    R(7, 15, 3, 2, "#ffb040"); R(7, 15, 2, 1, "#fff0b0");                      // a tear in the paper with the flame showing through
-    R(4, 22, 8, 1, "#6a4e18"); R(4, 23, 8, 1, gold); R(5, 24, 6, 1, o);
-    R(6, 24, 1, 2, "#a02020"); R(8, 24, 1, 2, "#8a1818"); R(10, 24, 1, 1, "#a02020");   // tassel
+  return baked("lantern2" + (seed % 4), 10, 18, (R) => {
+    const o = "#2a0608", d = "#6a0e12", m = "#c02020", l = "#f05a38", h = "#ffb088", gold = "#b8923a", gold2 = "#f0d070";
+    R(3, 0, 4, 1, o); R(2, 1, 6, 2, gold); R(2, 1, 6, 1, gold2); R(2, 2, 6, 1, "#6a4e18");
+    epx0(R, 5, 8.2, 3.7, 5.2, (u, v) => { const e = u * u + v * v > 0.78; return e ? o : (u < -0.3 && v < -0.2) ? l : u > 0.45 ? d : m; });
+    for (const y of [6, 9, 12]) R(2, y, 6, 1, d);
+    R(4, 3, 1, 10, "rgba(40,6,8,.5)"); R(6, 3, 1, 10, "rgba(40,6,8,.45)");
+    R(3, 5, 1, 2, h); R(3, 7, 1, 1, l);
+    R(4, 9, 2, 2, "#ffb840"); R(4, 9, 1, 1, "#fff4c0");
+    R(2, 13, 6, 1, gold); R(3, 14, 4, 1, "#6a4e18"); R(3, 15, 4, 1, o);
+    R(4, 16, 1, 2, "#a02020"); R(6, 16, 1, 2, "#8a1818");
   }, seed + 11);
 }
 
 function epx0(R, cx, cy, rx, ry, fn) { for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) { const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry; if (u * u + v * v > 1) continue; R(x, y, 1, 1, fn(u, v)); } }
 
 function drawLantern(d, cx, cy, lights) {
-  const t = G.frame + d.seed, sway = Math.round(Math.sin(t / 60) * 1.5 + (G.wind || 0) * 3), x = Math.round(d.x - cx) + 8, y0 = Math.round(d.y - cy), top = y0 + d.len * 16 - 2;
+  const t = G.frame + d.seed, sway = Math.round(Math.sin(t / 60) * 1.5 + (G.wind || 0) * 3), x = Math.round(d.x - cx) + 8, y0 = Math.round(d.y - cy), top = y0 + d.len * 16 + 2;
   ctx.fillStyle = "#3a2a1a"; for (let yy = y0; yy < top; yy++) { const f = (yy - y0) / Math.max(1, top - y0); ctx.fillRect(x + Math.round(sway * f), yy, 1, 1); }
-  const pul = 0.8 + 0.2 * Math.sin(t / 9) + 0.08 * Math.sin(t / 3.1), bx = x - 8 + sway, by = top;
-  const gl = ctx.createRadialGradient(bx + 8, by + 13, 0, bx + 8, by + 13, 34); gl.addColorStop(0, `rgba(255,70,40,${0.46 * pul})`); gl.addColorStop(1, "rgba(255,60,30,0)"); ctx.fillStyle = gl; ctx.fillRect(bx - 28, by - 24, 72, 74);
+  const pul = 0.82 + 0.18 * Math.sin(t / 9) + 0.08 * Math.sin(t / 3.1), bx = x - 5 + sway, by = top, gx = bx + 5, gy = by + 9;
+  // the glow: a wide red bloom, a hot orange halo and a bright core, added on top of the scene
+  ctx.globalCompositeOperation = "lighter";
+  let gl = ctx.createRadialGradient(gx, gy, 0, gx, gy, 84); gl.addColorStop(0, `rgba(255,66,38,${0.72 * pul})`); gl.addColorStop(0.3, `rgba(240,44,26,${0.36 * pul})`); gl.addColorStop(0.65, `rgba(220,36,22,${0.14 * pul})`); gl.addColorStop(1, "rgba(220,30,20,0)"); ctx.fillStyle = gl; ctx.fillRect(gx - 84, gy - 84, 168, 168);
+  gl = ctx.createRadialGradient(gx, gy, 0, gx, gy, 22); gl.addColorStop(0, `rgba(255,170,90,${0.85 * pul})`); gl.addColorStop(1, "rgba(255,90,40,0)"); ctx.fillStyle = gl; ctx.fillRect(gx - 22, gy - 22, 44, 44);
+  ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(lanternBody(d.seed), bx, by);
-  ctx.fillStyle = `rgba(255,120,60,${0.25 * pul})`; ctx.fillRect(bx + 5, by + 8, 6, 12);
-  lights.push([d.x + 8 + sway, by + cy + 13, 56 + 4 * pul, 0.9, "255,64,40"]);
+  ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,110,50,${0.38 * pul})`; ctx.fillRect(bx + 3, by + 4, 4, 9); ctx.fillStyle = `rgba(255,220,150,${0.5 * pul})`; ctx.fillRect(bx + 4, by + 9, 2, 2); ctx.globalCompositeOperation = "source-over";
+  lights.push([d.x + 8 + sway, by + cy + 9, 124 + 8 * pul, 1, "255,56,34"]);
 }
 
 function updateSmoke() {
@@ -2020,6 +2024,8 @@ function flyArt(kind, frame) {
   }
   outlineCanvas(c, kind === "firefly" ? "rgba(0,0,0,.9)" : "rgba(0,0,0,.5)"); BK[key] = c; return c;
 }
+
+
 
 
 
