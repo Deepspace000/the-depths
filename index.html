@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.23">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.23">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.24">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.24">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.23</title>
+<title>Black Tiger: The Depths v0.24</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -132,7 +132,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.23";   // bump by 0.01 with every change
+const VERSION = "0.24";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -715,6 +715,17 @@ function generateWorld(seed) {
     if (r.id > 0 && flat.length && R2() < (r.cave ? 0.4 : 0.11)) { const [x, y] = flat[Math.floor(R2() * flat.length)]; decor.push({ kind: "incense", x: x * TS, y: y * TS, seed: r2(0, 999), zone: r.zone }); }
     if (r.cave) for (const m of r.mouths) { const bx = m.bx; decor.push({ kind: "mouth", x: (m.cs > 0 ? bx - 1 : bx - 3) * TS, y: (m.fy - 3) * TS, dir: m.cs > 0 ? 1 : -1, seed: r2(0, 999), zone: r.zone, rooms: [r.id, m.other] }); }
   }
+  // ---- 4g. coloured smoke and red lanterns (a third random stream) ----
+  const R3 = rng((seed ^ 0x5bd1e995) >>> 0), r3 = (a, b) => a + Math.floor(R3() * (b - a + 1));
+  const SC = [[170, 90, 220], [90, 200, 110], [225, 70, 60], [80, 140, 235], [235, 170, 60]];
+  for (const r of rooms) {
+    if (r.id === 0) continue;
+    const cells = []; for (let y = r.ty + 1; y < r.ty + r.th - 1; y++) for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) cells.push([x, y]);
+    const floorSpots = cells.filter(([x, y]) => standOn(x, y) && get(x, y - 1) === EMPTY && get(x, y + 1) === SOLID);
+    if (floorSpots.length && R3() < (r.cave ? 0.2 : 0.08)) { const srcs = []; for (let k = 0, n = r3(1, 3); k < n; k++) srcs.push(floorSpots[Math.floor(R3() * floorSpots.length)]); r.smoke = { col: SC[Math.floor(R3() * SC.length)], srcs }; }
+    const hang = cells.filter(([x, y]) => get(x, y) === EMPTY && (get(x, y - 1) === SOLID || get(x, y - 1) === LEDGE) && get(x, y + 1) === EMPTY && get(x, y + 2) === EMPTY && get(x, y + 3) === EMPTY && get(x, y + 4) === EMPTY);
+    if (hang.length && R3() < (r.cave ? 0.2 : 0.09)) for (let k = 0, n = r3(1, 2); k < n; k++) { const [x, y] = hang[Math.floor(R3() * hang.length)]; decor.push({ kind: "lantern", x: x * TS, y: y * TS, len: r3(1, 2), seed: r3(0, 999), zone: r.zone }); }
+  }
   // hand every piece of decoration to its room, so drawing only looks at the current room
   for (const r of rooms) r.decor = [];
   for (const d of decor) {
@@ -1231,7 +1242,7 @@ function update() {
   }
   G.wind = windNow(); updateHero();
   const r = roomAtPx(G.hero.x + 16, G.hero.y + 20); if (r && r !== G.room) enterRoom(r, false);
-  updateItems(); updateEnemies(); updateTraps(); updatePebbles(); updateLife(); updateBugs(); updateWind(); updateHunger(); updateCampfire();
+  updateItems(); updateEnemies(); updateTraps(); updatePebbles(); updateLife(); updateBugs(); updateWind(); updateSmoke(); updateHunger(); updateCampfire();
   G.popups = G.popups.filter(p => (p.y -= 0.5, --p.t > 0));
   G.particles = G.particles.filter(p => (p.x += p.vx, p.y += p.vy, p.vy += 0.15, --p.t > 0));
   if (G.bannerT) G.bannerT--;
@@ -1300,7 +1311,7 @@ function draw() {
   if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); ctx.drawImage(f.img, Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); }
   for (const f of G.fires) if (!f.delay) put(Art.obj(f.blue ? "bluefire" : "fire", f.t <= 10 ? "small" : (f.t >> 2) & 1 ? "f1" : "f0", 0, zone), f.x, f.y);
   if (G.confuse > 0 && (G.frame & 16)) { ctx.fillStyle = "#80c0ff"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center"; ctx.fillText("CONFUSED", VW / 2, 52); }
-  drawWind(cx, cy); drawWater(cx, cy);
+  drawWind(cx, cy); drawSmoke(cx, cy, lights); drawWater(cx, cy);
   for (const p of G.particles) { ctx.fillStyle = p.color; ctx.fillRect(Math.round(p.x) - cx, Math.round(p.y) - cy, 2, 2); }
   ctx.font = "bold 8px monospace"; ctx.textAlign = "center";
   for (const p of G.popups) { ctx.fillStyle = "#000"; ctx.fillText(p.text, p.x - cx + 1, p.y - cy + 1); ctx.fillStyle = "#ffe680"; ctx.fillText(p.text, p.x - cx, p.y - cy); }
@@ -1512,6 +1523,7 @@ function drawDecor(cx, cy, zone, lights) {
       case "torch": drawTorch(ctx, d.x - cx, d.y - cy, G.frame + d.seed); lights.push([d.x + 8, d.y + 4, LOOK.torchLight + Math.sin((G.frame + d.seed) / 5) * 4, 1]); break;
       case "campfire": drawCampfire(d, cx, cy); lights.push([d.x + 16, d.y + 4, 84 + Math.sin((G.frame + d.seed) / 4) * 4, 1, "255,130,40"]); break;
       case "incense": drawIncense(d, cx, cy); lights.push([d.x + 8, d.y + 2, 24, 0.5, "255,90,60"]); break;
+      case "lantern": drawLantern(d, cx, cy, lights); break;
       case "mouth": drawMouth(d, cx, cy, zone); break;
       default: { drawPlant(d, cx, cy, zone); const p = plantArt(d.kind, d.seed, d.zone != null ? d.zone : zone); if (p.glow && dark) lights.push([d.x + 8, d.y + 6, 26, 0.55, p.glow]); }
     }
@@ -1879,6 +1891,62 @@ function outlineCanvas(c, col) {
 
 
 
+
+
+
+function lanternBody(seed) {
+  return baked("lantern" + (seed % 4), 16, 26, (R) => {
+    const o = "#2a0608", d = "#6a0e12", m = "#b01c1c", l = "#e04630", h = "#ff9a70", gold = "#b8923a", gold2 = "#e8c868";
+    R(5, 0, 6, 1, o); R(4, 1, 8, 3, gold); R(4, 1, 8, 1, gold2); R(4, 3, 8, 1, "#6a4e18");
+    epx0(R, 8, 13, 6, 8, (u, v) => { const e = u * u + v * v > 0.8; return e ? o : (u < -0.3 && v < -0.2) ? l : u > 0.45 ? d : m; });
+    for (const y of [8, 12, 16, 19]) R(3, y, 10, 1, d);                        // paper ribs
+    for (const x of [6, 10]) R(x, 5, 1, 17, "rgba(40,6,8,.55)");
+    R(5, 6, 1, 2, h); R(4, 8, 1, 2, l);
+    R(7, 15, 3, 2, "#ffb040"); R(7, 15, 2, 1, "#fff0b0");                      // a tear in the paper with the flame showing through
+    R(4, 22, 8, 1, "#6a4e18"); R(4, 23, 8, 1, gold); R(5, 24, 6, 1, o);
+    R(6, 24, 1, 2, "#a02020"); R(8, 24, 1, 2, "#8a1818"); R(10, 24, 1, 1, "#a02020");   // tassel
+  }, seed + 11);
+}
+
+function epx0(R, cx, cy, rx, ry, fn) { for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) { const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry; if (u * u + v * v > 1) continue; R(x, y, 1, 1, fn(u, v)); } }
+
+function drawLantern(d, cx, cy, lights) {
+  const t = G.frame + d.seed, sway = Math.round(Math.sin(t / 60) * 1.5 + (G.wind || 0) * 3), x = Math.round(d.x - cx) + 8, y0 = Math.round(d.y - cy), top = y0 + d.len * 16 - 2;
+  ctx.fillStyle = "#3a2a1a"; for (let yy = y0; yy < top; yy++) { const f = (yy - y0) / Math.max(1, top - y0); ctx.fillRect(x + Math.round(sway * f), yy, 1, 1); }
+  const pul = 0.8 + 0.2 * Math.sin(t / 9) + 0.08 * Math.sin(t / 3.1), bx = x - 8 + sway, by = top;
+  const gl = ctx.createRadialGradient(bx + 8, by + 13, 0, bx + 8, by + 13, 34); gl.addColorStop(0, `rgba(255,70,40,${0.46 * pul})`); gl.addColorStop(1, "rgba(255,60,30,0)"); ctx.fillStyle = gl; ctx.fillRect(bx - 28, by - 24, 72, 74);
+  ctx.drawImage(lanternBody(d.seed), bx, by);
+  ctx.fillStyle = `rgba(255,120,60,${0.25 * pul})`; ctx.fillRect(bx + 5, by + 8, 6, 12);
+  lights.push([d.x + 8 + sway, by + cy + 13, 56 + 4 * pul, 0.9, "255,64,40"]);
+}
+
+function updateSmoke() {
+  const r = G.room; if (!r || !r.smoke) { G.smoke = []; G.smokeRoom = -1; return; }
+  if (G.smokeRoom !== r.id) { G.smoke = []; G.smokeRoom = r.id; for (let i = 0; i < 40; i++) stepSmoke(r, i * 5); }
+  if (G.frame % 3 === 0 && G.smoke.length < 100) { const s = r.smoke.srcs[(G.frame >> 2) % r.smoke.srcs.length]; G.smoke.push({ x: s[0] * TS + 4 + Math.random() * 8, y: s[1] * TS + 10, vx: (Math.random() - 0.5) * 0.3, vy: -0.25 - Math.random() * 0.3, r: 5 + Math.random() * 4, t: 0, life: 240 + Math.random() * 120, ph: Math.random() * 6 }); }
+  stepSmoke(r, 1);
+}
+
+function stepSmoke(r, n) {
+  for (let k = 0; k < n; k++) for (const p of G.smoke) { p.t++; p.x += p.vx + Math.sin(p.t / 40 + p.ph) * 0.18 + (G.wind || 0) * 0.3; p.y += p.vy; p.r += 0.025; }
+  G.smoke = G.smoke.filter(p => p.t < p.life && p.y > r.ty * TS);
+}
+
+function drawSmoke(cx, cy, lights) {
+  const r = G.room; if (!r || !r.smoke || !G.smoke) return; const [R, Gc, B] = r.smoke.col;
+  // a faint haze of the same colour hanging low in the room
+  const hz = ctx.createLinearGradient(0, VH * 0.45, 0, VH); hz.addColorStop(0, `rgba(${R},${Gc},${B},0)`); hz.addColorStop(1, `rgba(${R},${Gc},${B},0.16)`); ctx.fillStyle = hz; ctx.fillRect(0, VH * 0.45, VW, VH * 0.55);
+  for (const p of G.smoke) {
+    const x = p.x - cx, y = p.y - cy; if (x < -20 || x > VW + 20 || y < -20 || y > VH + 20) continue;
+    const u = p.t / p.life, a = Math.sin(Math.min(1, u) * Math.PI) * 0.32, rr = Math.round(p.r);
+    for (let dy = -rr; dy <= rr; dy += 2) for (let dx = -rr; dx <= rr; dx += 2) {
+      const dd = dx * dx + dy * dy; if (dd > rr * rr) continue; const edge = dd > rr * rr * 0.55;
+      if (edge && ((dx + dy + Math.floor(p.ph * 3)) & 2)) continue;   // ragged, dithered edge
+      ctx.fillStyle = `rgba(${R},${Gc},${B},${edge ? a * 0.7 : a})`; ctx.fillRect(Math.round(x + dx), Math.round(y + dy), 2, 2);
+    }
+  }
+  for (const s of r.smoke.srcs) lights.push([s[0] * TS + 8, s[1] * TS + 4, 34, 0.5, `${R},${Gc},${B}`]);
+}
 
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
