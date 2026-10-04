@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.16">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.16">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.17">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.17">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.16</title>
+<title>Black Tiger: The Depths v0.17</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -99,6 +99,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
     <span><kbd>Z</kbd>/<kbd>Space</kbd> jump</span>
     <span><kbd>X</kbd> flail</span>
     <span><kbd>M</kbd> map</span>
+    <span>Gamepad: stick/d-pad move, A jump, B/X flail, Y map</span>
     <span><kbd>`</kbd> debug view</span>
   </div>
   <div class="row">
@@ -119,7 +120,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
   async function sha(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");}
   function go(){ document.getElementById("gate").remove(); const s=document.createElement("script"); s.textContent=document.getElementById("game").textContent; document.body.appendChild(s); }
   let ok=false; try{ ok=localStorage.getItem(K)===H; }catch(e){}
-  if(ok){ go(); return; }
+  if(ok){ document.addEventListener("DOMContentLoaded",go); return; }
   async function tryIt(){ const v=document.getElementById("pw").value.trim().toLowerCase(); if(await sha(v)===H){ try{localStorage.setItem(K,H);}catch(e){} go(); } else document.getElementById("pwErr").textContent="Wrong password."; }
   document.getElementById("pwGo").onclick=tryIt;
   document.getElementById("pw").addEventListener("keydown",e=>{ if(e.key==="Enter") tryIt(); });
@@ -130,7 +131,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.16";   // bump by 0.01 with every change
+const VERSION = "0.17";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -692,6 +693,21 @@ document.querySelectorAll("#touch [data-k]").forEach(b => {
   b.addEventListener("pointerdown", on); ["pointerup", "pointercancel", "lostpointercapture"].forEach(t => b.addEventListener(t, off));
   b.addEventListener("contextmenu", e => e.preventDefault());
 });
+// gamepad (Windows and iPad/iOS Safari, standard mapping): stick or d-pad moves, A jumps, B/X/right trigger swings the flail, Y/Select/Start opens the map.
+// On iOS the pad only shows up after its first button press. Polled every frame; keys it holds are released if the pad goes away.
+const padHeld = {};
+function pollPad() {
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [], gp = [...pads].find(g => g && g.connected);
+  const want = {};
+  if (gp) {
+    const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+    Object.assign(want, { left: ax < -0.4 || b(14), right: ax > 0.4 || b(15), up: ay < -0.5 || b(12), down: ay > 0.5 || b(13), jump: b(0), attack: b(1) || b(2) || b(7), map: b(3) || b(8) || b(9) });
+  }
+  for (const k of ["left", "right", "up", "down", "jump", "attack", "map"]) {
+    const w = !!want[k]; if (w === !!padHeld[k]) continue; padHeld[k] = w;
+    if (w) { if (!keys[k]) pressed[k] = true; keys[k] = true; } else keys[k] = false;
+  }
+}
 const clearPressed = () => { for (const k in pressed) pressed[k] = false; };
 
 /* ======================================================================
@@ -1270,7 +1286,7 @@ document.addEventListener("touchend", e => { const now = Date.now(); if (now - l
    14. START-UP
    ====================================================================== */
 let running = false, last = 0, acc = 0;
-function loop(t) { acc += Math.min(100, t - last); last = t; while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; } draw(); requestAnimationFrame(loop); }
+function loop(t) { pollPad(); acc += Math.min(100, t - last); last = t; while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; } draw(); requestAnimationFrame(loop); }
 function begin() {
   const urlSeed = +new URLSearchParams(location.search).get("seed"), saved = loadSave();
   if (urlSeed) newGame(urlSeed, saved && saved.seed === urlSeed ? saved : null);
