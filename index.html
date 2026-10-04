@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.28">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.28">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.29">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.29">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.28</title>
+<title>Black Tiger: The Depths v0.29</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -137,7 +137,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.28";   // bump by 0.01 with every change
+const VERSION = "0.29";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1569,7 +1569,7 @@ function drawFlies(cx, cy, lights) {
     if (!f.alive) continue; const x = Math.round(f.x - cx), y = Math.round(f.y - cy), w = (G.frame + f.t) & 1, dr = f.vx >= 0 ? 1 : -1, fl = ((G.frame + f.t) >> 1) & 1;
     if (f.kind === "firefly") { const pul = 0.5 + 0.5 * Math.sin((G.frame + f.t) / 18), hg = ctx.createRadialGradient(x, y, 0, x, y, 7); hg.addColorStop(0, "rgba(235,255,170,.42)"); hg.addColorStop(0.5, "rgba(225,255,150,.2)"); hg.addColorStop(1, "rgba(220,255,140,0)"); ctx.fillStyle = hg; ctx.fillRect(x - 7, y - 7, 16, 16); lights.push([f.x, f.y, 22 + pul * 6, 0.55, "200,255,110"]); }
     const spr = flyArt(f.kind, f.kind === "firefly" ? Math.floor(((G.frame + f.t) / 8) % 4) : f.kind === "dragon" ? fl : Math.floor(((G.frame + f.t) >> 1) % 3)), sw = spr.width, sh = spr.height;
-    ctx.save(); ctx.translate(x, y); if (dr < 0) ctx.scale(-1, 1); ctx.drawImage(spr, -Math.round(sw * 0.45), -Math.round(sh * 0.55)); ctx.restore();
+    ctx.save(); ctx.translate(x, y + (f.kind === "firefly" ? Math.round(Math.sin((G.frame + f.t) / 20) * 1.2) : 0)); if (dr < 0) ctx.scale(-1, 1); ctx.drawImage(spr, -Math.round(sw * 0.45), -Math.round(sh * 0.55)); ctx.restore();
   }
 }
 // ---- tiny bugs crawling on the walls, ceilings and floors ----
@@ -1953,23 +1953,24 @@ function bugArt(kind, frame, o, flipped) {
   const f = frame & 1, S = { f: [1, 1], c: [-1, -1], l: [1, -1], r: [-1, 1] }[o], sx = flipped ? -S[0] : S[0], sy = S[1];
   const light = (u, v) => sx * u + sy * v;            // negative = toward the light (top-left of the screen)
   if (kind === "beetle") {
-    const lg = "#06140e", lg2 = "#0e2a20";
+    const lg = "#040e08", lg2 = "#07180f";
     for (const [x, d] of [[6, 1], [10, 0], [13, 1]]) { const k = (d ^ f) ? 2 : -1; leg(x, 10, x + 2 + k, 12, x + 1 + k, 14, lg2); }
     epx(g, 10, 7.6, 7.4, 4.3, 0, (u, v) => { const L = light(u, v), e = u * u + v * v > 0.76; if (e) return lg; if (Math.abs(u - 0.1) < 0.06) return "#082018"; if (L < -0.62) return "#8af0c8"; if (L < -0.25) return "#40c090"; if (L > 0.3) return "#0a3a2c"; if (L > 0.05) return "#14604a"; return "#1c7a5a"; });
-    for (const [x, y] of [[7, 5], [12, 9], [14, 6], [9, 10]]) px(x, y, "#08241a");   // pits in the shell
+    for (const [x, y] of [[7, 5], [12, 9], [14, 6], [9, 10], [13, 10], [11, 8]]) px(x, y, "#08241a"); px(6, 6, "#c8fff0");   // pits in the shell
     epx(g, 17.5, 7.5, 2.7, 2.4, 0, (u, v) => (u * u + v * v > 0.7 ? lg : light(u, v) < -0.3 ? "#2a6a54" : "#12382c")); px(18, 6, "#ff5040"); px(19, 8, "#8a1c14");
     for (const [x, y] of [[19, 9], [20, 10], [21, 10], [21, 9], [19, 5], [20, 4], [21, 4], [21, 5]]) px(x, y, "#d8d0b0");   // hooked mandibles
     line(17, 5, 18, 3, "#a0a088"); line(18, 3, 20, 2, "#a0a088"); line(17, 10, 18, 11, "#a0a088");
     for (const [x, d] of [[5, 0], [9, 1], [12, 0]]) { const k = (d ^ f) ? 2 : -1; leg(x, 10, x + 1 + k, 12, x + k, 14, lg); }
   } else if (kind === "spider") {
-    const lc = "#b0a0e0", lf = "#5a4888";
-    for (const [h, k, ft] of [[[11, 9], [8, 1], [3, 12 + f]], [[11, 10], [6, 6], [4, 14 - f]], [[13, 9], [16, 1], [20, 11 + f]], [[13, 10], [18, 6], [21, 14 - f]]]) leg(h[0] + 1, h[1], k[0] + 1, k[1], ft[0] + 1, ft[1], lf, false);
+    const lc = "#9488c8", lf = "#4a3a78";
+    if (o === "f") for (const [h, k, ft] of [[[11, 9], [8, 1], [3, 12 + f]], [[11, 10], [6, 6], [4, 14 - f]], [[13, 9], [16, 1], [20, 11 + f]], [[13, 10], [18, 6], [21, 14 - f]]]) leg(h[0] + 1, h[1], k[0] + 1, k[1], ft[0] + 1, ft[1], lf, false);
     epx(g, 6, 9.5, 4.4, 3.4, 0, (u, v) => { const L = light(u, v), e = u * u + v * v > 0.72; if (e) return "#060210"; if (L < -0.6) return "#7a68b0"; if (L < -0.2) return "#40306e"; if (L > 0.5) return "#140a24"; return "#241848"; });
     px(5, 9, "#e03030"); px(5, 10, "#c82020"); px(6, 10, "#701010"); px(5, 8, "#f06060");
     epx(g, 12.5, 9.2, 2.9, 2.5, 0, (u, v) => (u * u + v * v > 0.7 ? "#060210" : light(u, v) < -0.2 ? "#40306e" : "#1a1034"));
     g.fillStyle = "#ff3a3a"; g.fillRect(13, 7, 2, 2); g.fillStyle = "#ffd0c0"; g.fillRect(13, 7, 1, 1); g.fillStyle = "#ff3a3a"; g.fillRect(15, 8, 2, 2); g.fillStyle = "#ffd0c0"; g.fillRect(15, 8, 1, 1);
     px(15, 11, "#d8d0c0"); px(15, 12, "#d8d0c0"); px(14, 12, "#a8a090");
-    for (const [h, k, ft] of [[[10, 8], [7, 0], [1, 10 + f]], [[10, 9], [4, 5], [2, 13 - f]], [[14, 8], [17, 0], [21, 9 + f]], [[14, 9], [20, 5], [21, 13 - f]]]) leg(h[0], h[1], k[0], k[1], ft[0], ft[1], lc, true);
+    const legs = o === "f" ? [[[10, 8], [7, 0], [1, 10 + f]], [[10, 9], [4, 5], [2, 13 - f]], [[14, 8], [17, 0], [21, 9 + f]], [[14, 9], [20, 5], [21, 13 - f]]] : [[[9, 10], [5, 6], [1, 11 + f]], [[10, 11], [8, 8], [5, 14 - f]], [[14, 10], [18, 6], [21, 11 + f]], [[13, 11], [15, 8], [18, 14 - f]]];
+    for (const [h, k, ft] of legs) leg(h[0], h[1], k[0], k[1], ft[0], ft[1], lc, true);
   } else {
     const dk = "#1e0804";
     for (const [x, d] of [[8, 0], [11, 1], [14, 0]]) { const k = (d ^ f) ? 2 : -1; leg(x, 10, x - 1 + k, 12, x + k, 14, dk); }
@@ -1993,32 +1994,34 @@ function bugArt(kind, frame, o, flipped) {
 
 function flyArt(kind, frame) {
   const key = "fly2" + kind + frame, BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key];
-  const W = kind === "dragon" ? 24 : 12, H = kind === "dragon" ? 14 : 10, c = mk(W, H), g = c.getContext("2d"), px = (x, y, col) => { g.fillStyle = col; g.fillRect(Math.round(x), Math.round(y), 1, 1); };
+  const W = kind === "dragon" ? 24 : 14, H = kind === "dragon" ? 14 : 12, c = mk(W, H), g = c.getContext("2d"), px = (x, y, col) => { g.fillStyle = col; g.fillRect(Math.round(x), Math.round(y), 1, 1); };
   const line = (x0, y0, x1, y1, col) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1); for (let i = 0; i <= n; i++) px(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, col); };
-  const wing = (x, y, rot, rx, ry, a) => epx(g, x, y, rx, ry, rot, (u, v) => { const d2 = u * u + v * v; if (d2 > 0.72) return (v < -0.2) ? "rgba(235,246,255,.9)" : "rgba(40,60,80,.75)"; if (Math.abs(v) < 0.1 || Math.abs(u * 1.3 - v * 1.8) < 0.1) return "rgba(30,48,66,.8)"; return `rgba(190,215,235,${a})`; });
+  const wing = (x, y, rot, rx, ry, a) => epx(g, x, y, rx, ry, rot, (u, v) => { const d2 = u * u + v * v; if (d2 > 0.72) return (v < -0.2) ? "rgba(235,246,255,.9)" : "rgba(40,60,80,.75)"; if (Math.abs(v) < 0.1 || Math.abs(u * 1.3 - v * 1.8) < 0.1) return "rgba(14,26,40,.9)"; return `rgba(190,215,235,${a})`; });
   if (kind === "fly") {
     const wy = [2.2, 3.4, 4.6][frame % 3], wr = [-1.1, -0.55, 0.0][frame % 3];
-    wing(3.5, wy, wr, 4.8, 1.8, 0.5); wing(6, wy + 0.4, wr + 0.4, 4.4, 1.7, 0.55);
-    epx(g, 5.2, 6, 3.2, 2.2, 0, (u, v) => (u * u + v * v > 0.7 ? "#050508" : u < -0.2 && v < -0.2 ? "#b0b0d0" : "#101018")); px(4, 5, "#e8e8ff");
-    epx(g, 8.4, 5.8, 1.5, 1.5, 0, (u, v) => (u * u + v * v > 0.7 ? "#300808" : "#d83030")); px(8, 5, "#ffb0a0");
-    line(4, 8, 3, 9, "#0a0a0e"); line(6, 8, 7, 9, "#0a0a0e");
+    wing(4, wy, wr, 5.4, 2.1, 0.5); wing(7, wy + 0.4, wr + 0.4, 5.0, 2.0, 0.55);
+    epx(g, 6, 7, 3.9, 2.8, 0, (u, v) => (u * u + v * v > 0.7 ? "#050508" : u < -0.2 && v < -0.2 ? "#b0b0d0" : "#101018")); px(4, 6, "#e8e8ff");
+    epx(g, 10, 6.8, 2.0, 2.0, 0, (u, v) => (u * u + v * v > 0.7 ? "#300808" : "#d83030")); px(9, 6, "#ffb0a0");
+    for (const lx of [4, 6, 8]) { line(lx, 9, lx - 1, 10, "#0a0a0e"); px(lx - 1, 11, "#0a0a0e"); }
   } else if (kind === "firefly") {
     const tip = ["#a8c850", "#d0f070", "#f4ffa0", "#d0f070"][frame & 3];
     wing(5, 3.2, -0.5, 3.6, 1.4, 0.4);
     epx(g, 4.2, 6.2, 3.2, 2.2, 0, (u, v) => (u * u + v * v > 0.7 ? "#050402" : v < -0.3 ? "#4a3c20" : "#1a150a"));
-    epx(g, 2.2, 6.4, 1.8, 1.6, 0, () => tip); px(1, 6, "#f4ffc8");
+    epx(g, 2.4, 6.4, 2.2, 1.9, 0, () => tip); px(1, 6, "#ffffe0"); px(2, 6, "#ffffe0"); px(1, 7, "#ffffe0");
     epx(g, 7.6, 5.8, 1.7, 1.6, 0, (u, v) => (u * u + v * v > 0.7 ? "#1a1410" : "#4a3a1c")); px(8, 5, "#ff6a40");
     line(7, 4, 8, 2, "#2a2214"); line(9, 4, 10, 2, "#2a2214"); line(4, 8, 4, 9, "#14100a"); line(6, 8, 6, 9, "#14100a");
   } else {
     const up = frame === 0, tl = "#1f6a86", tl2 = "#0e3a4c";
-    for (let i = 0; i < 11; i++) { const x = 2 + i * 1.05, w = i < 2 ? 1.6 : 1.1; for (let y = 7; y < 10; y++) px(x, y, y === 9 ? "#08242f" : i % 2 ? tl2 : (y === 7 ? "#5ac8e8" : tl)); }
+    for (let i = 0; i < 11; i++) { const x = 2 + i * 1.05, w = i < 2 ? 1.6 : 1.1; for (let y = 7; y < 10; y++) px(x, y, y === 9 ? "#08242f" : (i % 4 === 1) ? "#d8f4ff" : i % 2 ? tl2 : (y === 7 ? "#5ac8e8" : tl)); }
     epx(g, 13.5, 7.6, 2.2, 2.0, 0, (u, v) => (u * u + v * v > 0.7 ? tl2 : v < -0.3 ? "#6ad0f0" : "#2a8aaa"));
     epx(g, 17.4, 7.6, 2.8, 2.6, 0, (u, v) => (u * u + v * v > 0.7 ? "#14202a" : "#a82818")); px(17, 6, "#ffb090"); px(18, 7, "#400808");
-    wing(11.5, up ? 2.2 : 5.8, up ? -0.8 : 0.8, 6.4, 2.1, 0.5); wing(7.5, up ? 3.4 : 5.6, up ? -0.45 : 0.45, 6.4, 2.0, 0.5);
+    wing(11.5, up ? 2.2 : 7.6, up ? -0.8 : 0.95, 6.4, 2.1, 0.5); wing(7.5, up ? 3.4 : 7.2, up ? -0.45 : 0.6, 6.4, 2.0, 0.5);
     line(12, 9, 11, 10, "#0e3a4c"); line(14, 9, 15, 10, "#0e3a4c");
   }
-  outlineCanvas(c, "rgba(0,0,0,.5)"); BK[key] = c; return c;
+  outlineCanvas(c, kind === "firefly" ? "rgba(0,0,0,.9)" : "rgba(0,0,0,.5)"); BK[key] = c; return c;
 }
+
+
 
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
