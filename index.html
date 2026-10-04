@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.18">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.18">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.19">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.19">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.18</title>
+<title>Black Tiger: The Depths v0.19</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -131,7 +131,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.18";   // bump by 0.01 with every change
+const VERSION = "0.19";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -669,7 +669,7 @@ function generateWorld(seed) {
       const pts = [];
       for (let i = 0, want = r2(18, 52); i < want; i++) {
         pts.push([Math.round(px), Math.round(py)]);
-        ang += (R2() - 0.5) * 0.25; ang = up ? Math.max(-1.35, Math.min(-0.35, ang)) : Math.min(1.35, Math.max(0.35, ang));
+        ang += (R2() - 0.5) * 0.55; ang = up ? Math.max(-1.35, Math.min(-0.35, ang)) : Math.min(1.35, Math.max(0.35, ang));
         px += dir * Math.cos(ang) * 2.2; py += Math.sin(ang) * 2.2;
         if (get(Math.floor(px / TS), Math.floor(py / TS)) !== EMPTY) break;
       }
@@ -1410,6 +1410,7 @@ function plantArt(kind, seed, zone) {
     }
   }
   if (kind === "bush" || kind === "mushroom") { const id = g.getImageData(0, 0, 16, 24), a = id.data; for (let x = 0; x < 16; x++) { let low = -1; for (let y = 23; y >= 0; y--) if (a[(y * 16 + x) * 4 + 3] > 200) { low = y; break; } if (low > 4) dot(x, low, kind === "bush" ? P.o : "#1a0c0c"); } }
+  gritCanvas(c, seed * 13 + zone * 5 + kind.length, kind === "crystal" ? 0.04 : 0.12, kind === "crystal" ? 0.02 : 0.07, kind === "crystal" ? 0.96 : 0.9);
   const out = { c, glow: PLANT_GLOW[kind] || null, sway: kind !== "mushroom" && kind !== "crystal" && kind !== "thorn" };
   Art.cache.set(key, out); return out;
 }
@@ -1444,32 +1445,33 @@ function drawCrawlVine(d, cx, cy, zone) {
 function drawCampfire(d, cx, cy) {
   const x = Math.round(d.x - cx), y = Math.round(d.y - cy), t = G.frame + d.seed, fr = t / 5;
   const rect = (a, b, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x + a, y + b, w, h); };
+  const back = baked("cfb" + (d.seed % 5), 32, 20, (R) => { R(4, 12, 24, 4, "#120804"); R(5, 8, 22, 6, "#2a160a"); R(5, 8, 22, 2, "#6a4020"); R(6, 13, 20, 1, "#1a0c04"); R(3, 9, 5, 5, "#3a2010"); R(3, 9, 5, 1, "#8a5a2c"); R(4, 10, 3, 3, "#c89050"); R(5, 11, 1, 1, "#7a4a24"); R(24, 9, 5, 5, "#3a2010"); R(24, 9, 5, 1, "#8a5a2c"); R(25, 10, 3, 3, "#c89050"); R(26, 11, 1, 1, "#7a4a24"); R(9, 10, 1, 4, "#120804"); R(15, 9, 1, 4, "#120804"); R(21, 10, 1, 4, "#120804"); }, d.seed);
+  const front = baked("cff" + (d.seed % 5), 32, 20, (R) => { R(8, 11, 17, 4, "#3a2010"); R(8, 11, 17, 1, "#8a5a2c"); R(9, 14, 15, 1, "#1a0c04"); R(12, 12, 1, 2, "#120804"); R(18, 12, 1, 2, "#120804"); for (const [sx, sw, sh] of [[0, 6, 5], [5, 5, 4], [11, 5, 3], [17, 5, 4], [23, 6, 5]]) { R(2 + sx, 16 - sh, sw, sh, "#26262e"); R(3 + sx, 16 - sh, sw - 2, 1, "#a89c88"); R(3 + sx, 17 - sh, sw - 2, sh - 2, "#605e6c"); R(3 + sx, 17 - sh, 1, sh - 2, "#8a7e78"); R(1 + sx + sw, 17 - sh, 1, sh - 1, "#34343e"); R(3 + sx, 17 - sh, sw - 2, 1, "#c8844a"); R(4 + sx, 19 - sh, 1, 1, "#1a1a20"); } }, d.seed + 9);
   const gl = ctx.createRadialGradient(x + 16, y + 8, 0, x + 16, y + 8, 40); gl.addColorStop(0, "rgba(255,150,50,.26)"); gl.addColorStop(1, "rgba(255,150,50,0)"); ctx.fillStyle = gl; ctx.fillRect(x - 28, y - 34, 88, 70);
-  // two crossed logs with wide, lit end-grain, and a charred bed
-  rect(4, 12, 24, 4, "#120804"); rect(5, 8, 22, 6, "#2a160a"); rect(5, 8, 22, 2, "#6a4020"); rect(6, 13, 20, 1, "#1a0c04");
-  rect(3, 9, 5, 5, "#3a2010"); rect(3, 9, 5, 1, "#8a5a2c"); rect(4, 10, 3, 3, "#d8a060"); rect(5, 11, 1, 1, "#7a4a24"); rect(24, 9, 5, 5, "#3a2010"); rect(24, 9, 5, 1, "#8a5a2c"); rect(25, 10, 3, 3, "#d8a060"); rect(26, 11, 1, 1, "#7a4a24");
-  const flame = (cxl, base, W, H, col, ph) => { ctx.fillStyle = col; for (let r = 0; r < H; r++) { const k = r / H, flick = Math.sin(fr * 1.7 + ph) * 0.5 + Math.sin(fr * 0.6 + ph * 2) * 0.5, w = W * Math.pow(1 - k, 0.72) * (0.9 + 0.16 * Math.sin(k * 9 + fr * 1.3 + ph)), sw = flick * k * 3.4 + Math.sin(fr * 0.9 + k * 4 + ph) * k * 1.8 + (G.wind || 0) * k * 3; ctx.fillRect(Math.round(x + cxl + sw - w), y + base - r, Math.max(1, Math.round(w * 2)), 1); } };
-  flame(16, 12, 10, 26, "#a81e08", 0); flame(16, 12, 7.8, 22, "#ff5a10", 1); flame(16, 12, 5.4, 17, "#ffa828", 2); flame(16, 12, 3, 10, "#fff0a0", 3);
-  flame(8, 11, 4, 11, "#d83a0c", 4); flame(24, 11, 3.8, 10, "#d83a0c", 5);
-  rect(8, 11, 17, 4, "#3a2010"); rect(8, 11, 17, 1, "#8a5a2c"); rect(9, 14, 15, 1, "#1a0c04");
-  for (const [sx, sw, sh] of [[0, 6, 5], [5, 5, 4], [11, 5, 3], [17, 5, 4], [23, 6, 5]]) { rect(2 + sx, 16 - sh, sw, sh, "#2a2a32"); rect(3 + sx, 16 - sh, sw - 2, 1, "#b8a890"); rect(3 + sx, 17 - sh, sw - 2, sh - 2, "#686878"); rect(3 + sx, 17 - sh, 1, sh - 2, "#9a8a80"); rect(1 + sx + sw, 17 - sh, 1, sh - 1, "#3a3a46"); rect(3 + sx, 17 - sh, sw - 2, 1, "rgba(255,170,70,.85)"); rect(3 + sx, 18 - sh, sw - 2, 1, "rgba(255,130,50,.5)"); }
-  for (let k = 0; k < 9; k++) { const u = ((t * 0.6 + k * 13) % 48) / 48; ctx.fillStyle = `rgba(255,${150 + k * 15},60,${1 - u})`; ctx.fillRect(Math.round(x + 13 + Math.sin(t / 9 + k * 2) * 7 + k * 2), Math.round(y - u * 38), 1, 1 + (k & 1)); }
-  for (let k = 0; k < 4; k++) { const u = ((t * 0.4 + k * 14) % 56) / 56, r = Math.round(2 + u * 4); ctx.fillStyle = `rgba(140,140,152,${0.4 * (1 - u)})`; const sx = Math.round(x + 16 + Math.sin(t / 22 + k * 1.7) * (2 + u * 5) + (G.wind || 0) * u * 8); ctx.fillRect(sx - (r >> 1), Math.round(y - 22 - u * 36), r, r - 1); ctx.fillStyle = `rgba(190,190,200,${0.3 * (1 - u)})`; ctx.fillRect(sx - (r >> 1), Math.round(y - 22 - u * 36), r - 1, 1); }
+  ctx.drawImage(back, x, y);
+  const flame = (cxl, base, W, H, col, ph) => { ctx.fillStyle = col; for (let r = 0; r < H; r++) { const k = r / H, flick = Math.sin(fr * 1.7 + ph) * 0.5 + Math.sin(fr * 0.6 + ph * 2) * 0.5, jag = (((r * 7 + ph * 3 + (t >> 2)) % 5) - 2) * 0.35, w = W * Math.pow(1 - k, 0.72) * (0.9 + 0.16 * Math.sin(k * 9 + fr * 1.3 + ph)) + jag, sw = flick * k * 3.4 + Math.sin(fr * 0.9 + k * 4 + ph) * k * 1.8 + (G.wind || 0) * k * 3; ctx.fillRect(Math.round(x + cxl + sw - w), y + base - r, Math.max(1, Math.round(w * 2)), 1); } };
+  flame(16, 12, 10, 26, "#8a1a08", 0); flame(16, 12, 7.8, 22, "#e84e10", 1); flame(16, 12, 5.4, 17, "#f09020", 2); flame(16, 12, 3, 10, "#ffe890", 3);
+  flame(8, 11, 4, 11, "#c03208", 4); flame(24, 11, 3.8, 10, "#c03208", 5);
+  ctx.drawImage(front, x, y);
+  for (const sx of [2, 7, 13, 19, 25]) rect(sx + 1, 17 - (sx % 3 + 3), 3, 1, "rgba(255,170,70,.6)");
+  for (let k = 0; k < 9; k++) { const u = ((t * 0.6 + k * 13) % 48) / 48; ctx.fillStyle = `rgba(255,${150 + k * 12},60,${1 - u})`; ctx.fillRect(Math.round(x + 13 + Math.sin(t / 9 + k * 2) * 7 + k * 2), Math.round(y - u * 38), 1, 1 + (k & 1)); }
+  for (let k = 0; k < 4; k++) { const u = ((t * 0.4 + k * 14) % 56) / 56, r = Math.round(2 + u * 4); ctx.fillStyle = `rgba(110,106,112,${0.45 * (1 - u)})`; const sx = Math.round(x + 16 + Math.sin(t / 22 + k * 1.7) * (2 + u * 5) + (G.wind || 0) * u * 8); ctx.fillRect(sx - (r >> 1), Math.round(y - 22 - u * 36), r, r - 1); ctx.fillStyle = `rgba(160,156,160,${0.3 * (1 - u)})`; ctx.fillRect(sx - (r >> 1), Math.round(y - 22 - u * 36), r - 1, 1); }
 }
 function drawIncense(d, cx, cy) {
   const x = Math.round(d.x - cx), y = Math.round(d.y - cy), t = G.frame + d.seed;
-  const rect = (a, b, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x + a, y + b, w, h); };
-  rect(0, 6, 16, 10, "#2a2634"); rect(1, 6, 14, 2, "#c0bace"); rect(1, 8, 14, 6, "#7a7488"); rect(1, 8, 2, 6, "#a8a2b8"); rect(13, 8, 2, 6, "#4a4458"); rect(0, 14, 16, 2, "#1c1824"); rect(1, 13, 14, 1, "#5a5468");
-  rect(5, 9, 6, 1, "#3a3448"); rect(4, 10, 1, 2, "#3a3448"); rect(11, 10, 1, 2, "#3a3448"); rect(5, 12, 6, 1, "#3a3448"); rect(7, 10, 2, 2, "#e0a040"); rect(7, 10, 1, 1, "#ffe090"); rect(2, 9, 1, 1, "#d8d2e4");
-  rect(3, 5, 10, 2, "#c8b078"); rect(3, 5, 10, 1, "#f4e4a8"); rect(3, 7, 10, 1, "#8a7448"); rect(1, 6, 14, 1, "#e8e2f4"); rect(1, 6, 1, 8, "#d0cade");
-  if (d.seed % 2) { rect(12, -3, 4, 9, "#2e2a38"); rect(12, -3, 4, 2, "#a8a2b8"); rect(13, -1, 1, 1, "#e04030"); rect(15, 1, 1, 4, "#1c1824"); }
+  const alt = baked("alt" + (d.seed % 6) + (d.seed % 2), 20, 22, (R) => {
+    R(0, 6, 16, 10, "#241f2c"); R(1, 6, 14, 2, "#a8a2b4"); R(1, 8, 14, 6, "#6a6478"); R(1, 8, 2, 6, "#8e889c"); R(13, 8, 2, 6, "#403a4c"); R(0, 14, 16, 2, "#18141e"); R(1, 13, 14, 1, "#4a4458");
+    R(5, 9, 6, 1, "#322c40"); R(4, 10, 1, 2, "#322c40"); R(11, 10, 1, 2, "#322c40"); R(5, 12, 6, 1, "#322c40"); R(7, 10, 2, 2, "#d89238"); R(7, 10, 1, 1, "#ffd880"); R(6, 11, 1, 3, "#18141e"); R(10, 8, 1, 3, "#18141e");
+    R(3, 5, 10, 2, "#b8a068"); R(3, 5, 10, 1, "#e4d498"); R(3, 7, 10, 1, "#7a6640"); R(1, 6, 14, 1, "#d8d2e4"); R(1, 6, 1, 8, "#bcb6ca");
+    if (d.seed % 2) { R(12, -3 + 3, 4, 6, "#2a2634"); R(12, 0, 4, 2, "#8a849a"); R(13, 2, 1, 1, "#d03828"); R(15, 3, 1, 3, "#18141e"); }
+  }, d.seed + 5);
+  ctx.drawImage(alt, x, y);
   for (const [dx, lean] of [[5, -2], [8, 0], [11, 2]]) {
-    for (let k = 0; k < 9; k++) { const sx = x + dx + Math.round(lean * k / 5); ctx.fillStyle = "#a06a3c"; ctx.fillRect(sx, y + 5 - k, 1, 1); ctx.fillStyle = "#5a3418"; ctx.fillRect(sx + 1, y + 5 - k, 1, 1); }
+    for (let k = 0; k < 9; k++) { const sx = x + dx + Math.round(lean * k / 5) + ((k * 3 + dx) % 5 === 0 ? 1 : 0); ctx.fillStyle = "#946038"; ctx.fillRect(sx, y + 5 - k, 1, 1); ctx.fillStyle = "#523016"; ctx.fillRect(sx + 1, y + 5 - k, 1, 1); }
     const tx = x + dx + Math.round(lean * 9 / 5), ty = y - 5, tw = (t >> 3) & 1;
     ctx.fillStyle = "#ff3a18"; ctx.fillRect(tx, ty, 2, 1); ctx.fillStyle = tw ? "#ffe080" : "#ff9040"; ctx.fillRect(tx, ty - 1, 1, 1); ctx.fillStyle = "rgba(255,120,50,.35)"; ctx.fillRect(tx - 1, ty - 2, 4, 4); ctx.fillStyle = "rgba(255,150,60,.5)"; ctx.fillRect(tx, ty + 1, 2, 1);
   }
-  // smoke: a ribbon that thickens into three soft puffs as it rises and cools from warm grey to pale
-  for (let s = 0; s < 2; s++) for (let k = 0; k < 46; k++) { const u = k / 46, ph = t / 26 + s * 2.2 + u * 6.5, sx = x + 8 + (s ? 3 : -1) + Math.sin(ph) * (1.2 + u * 5) + (G.wind || 0) * u * 10, sy = y - 7 - k * 0.9, puff = 0.5 + 0.5 * Math.sin(u * 18 - t / 14), w = 2 + Math.round(puff * 2 + u * 2); ctx.fillStyle = `rgba(${215 + u * 35},${213 + u * 35},${228 + u * 25},${0.5 * (1 - u * 0.8)})`; ctx.fillRect(Math.round(sx) - (w >> 1), Math.round(sy), w, 1); if (k % 3 === 0) { ctx.fillStyle = `rgba(250,250,255,${0.3 * (1 - u)})`; ctx.fillRect(Math.round(sx), Math.round(sy), 1, 1); } }
+  for (let s = 0; s < 2; s++) for (let k = 0; k < 46; k++) { const u = k / 46, ph = t / 26 + s * 2.2 + u * 6.5, sx = x + 8 + (s ? 3 : -1) + Math.sin(ph) * (1.2 + u * 5) + (G.wind || 0) * u * 10 + (((k * 5 + s) % 4) - 1.5) * 0.4, sy = y - 7 - k * 0.9, puff = 0.5 + 0.5 * Math.sin(u * 18 - t / 14), w = 2 + Math.round(puff * 2 + u * 2); ctx.fillStyle = `rgba(${200 + u * 35},${198 + u * 35},${208 + u * 25},${0.46 * (1 - u * 0.8)})`; ctx.fillRect(Math.round(sx) - (w >> 1), Math.round(sy), w, 1); }
 }
 // A cave mouth: a very dark opening in the rock with a ragged stone rim and hanging teeth
 function drawMouth(d, cx, cy, zone) {
@@ -1543,15 +1545,9 @@ function drawPebbles(cx, cy) {
 function drawFlies(cx, cy, lights) {
   for (const f of G.flies) {
     if (!f.alive) continue; const x = Math.round(f.x - cx), y = Math.round(f.y - cy), w = (G.frame + f.t) & 1, ph = ((G.frame + f.t) >> 1) & 3, dr = f.vx >= 0 ? 1 : -1;
-    if (f.kind === "fly") { ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(x - 1, y + 3, 4, 1); ctx.fillStyle = "#14141a"; ctx.fillRect(x, y, 3, 2); ctx.fillStyle = "#8a8aa0"; ctx.fillRect(x, y, 1, 1); ctx.fillStyle = "#c83030"; ctx.fillRect(x + (dr > 0 ? 2 : 0), y, 1, 1); ctx.fillStyle = "rgba(230,240,255,.85)"; ctx.fillRect(x - (w ? 1 : 0), y - 2, 2, 2); ctx.fillRect(x + 1 + (w ? 1 : 0), y - 2, 2, 2); ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillRect(x - (w ? 1 : 0), y - 2, 1, 1); }
-    else if (f.kind === "firefly") { const pul = 0.5 + 0.5 * Math.sin((G.frame + f.t) / 18); ctx.fillStyle = "#2a2418"; ctx.fillRect(x, y, 3, 2); ctx.fillStyle = "#6a5a30"; ctx.fillRect(x, y, 1, 1); ctx.fillStyle = `rgba(215,255,110,${0.6 + pul * 0.4})`; ctx.fillRect(x + (dr > 0 ? -2 : 3), y, 2, 2); ctx.fillStyle = "rgba(230,255,160,.22)"; ctx.fillRect(x - 4, y - 3, 10, 8); ctx.fillStyle = "rgba(235,255,170,.2)"; ctx.fillRect(x - 3, y - 2, 8, 6); ctx.fillStyle = "rgba(220,235,255,.7)"; ctx.fillRect(x, y - 2 - w, 2, 1); lights.push([f.x, f.y, 22 + pul * 6, 0.55, "200,255,110"]); }
-    else {   // dragonfly: 10 px long with four wings that beat through four frames
-      const x0 = dr > 0 ? x - 7 : x - 2; ctx.fillStyle = "#14506a"; ctx.fillRect(x0, y, 10, 2); ctx.fillStyle = "#3ab0d8"; ctx.fillRect(x0 + 1, y, 8, 1); ctx.fillStyle = "#0e3040"; for (const sx of [2, 4, 6]) ctx.fillRect(x0 + sx, y + 1, 1, 1);
-      const hx = dr > 0 ? x0 + 7 : x0; ctx.fillStyle = "#b8f4ff"; ctx.fillRect(hx, y - 1, 3, 4); ctx.fillStyle = "#ff6040"; ctx.fillRect(hx + (dr > 0 ? 2 : 0), y, 1, 1); ctx.fillStyle = "#fff"; ctx.fillRect(hx + (dr > 0 ? 0 : 2), y - 1, 1, 1);
-      const up = [-4, -3, -1, -3][ph], dn = [1, 2, 3, 2][ph];
-      ctx.fillStyle = "rgba(225,242,255,.85)"; ctx.fillRect(x0 + 2, y + up, 4, 2); ctx.fillRect(x0 + 5, y + up + 1, 4, 2); ctx.fillStyle = "rgba(190,220,250,.6)"; ctx.fillRect(x0 + 2, y + dn + 1, 4, 1); ctx.fillRect(x0 + 5, y + dn + 1, 4, 1); ctx.fillStyle = "#fff"; ctx.fillRect(x0 + 2, y + up, 1, 1); ctx.fillRect(x0 + 5, y + up + 1, 1, 1);
-      ctx.fillStyle = "#2a6a8a"; ctx.fillRect(x0 + 2, y + up + 2, 4, 1); ctx.fillRect(x0 + 5, y + up + 3, 4, 1);
-    }
+    if (f.kind === "fly") { ctx.fillStyle = "rgba(0,0,0,.2)"; ctx.fillRect(x, y + 3, 3, 1); ctx.fillStyle = "#101014"; ctx.fillRect(x, y, 2, 1); ctx.fillStyle = "#b02828"; ctx.fillRect(x + (dr > 0 ? 1 : 0), y, 1, 1); ctx.fillStyle = "rgba(210,220,235,.8)"; ctx.fillRect(x - (w ? 1 : 0), y - 1, 1, 1); ctx.fillRect(x + 1 + (w ? 1 : 0), y - 1, 1, 1); }
+    else if (f.kind === "firefly") { const pul = 0.5 + 0.5 * Math.sin((G.frame + f.t) / 18); ctx.fillStyle = "#241e12"; ctx.fillRect(x, y, 2, 1); ctx.fillStyle = `rgba(215,255,110,${0.6 + pul * 0.4})`; ctx.fillRect(x + (dr > 0 ? -1 : 2), y, 1, 1); ctx.fillStyle = "rgba(230,255,160,.22)"; ctx.fillRect(x - 4, y - 3, 10, 8); ctx.fillStyle = "rgba(235,255,170,.2)"; ctx.fillRect(x - 3, y - 2, 8, 6); ctx.fillStyle = "rgba(200,215,230,.6)"; ctx.fillRect(x, y - 1 - w, 1, 1); lights.push([f.x, f.y, 22 + pul * 6, 0.55, "200,255,110"]); }
+    else { const x0 = dr > 0 ? x - 4 : x - 1; ctx.fillStyle = "#12485e"; ctx.fillRect(x0, y, 7, 1); ctx.fillStyle = "#38a0c0"; ctx.fillRect(x0 + 1, y, 5, 1); ctx.fillStyle = "#a8e8f4"; ctx.fillRect(x0 + (dr > 0 ? 5 : 0), y - 1, 2, 2); ctx.fillStyle = "#e04830"; ctx.fillRect(x0 + (dr > 0 ? 6 : 0), y, 1, 1); const up = [-3, -2, -1, -2][ph]; ctx.fillStyle = "rgba(210,228,242,.8)"; ctx.fillRect(x0 + 1, y + up, 3, 1); ctx.fillRect(x0 + 4, y + up + 1, 3, 1); ctx.fillStyle = "rgba(160,190,215,.5)"; ctx.fillRect(x0 + 1, y + 1, 3, 1); }
   }
 }
 // ---- tiny bugs crawling on the walls, ceilings and floors ----
@@ -1648,7 +1644,7 @@ function chickenArt() {
   g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(3, 1, 1, 1); g.fillRect(4, 0, 1, 1);
   const id = g.getImageData(0, 0, 16, 16), a = id.data, solidAt = (x, y) => x >= 0 && y >= 0 && x < 16 && y < 16 && a[(y * 16 + x) * 4 + 3] > 200;
   g.fillStyle = "#2a1206"; for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (!solidAt(x, y) && (solidAt(x - 1, y) || solidAt(x + 1, y) || solidAt(x, y - 1) || solidAt(x, y + 1))) g.fillRect(x, y, 1, 1);
-  Art.cache.set("chicken2", c); return c;
+  gritCanvas(c, 77, 0.1, 0.08, 0.92); Art.cache.set("chicken2", c); return c;
 }
 const itemArt = name => name === "chicken" ? chickenArt() : Art.item(name);
 function updateHunger() {
@@ -1674,23 +1670,44 @@ function enemyArt(type, frame, dir, zone) {
   const c = mk(32, 32), g = c.getContext("2d");
   if (dir < 0) { g.translate(32, 0); g.scale(-1, 1); }
   if (type === "hornet") hornetArt(g, frame); else slimeArt(g, type === "slime", frame, zone);
+  gritCanvas(c, key.length * 31 + zone * 7 + (frame.length ? frame.charCodeAt(0) : 0), type === "hornet" ? 0.08 : 0.1, 0.06, 0.92);
   const out = { img: c, ox: 0, oy: 0 }; Art.cache.set(key, out); return out;
 }
 function slimeArt(g, big, frame, zone) {
-  const [dk, md, lt] = zone === 6 ? ["#7a2010", "#f05030", "#ffb090"] : SLIME_COL[zone], W0 = big ? 28 : 14, H0 = big ? 17 : 9;
+  const [dk0, md0, lt0] = zone === 6 ? ["#7a2010", "#f05030", "#ffb090"] : SLIME_COL[zone], dk = shade(dk0, 0.8), md = shade(md0, 0.82), lt = shade(lt0, 0.82), W0 = big ? 28 : 14, H0 = big ? 17 : 9;
   const sq = frame === "squash" ? 0.66 : frame === "leap" ? 1.28 : frame === "m1" ? 1.07 : frame === "m2" ? 0.93 : 1, wq = frame === "squash" ? 1.24 : frame === "leap" ? 0.84 : 1;
-  const H = Math.round(H0 * sq), W = Math.round(W0 * wq), ox = (32 - W) >> 1, oy = 32 - H, inside = (x, y) => { const nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H; return nx * nx / (1 + 0.12 * (y / H)) + ny * ny <= 1 && y >= 0 && y < H && x >= 0 && x < W; };
-  g.fillStyle = "rgba(0,0,0,.4)"; g.fillRect(ox - 3, 31, W + 6, 1);   // contact shadow, wider than the body so it shows
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+  const H = Math.round(H0 * sq), W = Math.round(W0 * wq), ox = (32 - W) >> 1, oy = 32 - H;
+  // lumpy, uneven dome: a few pseudopod bumps along the top
+  const bumps = big ? [[0.22, 3], [0.5, 4], [0.78, 2]] : [[0.3, 2], [0.7, 1]];
+  const inside = (x, y) => { const nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H; if (!(nx * nx / (1 + 0.12 * (y / H)) + ny * ny <= 1 && y >= 0 && y < H && x >= 0 && x < W)) { for (const [p, h] of bumps) { const bx = Math.round(W * p); if (Math.abs(x - bx) <= 1 && y >= -h && y < 2 && ((y >= 0 && y < 2) || Math.abs(x - bx) < 1 || y > -h + 1)) return Math.abs(x - bx) + (y < 0 ? -y * 0.5 : 0) <= 1.5; } return false; } return true; };
+  g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(ox - 3, 31, W + 6, 1);
+  const oy2 = oy - 0;
+  for (let y = -4; y < H; y++) for (let x = 0; x < W; x++) {
     if (!inside(x, y)) continue; const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1), nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H;
-    const rim = !edge && (!inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y + 2)) && y > H * 0.45;
-    g.fillStyle = edge ? dk : rim ? shade(md, 0.7) : (nx < -0.25 && ny < -0.45) ? lt : y > H * 0.78 ? shade(md, 0.8) : nx > 0.45 ? shade(md, 0.88) : md; g.fillRect(ox + x, oy + y, 1, 1);
+    const rim = !edge && (!inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y + 2)) && y > H * 0.4;
+    g.fillStyle = edge ? shade(dk0, 0.55) : rim ? shade(md, 0.6) : (nx < -0.3 && ny < -0.55) ? lt : y > H * 0.7 ? shade(md, 0.66) : nx > 0.4 ? shade(md, 0.78) : md; g.fillRect(ox + x, oy2 + y, 1, 1);
   }
-  g.fillStyle = "#fff"; const hx = ox + Math.round(W * 0.24), hy = oy + Math.round(H * 0.2); g.fillRect(hx, hy, big ? 4 : 2, big ? 2 : 1); g.fillRect(hx - 1, hy + 1, 1, big ? 2 : 1);
-  if (big) { g.fillStyle = lt; g.fillRect(ox + Math.round(W * 0.66), oy + Math.round(H * 0.28), 2, 2); g.fillRect(ox + Math.round(W * 0.72), oy + Math.round(H * 0.5), 1, 1); }
-  const ey = oy + Math.round(H * 0.46), ex = ox + Math.round(W * 0.5) + (frame === "leap" ? 1 : 0), gap = big ? 5 : 3, ew = big ? 3 : 2, eh = big ? 4 : 3;
-  g.fillStyle = "#101820"; g.fillRect(ex - gap, ey, ew, eh); g.fillRect(ex + gap - ew + 1, ey, ew, eh); g.fillStyle = "#fff"; g.fillRect(ex - gap, ey, 1, 1); g.fillRect(ex + gap - ew + 1, ey, 1, 1); if (big) { g.fillRect(ex - gap + 1, ey + 1, 1, 1); g.fillRect(ex + gap - ew + 2, ey + 1, 1, 1); }
-  if (big) { g.fillStyle = dk; g.fillRect(ex - 2, ey + 6, 5, 1); g.fillRect(ex - 3, ey + 5, 1, 1); g.fillRect(ex + 3, ey + 5, 1, 1); }
+  // corroded prey inside the body: a pale bone and a few dark bubbles
+  if (big) { g.fillStyle = "rgba(235,228,205,.8)"; g.fillRect(ox + Math.round(W * 0.66), oy + Math.round(H * 0.62), 5, 1); g.fillRect(ox + Math.round(W * 0.66) - 1, oy + Math.round(H * 0.62) - 1, 1, 3); g.fillRect(ox + Math.round(W * 0.66) + 5, oy + Math.round(H * 0.62) - 1, 1, 3); g.fillStyle = shade(dk0, 0.5); for (const [a, b] of [[0.18, 0.7], [0.4, 0.78], [0.82, 0.45]]) g.fillRect(ox + Math.round(W * a), oy + Math.round(H * b), 2, 2); }
+  g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(ox + Math.round(W * 0.24), oy + Math.round(H * 0.18), big ? 3 : 2, 1);
+  // eyes: dark sockets with hot slit pupils under a slanted, angry brow
+  const ey = oy + Math.round(H * 0.4), ex = ox + Math.round(W * 0.5) + (frame === "leap" ? 1 : 0), gap = big ? 5 : 3, ew = big ? 4 : 3, eye = zone === 3 || zone === 5 ? "#ff3a30" : "#ffe03a";
+  for (const sd of [-1, 1]) {
+    const x0 = sd < 0 ? ex - gap - 1 : ex + gap - ew + 2;
+    g.fillStyle = "#0c0608"; g.fillRect(x0, ey, ew, big ? 3 : 2);
+    g.fillStyle = eye; g.fillRect(x0 + (sd < 0 ? 1 : 0), ey + 1, ew - 1, 1); if (big) { g.fillStyle = "#fff6c0"; g.fillRect(x0 + 1 + (sd < 0 ? 0 : 1), ey + 1, 1, 1); }
+    g.fillStyle = shade(dk0, 0.45); for (let k = 0; k < ew + 1; k++) g.fillRect(x0 - (sd < 0 ? 0 : 1) + k, ey - 1 + (sd < 0 ? Math.floor(k / 2) : Math.floor((ew - k) / 2)), 1, 1);   // brow slanting down toward the nose
+  }
+  // jagged mouth with fangs
+  const my = oy + Math.round(H * (big ? 0.7 : 0.72));
+  if (big) {
+    g.fillStyle = "#12060a"; g.fillRect(ex - 6, my, 13, 3); g.fillStyle = "#e8e2c8";
+    for (let k = 0; k < 6; k++) { g.fillRect(ex - 5 + k * 2, my, 1, 1 + (k % 2)); }
+    for (let k = 0; k < 5; k++) { g.fillRect(ex - 4 + k * 2 + 1 - 1, my + 2, 1, 1); }
+    g.fillStyle = "#b02830"; g.fillRect(ex - 2, my + 1, 4, 1);
+  } else { g.fillStyle = "#12060a"; g.fillRect(ex - 3, my, 7, 2); g.fillStyle = "#e8e2c8"; g.fillRect(ex - 2, my, 1, 2); g.fillRect(ex + 2, my, 1, 2); }
+  // acid drips down the sides
+  g.fillStyle = md; if (big) { g.fillRect(ox + 2, oy + H - 1, 1, 1); g.fillRect(ox + W - 4, oy + H - 1, 1, 1); }
   if (frame === "m2" || frame === "squash") { g.fillStyle = md; g.fillRect(ox + 2, 31, 3, 1); g.fillRect(ox + W - 5, 31, 3, 1); }
 }
 function hornetArt(g, frame) {
@@ -1759,6 +1776,29 @@ function drawVine(g, x, y, len, seed, t, zone) {
 
 
 
+
+
+
+
+
+
+
+function gritCanvas(c, seed, edgeP, speckP, dark) {
+  edgeP = edgeP == null ? 0.13 : edgeP; speckP = speckP == null ? 0.07 : speckP; dark = dark == null ? 0.9 : dark;
+  const g = c.getContext("2d"), w = c.width, h = c.height, id = g.getImageData(0, 0, w, h), a = id.data, S = rng((seed * 2654435761) >>> 0), op = (x, y) => x >= 0 && y >= 0 && x < w && y < h && a[(y * w + x) * 4 + 3] > 40, del = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4; if (a[i + 3] < 200) continue;
+    const edge = !op(x - 1, y) || !op(x + 1, y) || !op(x, y - 1) || !op(x, y + 1), r = S();
+    if (edge && r < edgeP) { del.push(i); continue; }
+    if (r < speckP) { a[i] *= 0.5; a[i + 1] *= 0.5; a[i + 2] *= 0.5; }
+    else if (r < speckP + 0.025) { a[i] = Math.min(255, a[i] * 1.25 + 14); a[i + 1] = Math.min(255, a[i + 1] * 1.25 + 14); a[i + 2] = Math.min(255, a[i + 2] * 1.25 + 14); }
+    else { a[i] *= dark; a[i + 1] *= dark; a[i + 2] *= dark; }
+  }
+  for (const i of del) a[i + 3] = 0;
+  g.putImageData(id, 0, 0); return c;
+}
+
+function baked(key, w, h, fn, seed) { const BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key]; const c = mk(w, h), g = c.getContext("2d"); fn((a, b, ww, hh, col) => { g.fillStyle = col; g.fillRect(a, b, ww, hh); }, g); gritCanvas(c, seed, 0.18, 0.1, 0.92); BK[key] = c; return c; }
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
