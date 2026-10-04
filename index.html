@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.20">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.20">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.21">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.21">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.20</title>
+<title>Black Tiger: The Depths v0.21</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -131,7 +131,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.20";   // bump by 0.01 with every change
+const VERSION = "0.21";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1292,7 +1292,7 @@ function draw() {
     ctx.drawImage(itemArt(art), Math.round(it.x) - cx, Math.round(it.y) - cy + bob);
   }
   for (const t of G.traps) if (t.state !== "gone") put(Art.obj("rock", "idle", 0, zone), t.x, t.y);
-  for (const e of G.enemies) if (e.alive && e.frame && !(e.state === "die" && e.t > 40 && (G.frame & 2)) && !(e.hurtT && (G.frame & 2))) { if (e.type === "hornet") { ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(Math.round(e.x + 16 - cx), Math.round(e.y + 17 - cy), 15, 9, 0, 0, 7); ctx.fill(); } put(ENEMY_ART[e.type] ? enemyArt(e.type, e.frame, e.dir, zone) : Art.obj(e.type, e.frame, e.dir, zone), e.x, e.y); }
+  for (const e of G.enemies) if (e.alive && e.frame && !(e.state === "die" && e.t > 40 && (G.frame & 2)) && !(e.hurtT && (G.frame & 2))) { if (e.type === "hornet") { ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(Math.round(e.x + 16 - cx), Math.round(e.y + 15 - cy), 17, 11, 0, 0, 7); ctx.fill(); } else if (e.type === "slime" || e.type === "slimelet") { ctx.fillStyle = "rgba(0,0,0,.32)"; ctx.fillRect(Math.round(e.x + 2 - cx), Math.round(e.y + 31 - cy), 28, 1); } put(ENEMY_ART[e.type] ? enemyArt(e.type, e.frame, e.dir, zone) : Art.obj(e.type, e.frame, e.dir, zone), e.x, e.y); }
   for (const b of G.shots) put(Art.obj(b.art, "idle", 0, zone), b.x, b.y);
   drawPebbles(cx, cy); drawFlies(cx, cy, lights); drawGauges(cx, cy);
   const h = G.hero;
@@ -1682,13 +1682,13 @@ function slimeArt(g, big, frame, zone) {
   const [dk0, md0, lt0] = zone === 6 ? ["#7a2010", "#f05030", "#ffb090"] : SLIME_COL[zone], ol = shade(dk0, 0.6), md = shade(md0, 0.9), lt = shade(lt0, 0.92), W0 = big ? 28 : 14, H0 = big ? 17 : 9;
   const sq = frame === "squash" ? 0.8 : frame === "leap" ? 1.28 : frame === "m1" ? 1.07 : frame === "m2" ? 0.93 : 1, wq = frame === "squash" ? 1.24 : frame === "leap" ? 0.84 : 1;
   const H = Math.round(H0 * sq), W = Math.round(W0 * wq), ox = (32 - W) >> 1, oy = 32 - H;
-  const bumps = big ? [[0.22, 3], [0.5, 4], [0.78, 2]] : [[0.2, 1], [0.5, 2], [0.8, 1]];
+  const bumps = big ? [[0.19, 3], [0.46, 5], [0.77, 2]] : [[0.16, 1], [0.44, 2], [0.79, 1]];
   const inside = (x, y) => { const nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H; if (!(nx * nx / (1 + 0.12 * (y / H)) + ny * ny <= 1 && y >= 0 && y < H && x >= 0 && x < W)) { for (const [p, h] of bumps) { const bx = Math.round(W * p); if (Math.abs(x - bx) <= 1 && y >= -h && y < 2 && ((y >= 0 && y < 2) || Math.abs(x - bx) < 1 || y > -h + 1)) return Math.abs(x - bx) + (y < 0 ? -y * 0.5 : 0) <= 1.5; } return false; } return true; };
   g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(ox - 3, 31, W + 6, 1);
   for (let y = -4; y < H; y++) for (let x = 0; x < W; x++) {
     if (!inside(x, y)) continue; const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1), nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H;
     let col;
-    if (edge) col = (!inside(x - 1, y) && y > H * 0.35) ? shade(md0, 0.9 * 1.15) : ol;      // a lit rim down the lower left keeps the volume
+    if (edge) col = (!inside(x - 1, y) && y > H * (big ? 0.35 : 0.1)) ? shade(md0, 0.9 * 1.15) : ol;      // a lit rim down the lower left keeps the volume
     else if (nx < -0.3 && ny < -0.55) col = lt; else if (nx < -0.05 && ny < -0.15) col = shade(md0, 0.9 * 1.14); else if (y > H * 0.74) col = shade(md0, 0.9 * 0.82); else if (nx > 0.4) col = shade(md0, 0.9 * 0.88); else col = md;
     g.fillStyle = col; g.fillRect(ox + x, oy + y, 1, 1);
   }
@@ -1699,17 +1699,17 @@ function slimeArt(g, big, frame, zone) {
     for (const sd of [-1, 1]) {
       const x0 = sd < 0 ? ex - 6 : ex + 3;
       g.fillStyle = "#0c0608"; g.fillRect(x0, ey, 4, 3); g.fillStyle = eye; g.fillRect(x0 + (sd < 0 ? 1 : 0), ey + 1, 3, 1); g.fillStyle = "#fff6c0"; g.fillRect(x0 + (sd < 0 ? 1 : 2), ey + 1, 1, 1);
-      g.fillStyle = shade(dk0, 0.4); for (let k = 0; k < 5; k++) g.fillRect(x0 - (sd < 0 ? 0 : 1) + k, ey - 1 + (sd < 0 ? Math.floor(k / 2) : Math.floor((4 - k) / 2)), 1, 1);
+      g.fillStyle = shade(dk0, 0.4); for (let k = 0; k < 5; k++) g.fillRect(x0 - (sd < 0 ? 0 : 1) + k, ey - 2 + (sd < 0 ? Math.floor(k / 2) : Math.floor((4 - k) / 2)), 1, 2);
     }
     const my = oy + Math.round(H * 0.7);
-    g.fillStyle = "#12060a"; g.fillRect(ex - 6, my, 13, 3); g.fillStyle = "#e0d8bc"; for (let k = 0; k < 6; k++) g.fillRect(ex - 5 + k * 2, my, 1, 1 + (k % 2)); for (let k = 0; k < 5; k++) g.fillRect(ex - 4 + k * 2, my + 2, 1, 1);
+    g.fillStyle = shade(dk0, 0.38); g.fillRect(ex - 6, my, 13, 3); g.fillStyle = "#12060a"; g.fillRect(ex - 5, my + 1, 11, 1); g.fillStyle = "#e0d8bc"; for (let k = 0; k < 6; k++) g.fillRect(ex - 5 + k * 2, my, 1, 1 + (k % 2)); for (let k = 0; k < 5; k++) g.fillRect(ex - 4 + k * 2, my + 2, 1, 1);
     g.fillStyle = "#a82430"; g.fillRect(ex - 2, my + 1, 4, 1);
     // a gnawed bone jammed in the corner of the mouth: angled, two knobs, one shadow pixel
     g.fillStyle = "#d8d0b4"; g.fillRect(ex + 5, my - 1, 2, 2); g.fillRect(ex + 7, my - 2, 1, 1); g.fillRect(ex + 8, my - 3, 2, 2); g.fillRect(ex + 9, my - 4, 1, 1); g.fillStyle = "#8a8068"; g.fillRect(ex + 6, my + 1, 1, 1); g.fillRect(ex + 8, my - 1, 1, 1);
     g.fillStyle = shade(dk0, 0.5); for (const [a, b] of [[0.18, 0.7], [0.4, 0.82], [0.82, 0.45]]) g.fillRect(ox + Math.round(W * a), oy + Math.round(H * b), 2, 2);
   } else {
     // slimelet: two hot red eye pixels, one brow line, one small spike. Nothing finer, so it reads at 1x.
-    g.fillStyle = "#ff6a50"; g.fillRect(ex - 3, ey + 1, 2, 2); g.fillRect(ex + 1, ey + 1, 2, 2); g.fillStyle = "#ffd0c0"; g.fillRect(ex - 3, ey + 1, 1, 1); g.fillRect(ex + 1, ey + 1, 1, 1); g.fillStyle = shade(dk0, 0.35); g.fillRect(ex - 4, ey - 1, 1, 1); g.fillRect(ex - 3, ey, 2, 1); g.fillRect(ex - 1, ey + 1, 1, 1); g.fillRect(ex + 3, ey - 1, 1, 1); g.fillRect(ex + 1, ey, 2, 1); g.fillRect(ex, ey + 1, 1, 1);
+    g.fillStyle = "#ff8a70"; g.fillRect(ex - 3, ey + 1, 2, 2); g.fillRect(ex + 1, ey + 1, 2, 2); g.fillStyle = "#ffd0c0"; g.fillRect(ex - 3, ey + 1, 1, 1); g.fillRect(ex + 1, ey + 1, 1, 1); g.fillStyle = shade(dk0, 0.35); g.fillRect(ex - 4, ey - 1, 1, 1); g.fillRect(ex - 3, ey, 2, 1); g.fillRect(ex - 1, ey + 1, 1, 1); g.fillRect(ex + 3, ey - 1, 1, 1); g.fillRect(ex + 1, ey, 2, 1); g.fillRect(ex, ey + 1, 1, 1); g.fillRect(ex - 3, ey - 1, 2, 1); g.fillRect(ex + 1, ey - 1, 2, 1);
     g.fillStyle = "#12060a"; g.fillRect(ex - 2, ey + 4, 4, 1);
   }
   g.clearRect(ox + 4, 31, 2, 1); g.clearRect(ox + W - 7, 31, 1, 1); if (big) { g.clearRect(ox + Math.round(W * 0.45), 31, 2, 1); g.fillStyle = shade(md0, 0.9 * 0.7); g.fillRect(ox + 3, 31, 1, 1); g.fillRect(ox + W - 4, 31, 1, 1); g.fillRect(ox + Math.round(W * 0.7), oy + H - 1, 1, 1); g.fillStyle = shade(dk0, 0.45); g.fillRect(ox + Math.round(W * 0.7), oy + Math.round(H * 0.5), 3, 2); } else { g.clearRect(ox, 31, 1, 1); g.fillStyle = shade(dk0, 0.45); g.fillRect(ox + 2, oy + Math.round(H * 0.6), 2, 1); }
@@ -1718,7 +1718,7 @@ function slimeArt(g, big, frame, zone) {
 function hornetArt(g, frame) {
   const k = "f0 f1 f2 f3".split(" ").indexOf(frame), pose = frame === "dive" ? 4 : [0, 1, 2, 3][k < 0 ? 0 : k], bob = frame === "dive" ? 0 : [0, 1, 0, 1][k < 0 ? 0 : k], tuck = pose === 2, dive = frame === "dive";
   g.save(); g.translate(0, bob);
-  const wingAng = [[-1.5, -1.2], [-0.8, -0.5], [0.5, 0.75], [-0.1, 0.25], [-0.2, 0.0]][pose];
+  const wingAng = [[-1.5, -1.2], [-0.8, -0.5], [0.5, 0.75], [-0.1, 0.25], [0.7, 0.95]][pose];
   const wing = (x, y, rot, rx, ry, a, seed) => epx(g, x, y, rx, ry, rot, (u, v) => {
     const d2 = u * u + v * v;
     if (u > 0.25 && Math.sin(u * 19 + v * 7 + seed) > 0.8) return "#141c24";   // chewed notches
@@ -1733,7 +1733,8 @@ function hornetArt(g, frame) {
     return band ? (lit ? "#46341f" : "#1a120a") : (lit ? "#e8a830" : dk ? "#86500f" : "#c4781c");
   });
   g.fillStyle = "#14100e"; g.fillRect(3, 22, 2, 1); g.fillRect(2, 23, 2, 1); g.fillStyle = "#2c2c34"; g.fillRect(1, 24, 2, 1); g.fillRect(1, 25, 1, 2); g.fillRect(0, 26, 1, 2); g.fillStyle = "#e8e8e0"; g.fillRect(0, 28, 1, 1); g.fillStyle = "#2c2c34"; g.fillRect(2, 26, 1, 1); g.fillRect(2, 25, 1, 1);   // a four-pixel barbed spike
-  g.fillStyle = "#b8f040"; g.fillRect(0, 29, 2, 2); g.fillStyle = "#f4ffb0"; g.fillRect(0, 29, 1, 1);   // venom
+  const vy = tuck ? 30 : 29; g.fillStyle = "#b8f040"; g.fillRect(0, vy, 2, 2); g.fillStyle = "#f4ffb0"; g.fillRect(0, vy, 1, 1);   // venom
+  g.fillStyle = "#f4c448"; for (const [x, y] of [[3, 17], [4, 15], [5, 14], [7, 13], [9, 13]]) g.fillRect(x, y, 1, 1);   // lit top-left rim of the abdomen
   epx(g, 19.5, 16, 5.2, 5, 0, (u, v) => (u * u + v * v > 0.8 ? "#1a0e06" : (u + v < -0.7) ? "#d89a38" : u < -0.2 && v < 0.2 ? "#8a5418" : v > 0.45 ? "#2e180a" : "#4e2c0c"));
   for (const [x, y] of [[16, 12], [18, 11], [21, 12], [23, 13], [15, 15], [18, 21], [22, 21]]) { g.fillStyle = "#d8a048"; g.fillRect(x, y, 1, 1); g.fillStyle = "#1a0e06"; g.fillRect(x, y - 1, 1, 1); }
   g.fillStyle = "#050302"; g.fillRect(24, 11, 1, 10);   // dark seam between thorax and head
@@ -1874,6 +1875,8 @@ function outlineCanvas(c, col) {
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!op(x, y) && (op(x - 1, y) || op(x + 1, y) || op(x, y - 1) || op(x, y + 1))) add.push([x, y]);
   g.fillStyle = col; for (const [x, y] of add) g.fillRect(x, y, 1, 1);
 }
+
+
 
 
 
