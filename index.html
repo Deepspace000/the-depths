@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.19">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.19">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.20">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.20">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.19</title>
+<title>Black Tiger: The Depths v0.20</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -131,7 +131,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.19";   // bump by 0.01 with every change
+const VERSION = "0.20";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -174,7 +174,7 @@ const capZenny = (src, v) => (src === "chest" || src === "guardian") ? v : Math.
 const EMPTY = 0, SOLID = 1, LEDGE = 2, CHAIN = 3, LEDGECHAIN = 4, WATER = 5, BRIDGE = 6;
 // Atmosphere settings
 const LOOK = {
-  caveDim: 0.985, caveHeroLight: 34,   // very dark cave rooms
+  caveDim: 0.985, caveHeroLight: 34, hallLit: 0.12,   // very dark cave rooms
   darkLit: 0.70,       // how dark a room with torches is (0 = no darkness, 1 = black)
   darkDim: 0.88,       // how dark an unlit room is
   heroLight: 78,       // radius of the light around the hero in lit rooms (px)
@@ -576,6 +576,7 @@ function generateWorld(seed) {
       if (y > r.ty + 3) for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) if (get(x, y) === EMPTY) set(x, y, BRIDGE);
     }
   }
+  { const r0 = rooms[0]; for (let y = r0.ty + 1; y < r0.ty + r0.th - 1; y++) for (let x = r0.tx + 1; x < r0.tx + r0.tw - 1; x++) set(x, y, EMPTY); }   // the entrance hall is a flat, empty room
   // ---- 4d. treasure, shrines, traps and enemies ----
   const items = [], spawns = [], traps = [];
   const standSpots = r => { const out = []; for (let y = r.ty + 1; y < r.ty + r.th - 1; y++) for (let x = r.tx + 2; x < r.tx + r.tw - 2; x++) { const b = get(x, y + 1); if (get(x, y) === EMPTY && get(x, y - 1) === EMPTY && (b === SOLID || b === LEDGE)) out.push([x, y]); } return out; };
@@ -622,6 +623,7 @@ function generateWorld(seed) {
       }
     }
   }
+  for (let i = items.length - 1; i >= 0; i--) if (items[i].id < 100 && items[i].id !== 52) items.splice(i, 1);   // nothing in the first room but its shrine
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
   const decor = [];
   for (const r of rooms) {
@@ -650,6 +652,7 @@ function generateWorld(seed) {
   const WZ = [1.2, 0.8, 1.3, 0.5, 0.9, 0.4, 0.3, 0.6], SZ = [0.35, 0.30, 0.25, 0.20, 0.05, 0.12, 0, 0.08];
   const standOn = (x, y) => { const b = get(x, y + 1); return get(x, y) === EMPTY && (b === SOLID || b === LEDGE); };
   for (const r of rooms) {
+    if (r.id === 0) { r.pebbles = []; r.air = []; r.flies = 0; r.fireflies = 0; r.dragons = 0; r.bugRuns = []; r.sun = []; r.hasWater = false; const fl = r.ty + r.th - 1; for (let x = r.tx + 4; x < r.tx + r.tw - 3; x += 5) decor.push({ kind: 'torch', x: x * TS, y: (fl - 4) * TS, seed: x }); continue; }
     const cells = []; for (let y = r.ty + 1; y < r.ty + r.th - 1; y++) for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) cells.push([x, y]);
     r.hasWater = cells.some(([x, y]) => get(x, y) === WATER);
     let stands = cells.filter(([x, y]) => standOn(x, y) && get(x, y - 1) === EMPTY);
@@ -715,7 +718,7 @@ function generateWorld(seed) {
   for (const r of rooms) r.decor = [];
   for (const d of decor) {
     if (d.rooms) { for (const id of d.rooms) rooms[id].decor.push(d); continue; }
-    const px = d.pts ? d.pts[0][0] : d.x, py = d.pts ? d.pts[0][1] : d.y, rr = rooms[roomOf[Math.floor(py / (CH * TS)) * GW + Math.floor(px / (CW * TS))]]; if (rr) rr.decor.push(d);
+    const px = d.pts ? d.pts[0][0] : d.x, py = d.pts ? d.pts[0][1] : d.y, rr = rooms[roomOf[Math.floor(py / (CH * TS)) * GW + Math.floor(px / (CW * TS))]]; if (rr && !(rr.id === 0 && d.kind !== "torch")) rr.decor.push(d);   // the first room keeps only its torches
   }
   const st = rooms[0];
   return { seed, tiles: T, roomOf, rooms, items, spawns, traps, decor, start: { x: (st.tx + st.tw / 2) * TS - 16, y: (st.ty + st.th - 1) * TS - 32 } };
@@ -919,7 +922,7 @@ function updateItems() {
     if (it.gone || it.x < r.tx * TS - 32 || it.x > (r.tx + r.tw) * TS + 32 || it.y < r.ty * TS - 32 || it.y > (r.ty + r.th) * TS + 32) continue;
     if (it.falling) { it.vy += 0.2; it.y += it.vy; const c = Math.floor((it.x + 8) / TS), rr = Math.floor((it.y + 16) / TS); if (it.vy > 0 && (solid(c, rr) || oneway(c, rr))) { it.y = rr * TS - 16; it.falling = false; } }
     const big = it.kind === "chest" || it.kind === "frozen";
-    const box = big ? { x: it.x + 4, y: it.y + 8, w: 24, h: 24 } : { x: it.x + 2, y: it.y + 2, w: 12, h: 13 };
+    const box = big ? { x: it.x + 4, y: it.y + 8, w: 24, h: 24 } : it.kind === 'shrine' ? { x: it.x - 4, y: it.y - 8, w: 24, h: 24 } : { x: it.x + 2, y: it.y + 2, w: 12, h: 13 };
     if (it.kind === "secret") {
       if (fb && overlap(fb, { x: it.x, y: it.y, w: 16, h: 16 })) {
         it.gone = true; G.got.add(it.id); burst(it.x + 8, it.y + 8, "#ffe080"); popup(it.x + 8, it.y - 4, "Secret!");
@@ -1282,13 +1285,14 @@ function draw() {
     if (it.kind === "chest") { put(Art.obj("chest", !it.open ? "shut" : it.t < 10 ? "open1" : it.t < 30 ? "open2" : "open", 0, zone), it.x, it.y); continue; }
     if (it.kind === "frozen") { const f = it.thawed ? ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3] : it.thawT ? ((it.thawT >> 2) & 1 ? "stone" : "man0") : "stone"; put(Art.obj("frozen", f, 0, zone), it.x, it.y); continue; }
     if (it.kind === "pot" || it.kind === "key") { put(Art.obj(it.kind, "idle", 0, zone), it.x + (it.shake ? Math.round(Math.sin(it.shake * 1.7) * 2) : 0), it.y); continue; }
+    if (it.kind === "shrine") { drawShrine(it, cx, cy, lights); continue; }
     if (it.kind === "treasure") { put(Art.obj(it.art, "idle", 0, zone), it.x, it.y); continue; }
     const bob = it.kind === "coin" && !it.falling ? Math.round(Math.sin((G.frame + it.x) / 12) * 1.5) : 0;
     const art = it.kind === "shrine" ? ((G.frame >> 3) & 1 ? "shrineA" : "shrineB") : it.art;
     ctx.drawImage(itemArt(art), Math.round(it.x) - cx, Math.round(it.y) - cy + bob);
   }
   for (const t of G.traps) if (t.state !== "gone") put(Art.obj("rock", "idle", 0, zone), t.x, t.y);
-  for (const e of G.enemies) if (e.alive && e.frame && !(e.state === "die" && e.t > 40 && (G.frame & 2)) && !(e.hurtT && (G.frame & 2))) put(ENEMY_ART[e.type] ? enemyArt(e.type, e.frame, e.dir, zone) : Art.obj(e.type, e.frame, e.dir, zone), e.x, e.y);
+  for (const e of G.enemies) if (e.alive && e.frame && !(e.state === "die" && e.t > 40 && (G.frame & 2)) && !(e.hurtT && (G.frame & 2))) { if (e.type === "hornet") { ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.ellipse(Math.round(e.x + 16 - cx), Math.round(e.y + 17 - cy), 15, 9, 0, 0, 7); ctx.fill(); } put(ENEMY_ART[e.type] ? enemyArt(e.type, e.frame, e.dir, zone) : Art.obj(e.type, e.frame, e.dir, zone), e.x, e.y); }
   for (const b of G.shots) put(Art.obj(b.art, "idle", 0, zone), b.x, b.y);
   drawPebbles(cx, cy); drawFlies(cx, cy, lights); drawGauges(cx, cy);
   const h = G.hero;
@@ -1670,61 +1674,75 @@ function enemyArt(type, frame, dir, zone) {
   const c = mk(32, 32), g = c.getContext("2d");
   if (dir < 0) { g.translate(32, 0); g.scale(-1, 1); }
   if (type === "hornet") hornetArt(g, frame); else slimeArt(g, type === "slime", frame, zone);
-  gritCanvas(c, key.length * 31 + zone * 7 + (frame.length ? frame.charCodeAt(0) : 0), type === "hornet" ? 0.08 : 0.1, 0.06, 0.92);
+  if (type === "hornet") outlineCanvas(c, "#0a0604");
+  gritCanvas(c, key.length * 31 + zone * 7 + (frame.length ? frame.charCodeAt(0) : 0), type === "hornet" ? 0.06 : 0.1, type === "hornet" ? 0.05 : 0.04, type === "hornet" ? 0.95 : 0.98);
   const out = { img: c, ox: 0, oy: 0 }; Art.cache.set(key, out); return out;
 }
 function slimeArt(g, big, frame, zone) {
-  const [dk0, md0, lt0] = zone === 6 ? ["#7a2010", "#f05030", "#ffb090"] : SLIME_COL[zone], dk = shade(dk0, 0.8), md = shade(md0, 0.82), lt = shade(lt0, 0.82), W0 = big ? 28 : 14, H0 = big ? 17 : 9;
-  const sq = frame === "squash" ? 0.66 : frame === "leap" ? 1.28 : frame === "m1" ? 1.07 : frame === "m2" ? 0.93 : 1, wq = frame === "squash" ? 1.24 : frame === "leap" ? 0.84 : 1;
+  const [dk0, md0, lt0] = zone === 6 ? ["#7a2010", "#f05030", "#ffb090"] : SLIME_COL[zone], ol = shade(dk0, 0.6), md = shade(md0, 0.9), lt = shade(lt0, 0.92), W0 = big ? 28 : 14, H0 = big ? 17 : 9;
+  const sq = frame === "squash" ? 0.8 : frame === "leap" ? 1.28 : frame === "m1" ? 1.07 : frame === "m2" ? 0.93 : 1, wq = frame === "squash" ? 1.24 : frame === "leap" ? 0.84 : 1;
   const H = Math.round(H0 * sq), W = Math.round(W0 * wq), ox = (32 - W) >> 1, oy = 32 - H;
-  // lumpy, uneven dome: a few pseudopod bumps along the top
-  const bumps = big ? [[0.22, 3], [0.5, 4], [0.78, 2]] : [[0.3, 2], [0.7, 1]];
+  const bumps = big ? [[0.22, 3], [0.5, 4], [0.78, 2]] : [[0.2, 1], [0.5, 2], [0.8, 1]];
   const inside = (x, y) => { const nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H; if (!(nx * nx / (1 + 0.12 * (y / H)) + ny * ny <= 1 && y >= 0 && y < H && x >= 0 && x < W)) { for (const [p, h] of bumps) { const bx = Math.round(W * p); if (Math.abs(x - bx) <= 1 && y >= -h && y < 2 && ((y >= 0 && y < 2) || Math.abs(x - bx) < 1 || y > -h + 1)) return Math.abs(x - bx) + (y < 0 ? -y * 0.5 : 0) <= 1.5; } return false; } return true; };
   g.fillStyle = "rgba(0,0,0,.45)"; g.fillRect(ox - 3, 31, W + 6, 1);
-  const oy2 = oy - 0;
   for (let y = -4; y < H; y++) for (let x = 0; x < W; x++) {
     if (!inside(x, y)) continue; const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1), nx = (x + 0.5 - W / 2) / (W / 2), ny = (y + 0.5 - H) / H;
-    const rim = !edge && (!inside(x - 2, y) || !inside(x + 2, y) || !inside(x, y + 2)) && y > H * 0.4;
-    g.fillStyle = edge ? shade(dk0, 0.55) : rim ? shade(md, 0.6) : (nx < -0.3 && ny < -0.55) ? lt : y > H * 0.7 ? shade(md, 0.66) : nx > 0.4 ? shade(md, 0.78) : md; g.fillRect(ox + x, oy2 + y, 1, 1);
+    let col;
+    if (edge) col = (!inside(x - 1, y) && y > H * 0.35) ? shade(md0, 0.9 * 1.15) : ol;      // a lit rim down the lower left keeps the volume
+    else if (nx < -0.3 && ny < -0.55) col = lt; else if (nx < -0.05 && ny < -0.15) col = shade(md0, 0.9 * 1.14); else if (y > H * 0.74) col = shade(md0, 0.9 * 0.82); else if (nx > 0.4) col = shade(md0, 0.9 * 0.88); else col = md;
+    g.fillStyle = col; g.fillRect(ox + x, oy + y, 1, 1);
   }
-  // corroded prey inside the body: a pale bone and a few dark bubbles
-  if (big) { g.fillStyle = "rgba(235,228,205,.8)"; g.fillRect(ox + Math.round(W * 0.66), oy + Math.round(H * 0.62), 5, 1); g.fillRect(ox + Math.round(W * 0.66) - 1, oy + Math.round(H * 0.62) - 1, 1, 3); g.fillRect(ox + Math.round(W * 0.66) + 5, oy + Math.round(H * 0.62) - 1, 1, 3); g.fillStyle = shade(dk0, 0.5); for (const [a, b] of [[0.18, 0.7], [0.4, 0.78], [0.82, 0.45]]) g.fillRect(ox + Math.round(W * a), oy + Math.round(H * b), 2, 2); }
-  g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(ox + Math.round(W * 0.24), oy + Math.round(H * 0.18), big ? 3 : 2, 1);
-  // eyes: dark sockets with hot slit pupils under a slanted, angry brow
-  const ey = oy + Math.round(H * 0.4), ex = ox + Math.round(W * 0.5) + (frame === "leap" ? 1 : 0), gap = big ? 5 : 3, ew = big ? 4 : 3, eye = zone === 3 || zone === 5 ? "#ff3a30" : "#ffe03a";
-  for (const sd of [-1, 1]) {
-    const x0 = sd < 0 ? ex - gap - 1 : ex + gap - ew + 2;
-    g.fillStyle = "#0c0608"; g.fillRect(x0, ey, ew, big ? 3 : 2);
-    g.fillStyle = eye; g.fillRect(x0 + (sd < 0 ? 1 : 0), ey + 1, ew - 1, 1); if (big) { g.fillStyle = "#fff6c0"; g.fillRect(x0 + 1 + (sd < 0 ? 0 : 1), ey + 1, 1, 1); }
-    g.fillStyle = shade(dk0, 0.45); for (let k = 0; k < ew + 1; k++) g.fillRect(x0 - (sd < 0 ? 0 : 1) + k, ey - 1 + (sd < 0 ? Math.floor(k / 2) : Math.floor((ew - k) / 2)), 1, 1);   // brow slanting down toward the nose
-  }
-  // jagged mouth with fangs
-  const my = oy + Math.round(H * (big ? 0.7 : 0.72));
+  for (const [p, h] of bumps) { g.fillStyle = lt; g.fillRect(ox + Math.round(W * p), oy - h, 1, 1); }   // a lit tip on every spike
+  g.fillStyle = "rgba(255,255,255,.5)"; g.fillRect(ox + Math.round(W * 0.24), oy + Math.round(H * 0.18), big ? 3 : 1, 1);
+  const ey = oy + Math.round(H * 0.4), ex = ox + Math.round(W * 0.5) + (frame === "leap" ? 1 : 0), eye = zone === 3 || zone === 5 ? "#ff3a30" : "#ffe03a";
   if (big) {
-    g.fillStyle = "#12060a"; g.fillRect(ex - 6, my, 13, 3); g.fillStyle = "#e8e2c8";
-    for (let k = 0; k < 6; k++) { g.fillRect(ex - 5 + k * 2, my, 1, 1 + (k % 2)); }
-    for (let k = 0; k < 5; k++) { g.fillRect(ex - 4 + k * 2 + 1 - 1, my + 2, 1, 1); }
-    g.fillStyle = "#b02830"; g.fillRect(ex - 2, my + 1, 4, 1);
-  } else { g.fillStyle = "#12060a"; g.fillRect(ex - 3, my, 7, 2); g.fillStyle = "#e8e2c8"; g.fillRect(ex - 2, my, 1, 2); g.fillRect(ex + 2, my, 1, 2); }
-  // acid drips down the sides
-  g.fillStyle = md; if (big) { g.fillRect(ox + 2, oy + H - 1, 1, 1); g.fillRect(ox + W - 4, oy + H - 1, 1, 1); }
-  if (frame === "m2" || frame === "squash") { g.fillStyle = md; g.fillRect(ox + 2, 31, 3, 1); g.fillRect(ox + W - 5, 31, 3, 1); }
+    for (const sd of [-1, 1]) {
+      const x0 = sd < 0 ? ex - 6 : ex + 3;
+      g.fillStyle = "#0c0608"; g.fillRect(x0, ey, 4, 3); g.fillStyle = eye; g.fillRect(x0 + (sd < 0 ? 1 : 0), ey + 1, 3, 1); g.fillStyle = "#fff6c0"; g.fillRect(x0 + (sd < 0 ? 1 : 2), ey + 1, 1, 1);
+      g.fillStyle = shade(dk0, 0.4); for (let k = 0; k < 5; k++) g.fillRect(x0 - (sd < 0 ? 0 : 1) + k, ey - 1 + (sd < 0 ? Math.floor(k / 2) : Math.floor((4 - k) / 2)), 1, 1);
+    }
+    const my = oy + Math.round(H * 0.7);
+    g.fillStyle = "#12060a"; g.fillRect(ex - 6, my, 13, 3); g.fillStyle = "#e0d8bc"; for (let k = 0; k < 6; k++) g.fillRect(ex - 5 + k * 2, my, 1, 1 + (k % 2)); for (let k = 0; k < 5; k++) g.fillRect(ex - 4 + k * 2, my + 2, 1, 1);
+    g.fillStyle = "#a82430"; g.fillRect(ex - 2, my + 1, 4, 1);
+    // a gnawed bone jammed in the corner of the mouth: angled, two knobs, one shadow pixel
+    g.fillStyle = "#d8d0b4"; g.fillRect(ex + 5, my - 1, 2, 2); g.fillRect(ex + 7, my - 2, 1, 1); g.fillRect(ex + 8, my - 3, 2, 2); g.fillRect(ex + 9, my - 4, 1, 1); g.fillStyle = "#8a8068"; g.fillRect(ex + 6, my + 1, 1, 1); g.fillRect(ex + 8, my - 1, 1, 1);
+    g.fillStyle = shade(dk0, 0.5); for (const [a, b] of [[0.18, 0.7], [0.4, 0.82], [0.82, 0.45]]) g.fillRect(ox + Math.round(W * a), oy + Math.round(H * b), 2, 2);
+  } else {
+    // slimelet: two hot red eye pixels, one brow line, one small spike. Nothing finer, so it reads at 1x.
+    g.fillStyle = "#ff6a50"; g.fillRect(ex - 3, ey + 1, 2, 2); g.fillRect(ex + 1, ey + 1, 2, 2); g.fillStyle = "#ffd0c0"; g.fillRect(ex - 3, ey + 1, 1, 1); g.fillRect(ex + 1, ey + 1, 1, 1); g.fillStyle = shade(dk0, 0.35); g.fillRect(ex - 4, ey - 1, 1, 1); g.fillRect(ex - 3, ey, 2, 1); g.fillRect(ex - 1, ey + 1, 1, 1); g.fillRect(ex + 3, ey - 1, 1, 1); g.fillRect(ex + 1, ey, 2, 1); g.fillRect(ex, ey + 1, 1, 1);
+    g.fillStyle = "#12060a"; g.fillRect(ex - 2, ey + 4, 4, 1);
+  }
+  g.clearRect(ox + 4, 31, 2, 1); g.clearRect(ox + W - 7, 31, 1, 1); if (big) { g.clearRect(ox + Math.round(W * 0.45), 31, 2, 1); g.fillStyle = shade(md0, 0.9 * 0.7); g.fillRect(ox + 3, 31, 1, 1); g.fillRect(ox + W - 4, 31, 1, 1); g.fillRect(ox + Math.round(W * 0.7), oy + H - 1, 1, 1); g.fillStyle = shade(dk0, 0.45); g.fillRect(ox + Math.round(W * 0.7), oy + Math.round(H * 0.5), 3, 2); } else { g.clearRect(ox, 31, 1, 1); g.fillStyle = shade(dk0, 0.45); g.fillRect(ox + 2, oy + Math.round(H * 0.6), 2, 1); }
+  if (frame === "m2" || frame === "squash") { g.fillStyle = shade(md0, 0.9); g.fillRect(ox + 2, 31, 3, 1); g.fillRect(ox + W - 5, 31, 3, 1); }
 }
 function hornetArt(g, frame) {
-  const k = "f0 f1 f2 f3".split(" ").indexOf(frame), pose = frame === "dive" ? 4 : [0, 1, 2, 3][k < 0 ? 0 : k], bob = frame === "dive" ? 0 : [0, 1, 0, 1][k < 0 ? 0 : k], tuck = pose === 2;
+  const k = "f0 f1 f2 f3".split(" ").indexOf(frame), pose = frame === "dive" ? 4 : [0, 1, 2, 3][k < 0 ? 0 : k], bob = frame === "dive" ? 0 : [0, 1, 0, 1][k < 0 ? 0 : k], tuck = pose === 2, dive = frame === "dive";
   g.save(); g.translate(0, bob);
   const wingAng = [[-1.5, -1.2], [-0.8, -0.5], [0.5, 0.75], [-0.1, 0.25], [-0.2, 0.0]][pose];
-  const wing = (x, y, rot, rx, ry, a) => epx(g, x, y, rx, ry, rot, (u, v) => { const d2 = u * u + v * v; if (d2 > 0.7) return (v < -0.3 && u > -0.4) ? "#e8f4ff" : "#34465a"; if (u > 0.1 && Math.abs(v) > 0.4 && v < 0) return `rgba(255,255,255,${a + 0.3})`; if (Math.abs(v) < 0.08) return "rgba(120,150,180,.85)"; return u < -0.2 ? `rgba(215,232,255,${a + 0.12})` : `rgba(180,210,245,${a})`; });
-  wing(12, 9, wingAng[0], 12, 4.6, 0.4); wing(17, 8, wingAng[1], 11, 4.2, 0.55);
-  epx(g, 10, 18, 9.2, 5.6, 0.2, (u, v) => { const band = Math.floor((u + 1) * 3.2) % 2, lit = v < -0.4, dk = v > 0.5, edge = u * u + v * v > 0.8; if (edge) return "#0e0a04"; return band ? (lit ? "#3a2c1a" : "#16100a") : (lit ? "#ffe060" : dk ? "#b88410" : "#f2c420"); });
-  g.fillStyle = "#16100a"; g.fillRect(3, 21, 2, 1); g.fillRect(2, 22, 2, 1); g.fillRect(1, 23, 2, 1); g.fillStyle = "#f0e8d8"; g.fillRect(0, 24, 1, 1); g.fillRect(1, 24, 1, 1);
-  epx(g, 20, 16, 5.2, 5, 0, (u, v) => (u * u + v * v > 0.8 ? "#2a1608" : u + v < -0.6 ? "#f0b830" : v > 0.45 ? "#6a3c0c" : "#b87a14"));
-  for (const [x, y] of [[17, 12], [19, 11], [22, 12], [16, 16], [23, 18], [20, 20]]) { g.fillStyle = "#ffd878"; g.fillRect(x, y, 1, 1); }
-  g.fillStyle = "#1a0a04"; g.fillRect(24, 12, 1, 9);
-  epx(g, 27.5, 16, 4, 3.9, 0, (u, v) => (u * u + v * v > 0.8 ? "#1a0804" : v > 0.5 ? "#2a0c06" : u < -0.4 ? "#7a2414" : "#5a1a0e"));
-  epx(g, 28.5, 14.6, 2.4, 2.2, 0, (u, v) => (u < -0.3 && v < -0.2 ? "#ffe0b0" : (u > 0.4 || v > 0.5) ? "#c02808" : "#ff5018")); g.fillStyle = "#1a0804"; g.fillRect(29, 15, 1, 1);
-  g.fillStyle = "#2a0c08"; g.fillRect(29, 19, 2, 1); g.fillRect(31, 18, 1, 2); g.fillStyle = "#6a6a60"; g.fillRect(26, 11, 1, 1); g.fillRect(27, 10, 2, 1); g.fillRect(29, 9, 1, 1); g.fillRect(30, 8, 1, 1);
-  g.fillStyle = "#2a1408"; for (const lx of [18, 20, 22]) { if (tuck) { g.fillRect(lx, 21, 1, 1); g.fillRect(lx + (lx > 20 ? 1 : -1), 22, 1, 1); } else { g.fillRect(lx, 21, 1, 2); g.fillRect(lx + (lx > 20 ? 1 : -1), 23, 1, 1); g.fillRect(lx + (lx > 20 ? 2 : -2), 24, 1, 1); } }
+  const wing = (x, y, rot, rx, ry, a, seed) => epx(g, x, y, rx, ry, rot, (u, v) => {
+    const d2 = u * u + v * v;
+    if (u > 0.25 && Math.sin(u * 19 + v * 7 + seed) > 0.8) return "#141c24";   // chewed notches
+    if (d2 > 0.72) return (v < -0.3 && u > -0.4) ? "#e0eaf2" : "#1a242e";       // lit leading edge
+    if (Math.abs(v) < 0.09 || Math.abs(u * 1.4 - v * 2.2 - 0.3) < 0.1) return "rgba(24,34,44,.8)";
+    return u < -0.2 ? `rgba(176,188,200,${a + 0.14})` : `rgba(136,150,164,${a + 0.04})`;
+  });
+  wing(12, 9, wingAng[0], 12, 4.6, 0.42, 1); wing(17, 8, wingAng[1], 11, 4.2, 0.52, 4);
+  epx(g, 10, 19, 10.4, 4.8, dive ? 0.5 : 0.3, (u, v) => {
+    const edge = u * u + v * v > 0.78, band = (Math.floor((u + 1) * 3.4 + v * 0.7 + Math.sin(v * 5) * 0.3)) % 2, lit = v < -0.45, dk = v > 0.45;
+    if (edge) return "#0a0604";
+    return band ? (lit ? "#46341f" : "#1a120a") : (lit ? "#e8a830" : dk ? "#86500f" : "#c4781c");
+  });
+  g.fillStyle = "#14100e"; g.fillRect(3, 22, 2, 1); g.fillRect(2, 23, 2, 1); g.fillStyle = "#2c2c34"; g.fillRect(1, 24, 2, 1); g.fillRect(1, 25, 1, 2); g.fillRect(0, 26, 1, 2); g.fillStyle = "#e8e8e0"; g.fillRect(0, 28, 1, 1); g.fillStyle = "#2c2c34"; g.fillRect(2, 26, 1, 1); g.fillRect(2, 25, 1, 1);   // a four-pixel barbed spike
+  g.fillStyle = "#b8f040"; g.fillRect(0, 29, 2, 2); g.fillStyle = "#f4ffb0"; g.fillRect(0, 29, 1, 1);   // venom
+  epx(g, 19.5, 16, 5.2, 5, 0, (u, v) => (u * u + v * v > 0.8 ? "#1a0e06" : (u + v < -0.7) ? "#d89a38" : u < -0.2 && v < 0.2 ? "#8a5418" : v > 0.45 ? "#2e180a" : "#4e2c0c"));
+  for (const [x, y] of [[16, 12], [18, 11], [21, 12], [23, 13], [15, 15], [18, 21], [22, 21]]) { g.fillStyle = "#d8a048"; g.fillRect(x, y, 1, 1); g.fillStyle = "#1a0e06"; g.fillRect(x, y - 1, 1, 1); }
+  g.fillStyle = "#050302"; g.fillRect(24, 11, 1, 10);   // dark seam between thorax and head
+  epx(g, 27.8, 16.5, 3.7, 4, 0, (u, v) => (u * u + v * v > 0.8 ? "#050302" : v > 0.5 ? "#2a1008" : "#4a1c10"));
+  g.fillStyle = "#ff3018"; g.fillRect(27, 14, 3, 3); g.fillStyle = "#5a0c08"; g.fillRect(29, 15, 1, 2); g.fillRect(27, 16, 3, 1); g.fillStyle = "#ffc0a0"; g.fillRect(27, 14, 1, 1); g.fillStyle = "#1a0404"; g.fillRect(28, 15, 1, 1);
+  g.fillStyle = "#1a1210"; g.fillRect(27, 19, 2, 1); g.fillRect(28, 20, 2, 2); g.fillRect(29, 22, 2, 1); g.fillRect(30, 23, 1, 1); g.fillRect(31, 19, 1, 3); g.fillRect(30, 18, 1, 1); g.fillStyle = "#c8c0a8"; g.fillRect(29, 21, 1, 1); g.fillRect(31, 19, 1, 1);
+  g.fillStyle = "#5a5a52"; g.fillRect(26, 11, 1, 1); g.fillRect(27, 10, 1, 1); g.fillRect(28, 9, 1, 1); g.fillRect(29, 9, 1, 1); g.fillRect(30, 10, 1, 1);
+  g.fillStyle = "#140c06";
+  for (const lx of [17, 20, 23]) { if (tuck) { g.fillRect(lx, 21, 1, 2); g.fillRect(lx + 1, 22, 1, 1); } else { g.fillRect(lx, 21, 1, 3); g.fillRect(lx - 1, 23, 1, 1); g.fillRect(lx - 2, 24, 1, 2); g.fillRect(lx - 1, 25, 1, 1); } }
   g.restore();
 }
 // ---- spawning and updating the small living things of a room ----
@@ -1800,17 +1818,76 @@ function gritCanvas(c, seed, edgeP, speckP, dark) {
 
 function baked(key, w, h, fn, seed) { const BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key]; const c = mk(w, h), g = c.getContext("2d"); fn((a, b, ww, hh, col) => { g.fillStyle = col; g.fillRect(a, b, ww, hh); }, g); gritCanvas(c, seed, 0.18, 0.1, 0.92); BK[key] = c; return c; }
 
+
+
+
+
+
+
+function shrineBody(zone) {
+  return baked("shrine" + zone, 28, 52, (R) => {
+    const o = "#17141a", d = "#3c383e", m = "#625e60", l = "#8e8880", h = "#b8b0a0", mo = "#4e6a34", mo2 = "#6e8a44";
+    // stepped plinth, worn and crooked
+    R(1, 47, 26, 5, o); R(2, 47, 24, 1, l); R(2, 48, 24, 3, m); R(2, 48, 2, 3, l); R(23, 48, 3, 3, d);
+    R(4, 43, 20, 5, o); R(5, 43, 18, 1, h); R(5, 44, 18, 3, m); R(5, 44, 3, 3, l); R(20, 44, 3, 3, d);
+    // the long tapering body
+    for (let y = 10; y < 44; y++) { const half = 5 + Math.round((y - 10) * 0.07), x0 = 14 - half; R(x0 - 1, y, half * 2 + 2, 1, o); R(x0, y, half * 2, 1, m); R(x0, y, 2, 1, l); R(x0 + half * 2 - 2, y, 2, 1, d); }
+    // carved bands and grooves
+    for (const y of [13, 33, 40]) { R(8, y, 12, 1, d); R(8, y + 1, 12, 1, l); }
+    for (const x of [11, 16]) for (let y = 34; y < 40; y++) R(x, y, 1, 1, d);
+    for (let y = 35; y < 40; y += 2) { R(12, y, 3, 1, d); R(13, y + 1, 1, 1, h); }
+    // capstone and finial, leaning a little
+    R(5, 6, 18, 5, o); R(6, 6, 16, 1, h); R(6, 7, 16, 3, m); R(6, 7, 3, 3, l); R(19, 7, 3, 3, d);
+    R(11, 1, 6, 6, o); R(12, 1, 4, 1, l); R(12, 2, 4, 4, m); R(13, 0, 2, 1, h); R(12, 2, 1, 3, l);
+    // the niche: a pointed arch, dark inside, with a bowl for the flame
+    R(9, 17, 10, 17, o); R(10, 18, 8, 15, "#0a080c"); R(11, 16, 6, 2, o); R(12, 15, 4, 2, o); R(12, 17, 4, 1, "#0a080c"); R(10, 17, 1, 2, "#0a080c"); R(17, 17, 1, 2, "#0a080c");
+    R(8, 31, 12, 4, o); R(9, 31, 10, 1, l); R(9, 32, 10, 2, m); R(9, 32, 3, 2, l);
+    // cracks and weathering
+    for (const [x, y] of [[8, 20], [9, 22], [8, 24], [7, 26], [18, 38], [19, 40], [20, 42], [6, 12], [21, 9]]) R(x, y, 1, 1, o);
+    for (const [x, y, w] of [[7, 41, 5], [16, 44, 4], [5, 44, 4], [18, 12, 3], [6, 9, 3], [10, 46, 3]]) { R(x, y, w, 1, mo); R(x, y - 1, Math.max(1, w - 2), 1, mo2); R(x + 1, y + 1, Math.max(1, w - 3), 1, mo); }
+    // a rope sling with a tattered cloth strip hanging from the right of the cap
+    R(21, 8, 1, 3, "#5a4026"); R(22, 10, 1, 2, "#5a4026");
+    for (let y = 12; y < 30; y++) { const w = 3 - (y > 24 ? (y % 3 === 0 ? 1 : 0) : 0) - (y > 27 ? 1 : 0); R(22, y, Math.max(1, w), 1, y % 5 === 0 ? "#6a1c14" : "#8a2a1c"); R(22, y, 1, 1, "#b04a30"); }
+    R(24, 26, 1, 2, "#6a1c14"); R(23, 29, 1, 2, "#5a1810");
+    // fallen stones at the foot
+    R(1, 46, 3, 2, d); R(2, 45, 2, 1, m); R(24, 46, 3, 2, d); R(25, 45, 2, 1, l);
+  }, zone * 7 + 3);
+}
+
+function drawShrine(it, cx, cy, lights) {
+  const zone = G.room.zone, active = G.shrine && G.shrine.x === it.x - 8 && G.shrine.y === it.y - 16, t = G.frame + (it.x >> 4);
+  const x = Math.round(it.x - cx) - 6, y = Math.round(it.y - cy) - 36;   // 28 x 52 art, bottom aligned with the floor
+  if (x < -40 || x > VW + 40 || y < -60 || y > VH + 40) return;
+  const gl = ctx.createRadialGradient(x + 14, y + 26, 0, x + 14, y + 26, active ? 52 : 34); gl.addColorStop(0, `rgba(255,150,50,${active ? 0.28 : 0.16})`); gl.addColorStop(1, "rgba(255,150,50,0)"); ctx.fillStyle = gl; ctx.fillRect(x - 40, y - 26, 108, 100);
+  ctx.drawImage(shrineBody(zone), x, y + 0);
+  // the niche flame: small and sullen until you light the shrine, then tall and bright
+  const fh = active ? 9 : 4, fw = active ? 3.2 : 1.8, bx = x + 14, by = y + 31;
+  for (const [W, H, col] of [[fw, fh, "#a02a0a"], [fw * 0.72, fh * 0.8, "#f06a18"], [fw * 0.4, fh * 0.55, active ? "#fff2a0" : "#ffb040"]]) { ctx.fillStyle = col; for (let r = 0; r < H; r++) { const k = r / H, w = W * Math.pow(1 - k, 0.7) + (((r * 5 + (t >> 2)) % 3) - 1) * 0.3, sw = Math.sin(t / 6 + k * 4) * k * 1.2; ctx.fillRect(Math.round(bx + sw - w), by - r, Math.max(1, Math.round(w * 2)), 1); } }
+  if (active) for (let k = 0; k < 4; k++) { const u = ((t * 0.5 + k * 11) % 36) / 36; ctx.fillStyle = `rgba(255,${170 + k * 20},70,${1 - u})`; ctx.fillRect(Math.round(bx + Math.sin(t / 8 + k * 2) * 4), Math.round(by - 8 - u * 22), 1, 1); }
+  lights.push([it.x + 8, it.y - 8, active ? 78 : 52, active ? 1 : 0.8, "255,140,50"]);
+}
+
+
+
+function outlineCanvas(c, col) {
+  const g = c.getContext("2d"), w = c.width, h = c.height, id = g.getImageData(0, 0, w, h), a = id.data, op = (x, y) => x >= 0 && y >= 0 && x < w && y < h && a[(y * w + x) * 4 + 3] > 120, add = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (!op(x, y) && (op(x - 1, y) || op(x + 1, y) || op(x, y - 1) || op(x, y + 1))) add.push([x, y]);
+  g.fillStyle = col; for (const [x, y] of add) g.fillRect(x, y, 1, 1);
+}
+
+
+
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
 // ---- atmosphere drawing (all original art) ----
 const lightCanvas = mk(256, 224), lgx = lightCanvas.getContext("2d");   // resized with the view in fit()
 function drawLighting(cx, cy, lights) {
-  const h = G.hero, dim = G.room.dark, cave = G.room.cave;
+  const h = G.hero, dim = G.room.dark, cave = G.room.cave, hall = G.room.id === 0;
   lgx.globalCompositeOperation = "source-over"; lgx.clearRect(0, 0, VW, VH);
-  lgx.fillStyle = `rgba(3,2,8,${cave ? LOOK.caveDim : dim ? LOOK.darkDim : LOOK.darkLit})`; lgx.fillRect(0, 0, VW, VH);
+  lgx.fillStyle = `rgba(3,2,8,${cave ? LOOK.caveDim : dim ? LOOK.darkDim : hall ? LOOK.hallLit : LOOK.darkLit})`; lgx.fillRect(0, 0, VW, VH);
   lgx.globalCompositeOperation = "destination-out";
   const hole = (x, y, r, a) => { const gr = lgx.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); gr.addColorStop(1, "rgba(0,0,0,0)"); lgx.fillStyle = gr; lgx.fillRect(x - r, y - r, r * 2, r * 2); };
-  hole(h.x + 16 - cx, h.y + 14 - cy, cave ? LOOK.caveHeroLight : dim ? LOOK.heroLightDim : LOOK.heroLight, 0.95);
+  hole(h.x + 16 - cx, h.y + 14 - cy, cave ? LOOK.caveHeroLight : dim ? LOOK.heroLightDim : hall ? LOOK.heroLight * 1.6 : LOOK.heroLight, 0.95);
   for (const [x, y, r, a] of lights) hole(x - cx, y - cy, r, a);
   ctx.drawImage(lightCanvas, 0, 0);
   // warm glow on top
