@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.65">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.65">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.67">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.67">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.65</title>
+<title>Black Tiger: The Depths v0.67</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.65";   // bump by 0.01 with every change
+const VERSION = "0.67";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3767,7 +3767,7 @@ function mapLinks() {
 
 function drawMap() {
   ctx.fillStyle = "#0b0c12"; ctx.fillRect(0, 0, VW, VH);
-  const s = Math.max(4, Math.min(6, Math.floor((VW - 22) / GW))), sy = 7, ox = 4, oy = 28, h = G.hero, mw = GW * s;
+  const s = Math.max(4, Math.min(6, Math.floor((VW - 22) / GW))), sy = 6, ox = 4, oy = 28, h = G.hero, mw = GW * s;
   ctx.textAlign = "center"; ctx.fillStyle = "#ffe680"; ctx.font = "bold 10px monospace"; ctx.fillText("MAP", VW / 2, 12);
   ctx.font = "8px monospace"; ctx.fillStyle = "#aab"; ctx.fillText(G.room ? "Level " + (G.room.zone + 1) + ": " + ZONES[G.room.zone].name : "", VW / 2, 22);
   const seenCell = (cx, cy) => G.visited.has(cy * GW + cx) || G.debug;
@@ -3809,11 +3809,12 @@ function drawMap() {
   for (const r of world.rooms) if (r.town) { let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (seenCell(r.x + i, r.y + j)) seen = true; if (seen) dot((r.x + r.w / 2) * CW * TS, (r.y + r.h / 2) * CH * TS, r.town === "orc" ? "#ff7a3a" : "#6aff8a", 3); }
   const hx = ox + (h.x + 16) / (CW * TS) * s, hy = oy + (h.y + 16) / (CH * TS) * sy;
   ctx.fillStyle = (G.frame & 16) ? "#fff" : "#ff5030"; ctx.fillRect(Math.round(hx) - 1, Math.round(hy) - 1, 3, 3);
-  // legend
-  ctx.textAlign = "left"; ctx.font = "7px monospace"; let lx = 4; const leg = [["#ff5a5a", "shrine"], ["#ffd24a", "shop"], ["#6ab4ff", "cell"], ["#8aeaff", "fountain"], ["#e090ff", "chapel"], ["#3a8ad0", "flooded"], ["#ff7a3a", "orcs"], ["#6aff8a", "town"], ["#ff2020", "boss"]];
-  for (const [c, t] of leg) { ctx.fillStyle = c; ctx.fillRect(lx, 199, 4, 4); ctx.fillStyle = "#aab"; ctx.fillText(t, lx + 6, 204); lx += 9 + t.length * 4.2; }
-  ctx.fillStyle = "#fff"; ctx.fillRect(4, 208, 3, 3); ctx.fillStyle = "#aab"; ctx.fillText("white = door or chain path   dim = not yet visited", 10, 212);
-  ctx.textAlign = "center"; ctx.fillText("Press M to close", VW / 2, 222);
+  // legend: every coloured dot, named
+  const leg = [["#ff5a5a", "Save shrine"], ["#ffd24a", "Shop"], ["#6ab4ff", "Prisoner cell"], ["#8aeaff", "Fountain"], ["#e090ff", "Chapel"], ["#3a8ad0", "Flooded room"], ["#ff7a3a", "Orc town"], ["#6aff8a", "Friendly town"], ["#ff2020", "Guardian boss"], ["#ffa030", "Orc chieftain"], ["#ff5030", "You (blinks)"], ["#ffffff", "Door/chain"]];
+  const colW = Math.floor((VW - 8) / 3), ly = oy + GH * sy + 8;
+  ctx.textAlign = "left"; ctx.font = "7px monospace";
+  leg.forEach(([c, name], i) => { const x = 4 + (i % 3) * colW, y = ly + Math.floor(i / 3) * 9; ctx.fillStyle = "#000"; ctx.fillRect(x - 1, y - 1, 6, 6); ctx.fillStyle = c; ctx.fillRect(x, y, 4, 4); ctx.fillStyle = "#b8bccc"; ctx.fillText(name, x + 8, y + 5); });
+  ctx.fillStyle = "#7a8098"; ctx.textAlign = "center"; ctx.fillText("Dim rooms: not visited yet.   M: close", VW / 2, VH - 3);
 }
 
 
@@ -4350,6 +4351,8 @@ function shopFrontArt(zone, inn) {
     for (const [mx, my] of [[10, 60], [64, 60]]) { R(mx, my, 4, 2, "#46702e"); }
   }, zone * 3 + (inn ? 1 : 0));
 }
+
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
