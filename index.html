@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.36">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.36">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.37">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.37">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.36</title>
+<title>Black Tiger: The Depths v0.37</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.36";   // bump by 0.01 with every change
+const VERSION = "0.37";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -501,7 +501,7 @@ function generateWorld(seed) {
     if (cx < GW - 1 && E[ci(cx, cy)] && roomOf[ci(cx, cy)] !== roomOf[ci(cx + 1, cy)]) { links[roomOf[ci(cx, cy)]].push({ side: true, bx: (cx + 1) * CW, cs: -1, fy: cy * CH + CH - 1, other: roomOf[ci(cx + 1, cy)] }); links[roomOf[ci(cx + 1, cy)]].push({ side: true, bx: (cx + 1) * CW, cs: 1, fy: cy * CH + CH - 1, other: roomOf[ci(cx, cy)] }); }
     if (cy < GH - 1 && S[ci(cx, cy)] && roomOf[ci(cx, cy)] !== roomOf[ci(cx, cy + 1)]) { links[roomOf[ci(cx, cy)]].push({ side: false }); links[roomOf[ci(cx, cy + 1)]].push({ side: false }); }
   }
-  for (const r of rooms) if (r.id > 0 && r.w === 1 && r.h === 1 && !ZONES[r.zone].lab && links[r.id].length >= 1 && links[r.id].length <= 2 && links[r.id].every(l => l.side) && R2() < 0.6) { r.cave = true; r.mouths = links[r.id]; }
+  for (const r of rooms) if (r.id > 0 && r.w === 1 && r.h === 1 && !ZONES[r.zone].lab && links[r.id].length >= 1 && links[r.id].length <= 2 && links[r.id].every(l => l.side) && R2() < 0.6) { r.cave = true; r.mouths = links[r.id]; r.tunnel = rng(r.id * 131 + 5)() < 0.6; }
   // ---- 4c. carve tiles ----
   const T = new Uint8Array(WT * HT).fill(SOLID);
   const get = (x, y) => (x < 0 || y < 0 || x >= WT || y >= HT) ? SOLID : T[y * WT + x];
@@ -541,6 +541,7 @@ function generateWorld(seed) {
   }
   // caves: an irregular, low-ceilinged chamber with stalactites and a few rocks on the floor
   for (const r of rooms) if (r.cave) {
+    if (r.tunnel) { carveTunnel(r, set, CW, CH); continue; }
     const x0 = r.x * CW, y0 = r.y * CH, floor = y0 + CH - 1;
     for (let y = y0 + 1; y < floor; y++) for (let x = x0 + 1; x < x0 + CW - 1; x++) set(x, y, EMPTY);
     r.style = "cave";
@@ -863,16 +864,16 @@ const roomAtPx = (px, py) => { const cx = Math.floor(px / (CW * TS)), cy = Math.
    6. GAME STATE, SAVE, LOAD
    ====================================================================== */
 let G;   // everything that changes while playing
-const SAVE_KEY = "btdepths.save.L22";   // bump only when the world generator changes: an old save would drop you into the wrong room
+const SAVE_KEY = "btdepths.save.L23";   // bump only when the world generator changes: an old save would drop you into the wrong room
 function newGame(seed, saved) {
   world = generateWorld(seed);
   G = {
     hero: { x: world.start.x, y: world.start.y, vx: 0, vy: 0, dir: -1, ground: true, climb: false, crouch: false, atk: 0, anim: 0, climbDist: 0, hp: CFG.maxHP, inv: 0, chainTop: 0, drop: 0 },
     zenny: 0, keys: 0, maxHP: CFG.maxHP, fires: [], traps: [], shots: [], confuse: 0, got: new Set(), visited: new Set(), shrine: { ...world.start }, room: null, enemies: [], popups: [], particles: [],
-    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
+    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, lantern: 0, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
   };
   if (saved) {
-    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
+    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
     G.got = new Set(saved.got); G.visited = new Set(saved.visited); G.shrine = saved.shrine;
   }
   if (saved && hitsSolid(G.hero, G.hero.x, G.hero.y)) {   // the world's layout changed since this save: start at the entrance
@@ -887,7 +888,7 @@ function newGame(seed, saved) {
 }
 function save() {
   const h = G.hero;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
 }
 function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
 
@@ -1003,13 +1004,15 @@ function updateHero() {
     }
   }
   // crouch and attack
-  h.crouch = h.ground && keys.down && h.atk === 0 ? true : (h.atk > 0 ? h.crouch : false);
+  const lowAt = (px) => hitsSolid({ crouch: false }, px, h.y) && !hitsSolid({ crouch: true }, px, h.y);   // a one-tile-high gap: you have to crawl
+  const forceCrouch = (h.ground || h.stairT > 0) && ((h.stairT > 0 && h.crouch) || lowAt(h.x) || (dirIn && lowAt(h.x + dirIn * 4)) || (dirIn && (() => { const cf = G.room.tunnel ? Math.floor((h.x + (dirIn > 0 ? 24 : 7)) / TS) : Math.floor((h.x + 16 + dirIn * 13) / TS), fr = Math.round((h.y + 32) / TS), st = tileAt(cf, fr - 1); return (st === STAIR || st === PROP) && (G.room.tunnel || solid(cf, fr - 3)) && !solid(cf, fr - 2); })()));
+  h.crouch = (h.ground || h.stairT > 0) && ((keys.down && h.atk === 0) || forceCrouch) ? true : (h.atk > 0 ? h.crouch : false);
   if (pressed.attack && h.atk === 0) { h.atk = 1; h.swing = (h.swing || 0) + 1; }
   if (h.atk > 0 && ++h.atk > CFG.attackLength) h.atk = 0;
   // walk
-  const locked = (h.atk > 0 && h.ground) || h.crouch;
+  const locked = (h.atk > 0 && h.ground) || (h.crouch && !forceCrouch);
   const wade = isWater(cc, Math.floor((h.y + 31) / TS)) ? 0.55 : 1;   // wading through a pool
-  if (!locked) { h.vx = h.knock ? h.vx : dirIn * CFG.walkSpeed * wade; if (dirIn && !h.knock) h.dir = dirIn; } else { h.vx = 0; if (dirIn && h.crouch && h.atk === 0) h.dir = dirIn; }
+  if (!locked) { h.vx = h.knock ? h.vx : dirIn * CFG.walkSpeed * wade * (forceCrouch ? 0.55 : 1); if (dirIn && !h.knock) h.dir = dirIn; } else { h.vx = 0; if (dirIn && h.crouch && h.atk === 0) h.dir = dirIn; }
   if (h.knock) h.knock--;
   // jump / drop through
   if (pressed.jump && h.ground && !h.crouch) { h.vy = -CFG.jumpSpeed; h.ground = false; }
@@ -1024,7 +1027,7 @@ function updateHero() {
   const wpush = h.climb ? 0 : (G.wind || 0) * (h.ground ? (h.vx !== 0 ? 0.15 : 0) : 0.4);   // wind: a gentle push, mostly in the air
   if (h.stairT > 0) { h.stairT--; h.y -= 2; h.vy = 0; h.ground = true; moveX(h, h.vx + wpush); }
   else {
-    if (h.ground && dirIn && !h.crouch && !h.atk) { const cf = Math.floor((h.x + 16 + dirIn * 13) / TS), fr = Math.round((h.y + 32) / TS); if ((tileAt(cf, fr - 1) === STAIR || tileAt(cf, fr - 1) === PROP) && !solid(cf, fr - 2) && !solid(cf, fr - 3)) h.stairT = 8; }
+    if (h.ground && dirIn && (!h.crouch || forceCrouch) && !h.atk) { const cf = G.room.tunnel ? Math.floor((h.x + (dirIn > 0 ? 24 : 7)) / TS) : Math.floor((h.x + 16 + dirIn * 13) / TS), fr = Math.round((h.y + 32) / TS); if ((tileAt(cf, fr - 1) === STAIR || tileAt(cf, fr - 1) === PROP) && !solid(cf, fr - 2) && (h.crouch || !solid(cf, fr - 3))) h.stairT = 8; }
     moveX(h, h.vx + wpush); moveY(h, h.vy);
   }
   if (h.ground && !onFloor(h)) h.ground = false;
@@ -1442,6 +1445,7 @@ function draw() {
   for (const p of G.popups) { ctx.fillStyle = "#000"; ctx.fillText(p.text, p.x - cx + 1, p.y - cy + 1); ctx.fillStyle = "#ffe680"; ctx.fillText(p.text, p.x - cx, p.y - cy); }
   // lights: the hero, torches, fire, fireballs and shrines push back the dark
   for (const f of G.fires) if (!f.delay) lights.push([f.x + 8, f.y + 30, 60, 1]);
+  lanternLights(lights);
   for (const b of G.shots) lights.push([b.x + 8, b.y + 8, 34, 0.9]);
   for (const it of world.items) if (it.kind === "shrine" && !it.gone && Math.abs(it.x - cx - VW / 2) < 200 && Math.abs(it.y - cy - 112) < 180) lights.push([it.x + 8, it.y + 8, 50, 0.8]);
   drawLighting(cx, cy, lights);
@@ -2031,18 +2035,11 @@ function lanternBody(seed) {
 
 function epx0(R, cx, cy, rx, ry, fn) { for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) { const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry; if (u * u + v * v > 1) continue; R(x, y, 1, 1, fn(u, v)); } }
 
-function drawLantern(d, cx, cy, lights) {
-  const t = G.frame + d.seed, sway = Math.round(Math.sin(t / 60) * 1.5 + (G.wind || 0) * 3), x = Math.round(d.x - cx) + 8, y0 = Math.round(d.y - cy), top = y0 + d.len * 16 + 2;
-  ctx.fillStyle = "#3a2a1a"; for (let yy = y0; yy < top; yy++) { const f = (yy - y0) / Math.max(1, top - y0); ctx.fillRect(x + Math.round(sway * f), yy, 1, 1); }
-  const pul = 0.82 + 0.18 * Math.sin(t / 9) + 0.08 * Math.sin(t / 3.1), bx = x - 5 + sway, by = top, gx = bx + 5, gy = by + 9;
-  // the glow: a wide red bloom, a hot orange halo and a bright core, added on top of the scene
-  ctx.globalCompositeOperation = "lighter";
-  let gl = ctx.createRadialGradient(gx, gy, 0, gx, gy, 84); gl.addColorStop(0, `rgba(255,66,38,${0.72 * pul})`); gl.addColorStop(0.3, `rgba(240,44,26,${0.36 * pul})`); gl.addColorStop(0.65, `rgba(220,36,22,${0.14 * pul})`); gl.addColorStop(1, "rgba(220,30,20,0)"); ctx.fillStyle = gl; ctx.fillRect(gx - 84, gy - 84, 168, 168);
-  gl = ctx.createRadialGradient(gx, gy, 0, gx, gy, 22); gl.addColorStop(0, `rgba(255,170,90,${0.85 * pul})`); gl.addColorStop(1, "rgba(255,90,40,0)"); ctx.fillStyle = gl; ctx.fillRect(gx - 22, gy - 22, 44, 44);
-  ctx.globalCompositeOperation = "source-over";
-  ctx.drawImage(lanternBody(d.seed), bx, by);
-  ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,110,50,${0.38 * pul})`; ctx.fillRect(bx + 3, by + 4, 4, 9); ctx.fillStyle = `rgba(255,220,150,${0.5 * pul})`; ctx.fillRect(bx + 4, by + 9, 2, 2); ctx.globalCompositeOperation = "source-over";
-  lights.push([d.x + 8 + sway, by + cy + 9, 124 + 8 * pul, 1, "255,56,34"]);
+function drawLantern(h, cx, cy) {
+  const L = G.lan, l = G.lantern | 0; if (!L || l < 1) return;
+  const steps = 7; ctx.fillStyle = "#3a3a44";
+  for (let i = 1; i < steps; i++) { const f = i / steps; ctx.fillRect(Math.round(L.ax + (L.wx - L.ax) * f - cx), Math.round(L.ay + (L.wy - 4 - L.ay) * f - cy), 1, 1); }
+  ctx.drawImage(lanternSmall(l), Math.round(L.wx - 3 - cx), Math.round(L.wy - 4 - cy));
 }
 
 function updateSmoke() {
@@ -2406,6 +2403,7 @@ function drawWornPack(h, cx, cy) {
   const t = G.packTier | 0, dir = h.dir, dy = h.crouch ? 8 : 4;
   if (h.climb) ctx.drawImage(wornPackArt(true, t), Math.round(h.x + 8 - cx), Math.round(h.y + 2 - cy));
   else ctx.drawImage(wornPackArt(false, t), Math.round((dir > 0 ? h.x - 4 : h.x + 20) - cx), Math.round(h.y + dy - cy));
+  if ((G.lantern | 0) > 0) { lanternStep(h); drawLantern(h, cx, cy); }
 }
 
 function packLayout() {
@@ -2547,7 +2545,7 @@ function drawBridge(g, x) {
 }
 
 
-function shopPrice(kind, tier) { return kind === "food" ? 300 : kind === "potion" ? 500 : kind === "heart" ? 4000 : 1500 * ((tier | 0) + 1); }
+function shopPrice(kind, tier) { return kind === "lantern" ? lanternPrice(tier) : kind === "food" ? 300 : kind === "potion" ? 500 : kind === "heart" ? 4000 : 1500 * ((tier | 0) + 1); }
 
 function shopkeeperArt(zone, f) {
   const cloak = ["#2a4a52", "#4a2a52", "#52402a", "#2a3a5a", "#5a2a2a", "#3a4a2a", "#4a4a4a", "#52302a"][zone % 8];
@@ -2595,6 +2593,7 @@ function drawShop(it, cx, cy, lights) {
 function shopStock(it) {
   const rows = [{ kind: "food", name: "Roast chicken", desc: "Fills your hunger gauge." }, { kind: "potion", name: "Potion", desc: "Heals 3 life." }];
   rows.push({ kind: "heart", name: "Heart charm", desc: "Adds 1 to your maximum life.", once: it.id + 1 });
+  rows.push({ kind: "lantern", name: lanternName(Math.min(4, (G.lantern | 0) + 1)), desc: "Lights the area around you. Needs a backpack.", tier: Math.min(4, (G.lantern | 0) + 1) });
   if (it.tier >= 0) rows.push({ kind: "pack", name: packName(it.tier), desc: "Holds " + (8 + 2 * it.tier) + " things.", tier: it.tier });
   for (const r of rows) r.price = shopPrice(r.kind, r.tier);
   return rows;
@@ -2602,16 +2601,17 @@ function shopStock(it) {
 
 function shopRowState(r) {
   if (r.kind === "heart" && G.got.has(r.once)) return "Sold out";
+  if (r.kind === "lantern" && (G.lantern | 0) >= 4) return "Your lantern is the brightest";
   if (r.kind === "pack" && r.tier <= G.packTier) return "You have one this big";
   return "";
 }
 
 function shopLayout(n) {
-  const W = Math.min(VW - 8, 236), x = Math.round((VW - W) / 2), rowH = 24, y = 12, h = 44 + n * rowH + 36;
+  const W = Math.min(VW - 8, 236), x = Math.round((VW - W) / 2), rowH = 22, y = 8, h = 44 + n * rowH + 36;
   return { x, y, w: W, h, rowH, rows0: y + 44, close: { x: Math.round(VW / 2) - 28, y: y + h - 24, w: 56, h: 16 } };
 }
 
-function shopArt(r) { return r.kind === "food" ? chickenArt() : r.kind === "potion" ? itemArt("potion") : r.kind === "heart" ? heartArt() : backpackArt(r.tier); }
+function shopArt(r) { return r.kind === "food" ? chickenArt() : r.kind === "potion" ? itemArt("potion") : r.kind === "heart" ? heartArt() : r.kind === "lantern" ? lanternIcon(r.tier) : backpackArt(r.tier); }
 
 function drawShopUI() {
   const it = G.shopIt, rows = shopStock(it), L = shopLayout(rows.length), g = ctx, sel = Math.min(G.shopSel | 0, rows.length - 1), t = G.frame;
@@ -2643,7 +2643,8 @@ function shopBuy(i) {
     if (!G.hasPack) { G.shopMsg = "You need a backpack to carry that."; return; }
     if (G.pack.length >= G.packCap) { G.shopMsg = "Your pack is full."; return; }
     G.pack.push({ kind: r.kind });
-  } else if (r.kind === "heart") { G.got.add(r.once); G.maxHP++; h.hp = G.maxHP; popup(px, py, "Life up!"); }
+  } else if (r.kind === "lantern") { G.lantern = r.tier; G.banner = lanternName(r.tier) + (G.hasPack ? " hangs from your pack." : ". It only works when you wear a backpack."); G.bannerT = 240; }
+  else if (r.kind === "heart") { G.got.add(r.once); G.maxHP++; h.hp = G.maxHP; popup(px, py, "Life up!"); }
   else { G.packTier = r.tier; G.packCap = 8 + 2 * r.tier; G.hasPack = true; G.banner = packName(r.tier) + ": it now holds " + G.packCap + " things."; G.bannerT = 240; }
   G.zenny -= r.price; G.shopMsg = "Sold. Spend it well."; save();
 }
@@ -2678,6 +2679,69 @@ function heartArt() {
   }, 5);
 }
 
+
+
+
+function lanternName(l) { return ["No lantern", "Candle lantern", "Oil lantern", "Bright lantern", "Sun lantern"][Math.max(0, Math.min(4, l | 0))]; }
+
+function lanternRadius(l) { return [0, 64, 92, 124, 166][Math.max(0, Math.min(4, l | 0))]; }
+
+function lanternPrice(l) { return [0, 2000, 4000, 7000, 11000][Math.max(0, Math.min(4, l | 0))]; }
+
+function lanternSmall(l) {
+  l = Math.max(1, Math.min(4, l | 0));
+  const fl = [["#c85010", "#ff9030"], ["#e0a020", "#ffd860"], ["#f0d060", "#fff4b0"], ["#a8d8ff", "#f0fbff"]][l - 1];
+  return baked("lan7_" + l, 7, 11, (R) => {
+    const o = "#0c0806", br = ["#6a4a20", "#8a6a28", "#a8842c", "#c8a040"][l - 1];
+    R(2, 0, 3, 1, o); R(2, 1, 1, 1, o); R(4, 1, 1, 1, o);          // the carrying ring
+    R(0, 2, 7, 1, o); R(1, 2, 5, 1, br);                           // cap
+    R(0, 3, 7, 6, o); R(1, 3, 1, 6, br); R(5, 3, 1, 6, shade(br, 0.6)); R(2, 3, 3, 6, fl[0]); R(2, 4, 3, 3, fl[1]); R(3, 4, 1, 2, "#ffffff");   // glass and flame
+    R(0, 9, 7, 2, o); R(1, 9, 5, 1, br); R(2, 10, 3, 1, shade(br, 0.6));  // base
+    R(0, 3, 1, 1, "rgba(0,0,0,0)");
+  }, l * 3);
+}
+
+function lanternIcon(l) {
+  l = Math.max(1, Math.min(4, l | 0));
+  return baked("lan16_" + l, 16, 16, (R, g) => { const c = mk(7, 11); c.getContext("2d").drawImage(lanternSmall(l), 0, 0); g.imageSmoothingEnabled = false; g.drawImage(c, 3, 1, 10, 14); }, l * 5);
+}
+
+function lanternStep(h) {
+  const L = (G.lan = G.lan || { a: 0, w: 0, pv: 0 }), vx = h.vx || 0, acc = vx - L.pv; L.pv = vx;
+  L.w += -acc * 0.14 + (-vx * 0.10 - L.a) * 0.06 - Math.sin(L.a) * 0.08; L.w *= 0.93; L.a += L.w; if (L.a > 1.1) { L.a = 1.1; L.w = 0; } if (L.a < -1.1) { L.a = -1.1; L.w = 0; }
+  const ax = h.climb ? h.x + 9 : (h.dir > 0 ? h.x - 2 : h.x + 22), ay = h.y + (h.climb ? 12 : h.crouch ? 15 : 10);
+  L.ax = ax; L.ay = ay; L.wx = ax + Math.sin(L.a) * 7; L.wy = ay + Math.cos(L.a) * 7 + 4;
+}
+
+function lanternLights(lights) {
+  const l = G.lantern | 0; if (!G.hasPack || l < 1 || G.mode === "dead" || !G.lan || G.lan.wx == null) return;
+  const fl = Math.sin(G.frame / 5) * 2 + Math.sin(G.frame / 2.3) * 1;
+  lights.push([G.lan.wx, G.lan.wy, lanternRadius(l) + fl, 0.97, l === 4 ? "190,225,255" : "255,185,95"]);
+}
+
+function carveTunnel(r, set, CW, CH) {
+  const S = rng(r.id * 131 + 9), x0 = r.x * CW, y0 = r.y * CH, fl = y0 + CH - 1, minF = y0 + 5;
+  for (let y = y0 + 1; y < fl; y++) for (let x = x0 + 1; x < x0 + CW - 1; x++) set(x, y, SOLID);
+  const left = r.mouths.some(m => m.cs > 0), right = r.mouths.some(m => m.cs < 0);
+  const cL = left ? x0 + 3 : x0 + 1, cR = right ? x0 + CW - 4 : x0 + CW - 2, L = cR - cL + 1, F = new Array(L).fill(fl);
+  const fromLeft = left || !right, idx = k => fromLeft ? k : L - 1 - k, both = left && right;
+  F[idx(0)] = fl;
+  for (let k = 1; k < L; k++) {
+    const prev = F[idx(k - 1)], rem = L - 1 - k, opts = [];
+    for (const d of [-1, 0, 1]) { const f = prev + d; if (f > fl || f < minF) continue; if (both && fl - f > rem) continue; if (!both && rem < 3 && d !== 0) continue; opts.push(d); }
+    const moving = opts.filter(d => d !== 0), pick = (moving.length && S() < 0.72) ? moving[Math.floor(S() * moving.length)] : (opts.includes(0) ? 0 : opts[0]);
+    F[idx(k)] = prev + pick;
+  }
+  if (both) F[idx(L - 1)] = fl;
+  for (let i = 0; i < L; i++) {
+    const col = cL + i; set(col, F[i] - 1, EMPTY);
+    if (i > 0 && F[i] !== F[i - 1]) { const hiCol = F[i] < F[i - 1] ? col : col - 1, loCol = hiCol === col ? col - 1 : col, hf = Math.min(F[i], F[i - 1]); set(hiCol, hf, STAIR); set(loCol, hf - 1, EMPTY); }
+  }
+  if (!both) {   // a small chamber at the dead end for a chest
+    const e = fromLeft ? L - 1 : 0, ef = F[e]; for (let k = 0; k < 3; k++) { const i = fromLeft ? L - 1 - k : k; F[i] = ef; for (let y = ef - 3; y <= ef - 1; y++) set(cL + i, y, EMPTY); }
+  }
+  r.style = "cave"; r.tunnelF = F; r.tunnelX = cL;
+}
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
