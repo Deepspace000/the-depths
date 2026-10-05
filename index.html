@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.51">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.51">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.52">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.52">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.51</title>
+<title>Black Tiger: The Depths v0.52</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.51";   // bump by 0.01 with every change
+const VERSION = "0.52";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4016,7 +4016,7 @@ function bossGlow(z) { return ["#ff8030", "#90ff60", "#ffd060", "#60c0ff", "#ff6
 function bossArt(kind, zone, pose, flash) {
   return bakedR("boss3" + kind + zone + pose + (flash ? "f" : ""), 64, 76, (R, g) => {
     const o = "#0a0806", E = "rgba(0,0,0,0)", gl = bossGlow(zone);
-    const up = pose === "windup", slam = pose === "slam", chg = pose === "charge", lean = chg ? 4 : 0, cr = up ? 2 : 0, hd = slam ? 3 : 0;
+    const up = pose === "windup", slam = pose === "slam", chg = pose === "charge", lean = (chg ? 4 : 0) + 3, ll = chg ? 4 : 0, cr = (up ? 2 : 0) - 2, hd = slam ? 3 : 0;
     if (kind === "guardian") {
       const T = zone === 4 ? ["#566274", "#8c9ab0", "#222a38"] : zone === 3 ? ["#2e6a62", "#58a89a", "#10302c"] : zone === 7 ? ["#b8b098", "#ece4cc", "#5a5444"] : zone === 6 ? ["#5a3a30", "#8a5a46", "#241410"] : zone === 5 ? ["#5a5470", "#8a84a8", "#241e34"] : stoneTone(zone);
       const st = T[0], lt = T[1], dk = T[2], wide = zone === 1 ? 2 : zone === 4 ? 2 : 0, S = rng(zone * 31 + pose.length);
@@ -4024,12 +4024,15 @@ function bossArt(kind, zone, pose, flash) {
       const spike = (x, y, w, h, dir) => { for (let k = 0; k < h; k++) { const ww = Math.max(1, Math.round(w * (1 - k / h))); R(x + (w - ww >> 1) - 1, y + (dir > 0 ? k : -k) , ww + 2, 1, o); } for (let k = 0; k < h; k++) { const ww = Math.max(1, Math.round(w * (1 - k / h))); R(x + (w - ww >> 1), y + (dir > 0 ? k : -k), ww, 1, k < h / 2 ? lt : st); } };
       const claws = (x, y, n, sp) => { for (let k = 0; k < n; k++) { const cx = x + k * sp; R(cx - 1, y, 4, 2, o); R(cx, y, 2, 6, o); R(cx, y + 1, 2, 4, "#d8d0b8"); R(cx, y + 5, 1, 2, "#d8d0b8"); } };
       // legs: lean, with claw toes (not for the Wraith)
-      if (zone !== 5) { blk(18 - wide + lean, 52, 11, 20, true); blk(36 + lean, 52, 11 + wide, 20); blk(15 - wide + lean, 70, 15, 5); blk(34 + lean, 70, 15 + wide, 5); for (const fx of [14, 33]) claws(fx - wide + lean, 72, 3, 5);
+      if (zone !== 5) {   // longer, hunched legs: a forward knee, then the shin back under the hip, ending in clawed feet
+        const lh1 = hz(zone * 5 + 3, 2), lh2 = hz(zone * 5 + 4, 6), lw = 9 + Math.floor(lh1 * 3), rw = 9 + Math.floor(lh2 * 3) + wide;
+        for (const a of [{ S: { x: 24 + ll, y: 45 }, E: { x: 32 + ll + Math.round(lh1 * 3), y: 58 }, W: { x: 23 + ll, y: 71 }, w0: lw + 2, w1: lw - 3 }, { S: { x: 39 + ll, y: 45 }, E: { x: 47 + ll + Math.round(lh2 * 3), y: 57 }, W: { x: 40 + ll, y: 71 }, w0: rw + 2, w1: rw - 3 }]) curveArm(R, a, st, lt, dk, o, null, false);
+        blk(15 - wide + ll, 70, 14, 5); blk(34 + ll, 70, 14 + wide, 5); for (const fx of [14, 33]) claws(fx - wide + ll + 1, 72, 3, 5);
         if (slam) { R(8, 72, 10, 2, "rgba(220,210,190,.5)"); R(48, 72, 12, 2, "rgba(220,210,190,.5)"); R(2, 74, 6, 2, "rgba(220,210,190,.4)"); R(58, 74, 6, 2, "rgba(220,210,190,.4)"); } }
       else { for (let y = 0; y < 22; y++) { const hw = Math.round(14 - y * 0.55); R(32 + lean - hw - 1, 52 + y, hw * 2 + 2, 1, y < 18 ? o : E); R(32 + lean - hw, 52 + y, hw * 2, 1, y < 16 ? "rgba(90,84,112,.8)" : "rgba(90,84,112,.35)"); } for (const [sx, sy] of [[10, 66], [50, 70], [32, 74]]) { R(sx + lean, sy, 3, 5, o); R(sx + lean + 1, sy + 1, 1, 3, gl); } }
       // gaunt torso with ribs
       if (zone === 5) { blk(14 + lean, 24 + cr, 10, 28, true); blk(40 + lean, 24 + cr, 10, 28); R(24 + lean, 26 + cr, 16, 24, "rgba(20,14,40,.7)"); for (const [sx, sy] of [[28, 30], [34, 38], [30, 46]]) { R(sx + lean - 1, sy + cr - 1, 5, 7, o); R(sx + lean, sy + cr, 3, 5, gl); R(sx + lean, sy + cr, 1, 2, "#fff"); } }
-      else { taperTorso(R, 32 + lean, 24 + cr, 31, 13 + wide, 8 + (wide >> 1), st, lt, dk, o); for (let k = 0; k < 4; k++) { const hw = 11 - k - (k > 1 ? 1 : 0) + wide; R(32 + lean - hw + 2, 38 + cr + k * 4, hw - 3, 1, o); R(32 + lean + 3, 38 + cr + k * 4, hw - 3, 1, o); R(32 + lean - hw + 2, 39 + cr + k * 4, hw - 3, 1, dk); R(32 + lean + 3, 39 + cr + k * 4, hw - 3, 1, dk); } R(26 + lean, 26 + cr, 12, 1, lt); R(24 + lean, 28 + cr, 1, 5, o); R(41 + lean, 30 + cr, 1, 4, o); }
+      else { taperTorso(R, 32 + ll, 24 + cr, 27, 13 + wide, 8 + (wide >> 1), st, lt, dk, o, 4); for (let k = 0; k < 4; k++) { const hw = 11 - k - (k > 1 ? 1 : 0) + wide; R(33 + ll - hw + 2, 35 + cr + k * 3, hw - 3, 1, o); R(33 + ll + 3, 35 + cr + k * 3, hw - 3, 1, o); R(33 + ll - hw + 2, 36 + cr + k * 3, hw - 3, 1, dk); R(33 + ll + 3, 36 + cr + k * 3, hw - 3, 1, dk); } R(26 + lean, 26 + cr, 12, 1, lt); R(24 + lean, 28 + cr, 1, 5, o); R(41 + lean, 30 + cr, 1, 4, o); }
       // spiked shoulders, long thin arms that end in claws
       const sh = zone === 1 ? -3 : 0;
       blk(7 - wide + lean, 18 + sh + cr, 12, 10); blk(45 + wide + lean, 18 + sh + cr, 12, 10);
@@ -4037,7 +4040,7 @@ function bossArt(kind, zone, pose, flash) {
       for (const a of armPaths(pose, lean, cr, zone)) curveArm(R, a, st, lt, dk, o, zone === 6 ? gl : null, true);
       if (up) { R(6 + lean, 10, 3, 2, gl); R(54 + lean, 10, 3, 2, gl); }
       // head, per guardian: narrower, a jutting jaw, slanted eyes, jagged teeth
-      const hx = 22 + lean + (chg ? 3 : 0), hy = 5 + hd + cr;
+      const hx = 22 + lean + (chg ? 3 : 0), hy = 8 + hd + cr;
       const face = () => {
         R(hx + 4, hy + 6, 5, 4, o); R(hx + 11, hy + 6, 5, 4, o);
         R(hx + 3, hy + 4, 3, 1, o); R(hx + 5, hy + 5, 3, 1, o); R(hx + 12, hy + 5, 3, 1, o); R(hx + 14, hy + 4, 3, 1, o);          // brows slanting down to the nose
@@ -4201,9 +4204,9 @@ function jagBoss(g, seed) {
 
 
 
-function taperTorso(R, cx, y0, h, hwTop, hwBot, st, lt, dk, o) {
-  for (let k = 0; k < h; k++) { const t = k / (h - 1), hw = Math.round(hwTop + (hwBot - hwTop) * Math.pow(t, 0.8)), y = y0 + k; R(cx - hw - 1, y, hw * 2 + 2, 1, o); R(cx - hw, y, hw * 2, 1, st); R(cx - hw, y, 3, 1, lt); R(cx + hw - 3, y, 3, 1, dk); if (k < 2) R(cx - hw, y, hw * 2, 1, lt); if (k > h - 4) R(cx - hw + 2, y, hw * 2 - 2, 1, dk); }
-  R(cx - hwTop - 1, y0 - 1, hwTop * 2 + 2, 1, o);
+function taperTorso(R, cx0, y0, h, hwTop, hwBot, st, lt, dk, o, shear) {
+  for (let k = 0; k < h; k++) { const t = k / (h - 1), hw = Math.round(hwTop + (hwBot - hwTop) * Math.pow(t, 0.8)), y = y0 + k, cx = cx0 + Math.round((shear || 0) * (1 - t)); R(cx - hw - 1, y, hw * 2 + 2, 1, o); R(cx - hw, y, hw * 2, 1, st); R(cx - hw, y, 3, 1, lt); R(cx + hw - 3, y, 3, 1, dk); if (k < 2) R(cx - hw, y, hw * 2, 1, lt); if (k > h - 4) R(cx - hw + 2, y, hw * 2 - 2, 1, dk); }
+  R(cx0 + (shear || 0) - hwTop - 1, y0 - 1, hwTop * 2 + 2, 1, o);
 }
 
 function curveArm(R, a, st, lt, dk, o, gl, claws) {
@@ -4227,6 +4230,7 @@ function armPaths(pose, lean, cr, zone) {
   };
   return sets[pose] || sets.idle;
 }
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
