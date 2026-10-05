@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.45">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.45">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.46">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.46">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.45</title>
+<title>Black Tiger: The Depths v0.46</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.45";   // bump by 0.01 with every change
+const VERSION = "0.46";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -882,10 +882,10 @@ function newGame(seed, saved) {
   G = {
     hero: { x: world.start.x, y: world.start.y, vx: 0, vy: 0, dir: -1, ground: true, climb: false, crouch: false, atk: 0, anim: 0, climbDist: 0, hp: CFG.maxHP, inv: 0, chainTop: 0, drop: 0 },
     zenny: 0, keys: 0, maxHP: CFG.maxHP, fires: [], traps: [], shots: [], confuse: 0, got: new Set(), visited: new Set(), shrine: { ...world.start }, room: null, enemies: [], popups: [], particles: [],
-    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, lantern: 0, weapon: 0, gear: { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
+    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, killed: new Set(), lantern: 0, weapon: 0, gear: { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
   };
   if (saved) {
-    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; if (saved.gear) G.gear = saved.gear; G.weapon = saved.weapon | 0; G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
+    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; if (saved.gear) G.gear = saved.gear; G.weapon = saved.weapon | 0; G.killed = new Set(saved.killed || []); G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
     G.got = new Set(saved.got); G.visited = new Set(saved.visited); G.shrine = saved.shrine;
   }
   if (saved && hitsSolid(G.hero, G.hero.x, G.hero.y)) {   // the world's layout changed since this save: start at the entrance
@@ -900,7 +900,7 @@ function newGame(seed, saved) {
 }
 function save() {
   const h = G.hero;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, weapon: G.weapon | 0, gear: G.gear, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, killed: [...G.killed], weapon: G.weapon | 0, gear: G.gear, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
 }
 function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
 
@@ -912,7 +912,8 @@ function enterRoom(r, instant) {
   const oldZone = G.room ? G.room.zone : -1;
   G.room = r;
   for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) G.visited.add((r.y + j) * GW + r.x + i);
-  G.enemies = world.spawns.filter(s => s.room === r.id).map(s => ({ ...s, maxHp: s.hp, x0: s.x, y0: s.y, dir: (s.x >> 4) & 1 ? 1 : -1, state: ENEMY_TYPES[s.type].start, t: 0, cd: 40 + ((s.x >> 4) % 5) * 15, anim: 0, hurtT: 0, alive: true, frame: "" }));
+  for (const e of (G.enemies || [])) if (e.sid != null && (!e.alive || e.state === "die" || e.hp <= 0)) G.killed.add(e.sid);
+  G.enemies = world.spawns.filter((s, i) => { s.sid = i; return s.room === r.id && !G.killed.has(i); }).map(s => ({ ...s, maxHp: s.hp, x0: s.x, y0: s.y, dir: (s.x >> 4) & 1 ? 1 : -1, state: ENEMY_TYPES[s.type].start, t: 0, cd: 40 + ((s.x >> 4) % 5) * 15, anim: 0, hurtT: 0, alive: true, frame: "" }));
   G.shots = [];
   G.traps = world.traps.filter(t => t.room === r.id).map(t => ({ ...t, state: "wait", vy: 0 }));
   G.fires = []; spawnLife(r);
@@ -1313,7 +1314,7 @@ function enemyBox(e) { const B = ENEMY_TYPES[e.type].box; if (B) return B(e); re
 function updateEnemies() {
   const fb = flailBox(), h = G.hero, zone = G.room.zone;
   for (const e of G.enemies) {
-    if (!e.alive) continue;
+    if (!e.alive) { if (e.sid != null) G.killed.add(e.sid); continue; }
     const T = ENEMY_TYPES[e.type]; if (e.maxHp === undefined) e.maxHp = e.hp;
     e.t++; if (e.cd) e.cd--;
     if (e.state === "die") { e.frame = e.t < 12 ? "die0" : e.t < 24 ? "die1" : "die2"; if (e.t > 56) e.alive = false; continue; }
