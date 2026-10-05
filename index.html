@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.55">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.55">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.56">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.56">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.55</title>
+<title>Black Tiger: The Depths v0.56</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.55";   // bump by 0.01 with every change
+const VERSION = "0.56";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4031,9 +4031,9 @@ function bossArt(kind, zone, pose, flash) {
       const spike = (x, y, w, h, dir) => { for (let k = 0; k < h; k++) { const ww = Math.max(1, Math.round(w * (1 - k / h))); R(x + (w - ww >> 1) - 1, y + (dir > 0 ? k : -k) , ww + 2, 1, o); } for (let k = 0; k < h; k++) { const ww = Math.max(1, Math.round(w * (1 - k / h))); R(x + (w - ww >> 1), y + (dir > 0 ? k : -k), ww, 1, k < h / 2 ? lt : st); } };
       const claws = (x, y, n, sp) => { for (let k = 0; k < n; k++) { const cx = x + k * sp; R(cx - 1, y, 4, 2, o); R(cx, y, 2, 6, o); R(cx, y + 1, 2, 4, "#d8d0b8"); R(cx, y + 5, 1, 2, "#d8d0b8"); } };
       // legs: lean, with claw toes (not for the Wraith)
-      if (zone !== 5) {   // longer, hunched legs: a forward knee, then the shin back under the hip, ending in clawed feet
+      if (zone !== 5) {   // longer, hunched legs: knees pushed outward, shins back under the hips, ending in clawed feet
         const lh1 = hz(zone * 5 + 3, 2), lh2 = hz(zone * 5 + 4, 6), lw = 9 + Math.floor(lh1 * 3), rw = 9 + Math.floor(lh2 * 3) + wide;
-        for (const a of [{ S: { x: 24 + ll, y: 45 }, E: { x: 32 + ll + Math.round(lh1 * 3), y: 58 }, W: { x: 23 + ll, y: 71 }, w0: lw + 2, w1: lw - 3 }, { S: { x: 39 + ll, y: 45 }, E: { x: 47 + ll + Math.round(lh2 * 3), y: 57 }, W: { x: 40 + ll, y: 71 }, w0: rw + 2, w1: rw - 3 }]) curveArm(R, a, st, lt, dk, o, null, false);
+        for (const a of [{ S: { x: 25 + ll, y: 45 }, E: { x: 12 + ll - Math.round(lh1 * 3), y: 58 }, W: { x: 21 + ll, y: 71 }, w0: lw + 2, w1: lw - 3 }, { S: { x: 39 + ll, y: 45 }, E: { x: 54 + ll + Math.round(lh2 * 3), y: 57 }, W: { x: 43 + ll, y: 71 }, w0: rw + 2, w1: rw - 3 }]) curveArm(R, a, st, lt, dk, o, null, false);
         blk(15 - wide + ll, 70, 14, 5); blk(34 + ll, 70, 14 + wide, 5); for (const fx of [14, 33]) claws(fx - wide + ll + 1, 72, 3, 5);
         if (slam) { R(8, 72, 10, 2, "rgba(220,210,190,.5)"); R(48, 72, 12, 2, "rgba(220,210,190,.5)"); R(2, 74, 6, 2, "rgba(220,210,190,.4)"); R(58, 74, 6, 2, "rgba(220,210,190,.4)"); } }
       else { for (let y = 0; y < 22; y++) { const hw = Math.round(14 - y * 0.55); R(32 + lean - hw - 1, 52 + y, hw * 2 + 2, 1, y < 18 ? o : E); R(32 + lean - hw, 52 + y, hw * 2, 1, y < 16 ? "rgba(90,84,112,.8)" : "rgba(90,84,112,.35)"); } for (const [sx, sy] of [[10, 66], [50, 70], [32, 74]]) { R(sx + lean, sy, 3, 5, o); R(sx + lean + 1, sy + 1, 1, 3, gl); } }
@@ -4299,6 +4299,7 @@ function itemGrid(items) {
   const M = new Map(), key = (x, y) => (x >> 5) + "," + (y >> 5), g = { add(i) { const k = key(i.x | 0, i.y | 0); (M.get(k) || (M.set(k, []), M.get(k))).push(i); }, near(x, y, rx, ry) { for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = M.get(((x >> 5) + a) + "," + ((y >> 5) + b)); if (l) for (const i of l) if (Math.abs(i.x - x) < rx && Math.abs(i.y - y) < ry) return true; } return false; } };
   for (const i of items) if (i.x != null) g.add(i); return g;
 }
+
 
 
 
