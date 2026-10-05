@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.41">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.41">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.43">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.43">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.41</title>
+<title>Black Tiger: The Depths v0.43</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.41";   // bump by 0.01 with every change
+const VERSION = "0.43";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -750,10 +750,11 @@ function generateWorld(seed) {
   buildForests(rooms, items, get, ruinDecor);
   placeHiddenKeys(rooms, items, get, set, chainCell, standSpots, ruinDecor);
   buildFungus(rooms, items, get, ruinDecor);
+  buildTowns(rooms, items, spawns, traps, get, set, ruinDecor, E, S, roomOf, ci, standSpots);
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
   const decor = [...ruinDecor];
   for (const r of rooms) {
-    r.dark = r.id > 0 && R() < 0.22 + r.zone * 0.06; if (r.cave || r.flood) r.dark = true;
+    r.dark = r.id > 0 && R() < 0.22 + r.zone * 0.06; if (r.cave || r.flood) r.dark = true; if (r.town === "friendly") r.dark = false;
     const vineChance = (r.dark ? 0.16 : 0.05) + (r.zone === 1 || r.zone === 3 ? 0.08 : 0);
     const torches = r.cave ? 0 : r.dark ? (R() < 0.3 ? 1 : 0) : r.w * r.h + (R() < 0.5 ? 1 : 0);
     const torchSpots = [];
@@ -880,10 +881,10 @@ function newGame(seed, saved) {
   G = {
     hero: { x: world.start.x, y: world.start.y, vx: 0, vy: 0, dir: -1, ground: true, climb: false, crouch: false, atk: 0, anim: 0, climbDist: 0, hp: CFG.maxHP, inv: 0, chainTop: 0, drop: 0 },
     zenny: 0, keys: 0, maxHP: CFG.maxHP, fires: [], traps: [], shots: [], confuse: 0, got: new Set(), visited: new Set(), shrine: { ...world.start }, room: null, enemies: [], popups: [], particles: [],
-    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, lantern: 0, gear: { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
+    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, lantern: 0, weapon: 0, gear: { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
   };
   if (saved) {
-    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; if (saved.gear) G.gear = saved.gear; G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
+    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; if (saved.gear) G.gear = saved.gear; G.weapon = saved.weapon | 0; G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
     G.got = new Set(saved.got); G.visited = new Set(saved.visited); G.shrine = saved.shrine;
   }
   if (saved && hitsSolid(G.hero, G.hero.x, G.hero.y)) {   // the world's layout changed since this save: start at the entrance
@@ -898,7 +899,7 @@ function newGame(seed, saved) {
 }
 function save() {
   const h = G.hero;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, gear: G.gear, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, weapon: G.weapon | 0, gear: G.gear, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
 }
 function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
 
@@ -1049,7 +1050,7 @@ function atkStage(a) { if (a <= 6) return 0; if (a <= 8) return 1; if (a <= 10) 
 // The flail's hit box: from the hand out to the ball
 function flailBox() {
   const h = G.hero; if (!h.atk) return null; const s = atkStage(h.atk); if (!s) return null;
-  const reach = 16 * (s + 1), y = h.y + (h.crouch ? 12 : 4);
+  const reach = 16 * (s + 1) + weaponReach(G.weapon), y = h.y + (h.crouch ? 12 : 4);
   return { x: h.dir < 0 ? h.x - reach : h.x + 32, y, w: reach, h: 20 };
 }
 const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
@@ -1088,6 +1089,7 @@ function updateItems() {
     if (it.kind === "house") { updateHouse(it, hb); continue; }
     if (it.kind === "prisoner") { updatePrisoner(it); continue; }
     if (it.kind === "bigshroom") { updateBigShroom(it, hb); continue; }
+    if (it.kind === "villager") { updateVillager(it, hb); continue; }
     if (it.kind === "fountain") { updateFountain(it, hb); continue; }
     if (!overlap(hb, box)) continue;
     if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; popup(it.x + 8, it.y, "+" + it.value); }
@@ -1446,6 +1448,7 @@ function draw() {
     if (it.kind === "shop") { drawShop(it, cx, cy, lights); continue; }
     if (it.kind === "prisoner") { put(Art.obj("frozen", ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3], 0, zone), it.x, it.y); continue; }
     if (it.kind === "bigshroom") { drawBigShroom(it, cx, cy); continue; }
+    if (it.kind === "villager") { drawVillager(it, cx, cy, zone); continue; }
     if (it.kind === "house" || it.kind === "fountain") continue;
     if (it.kind === "treasure") { put(Art.obj(it.art, "idle", 0, zone), it.x, it.y); continue; }
     const bob = it.kind === "coin" && !it.falling ? Math.round(Math.sin((G.frame + it.x) / 12) * 1.5) : 0;
@@ -1689,6 +1692,7 @@ function drawDecor(cx, cy, zone, lights) {
       case "cellback": drawCellBack(d, cx, cy, lights); break;
       case "weed": case "jelly": drawFloodDecor(d, cx, cy, lights); break;
       case "wallfx": case "smallshroom": drawFungus(d, cx, cy, lights); break;
+      case "orchut": case "orcbanner": case "orcdrum": case "palisade": case "totem": case "lamppost": case "stall": case "bunting": case "cottage": drawTown(d, cx, cy, lights); break;
       case "statue": case "bigstatue": case "tree": case "fountain": drawGarden(d, cx, cy, lights); break;
       case "cwindow": case "pillar": case "pew": case "altar": case "chandelier": case "rubble": case "bwall": case "wallface": case "podium": case "rose": case "balustrade": drawRuin(d, cx, cy, lights); break;
       default: { drawPlant(d, cx, cy, zone); const p = plantArt(d.kind, d.seed, d.zone != null ? d.zone : zone); if (p.glow && dark) lights.push([d.x + 8, d.y + 6, 26, 0.55, p.glow]); }
@@ -2218,6 +2222,7 @@ function windowArt(seed, pal) {
       R(p.x, p.y, p.w, p.h, base); R(p.x, p.y, p.w, 2, shade(base, 1.32)); R(p.x, p.y, 2, p.h, shade(base, 1.22)); R(p.x + p.w - 2, p.y + 2, 2, p.h - 2, shade(base, 0.68)); R(p.x + 2, p.y + p.h - 2, p.w - 2, 2, shade(base, 0.76));
       if (S() < 0.5) R(p.x + 3 + Math.floor(S() * Math.max(1, p.w - 6)), p.y + 3, 1, 3, "rgba(255,255,255,.45)");
       if (S() < 0.25) R(p.x + 2 + Math.floor(S() * (p.w - 4)), p.y, 1, p.h, "rgba(10,6,8,.7)");   // a crack through the pane
+      if (S() < 0.22) for (let k = 0; k < Math.min(p.w, p.h); k++) R(p.x + p.w - 1 - k, p.y + p.h - 1, k + 1, 1, "rgba(0,0,0,0)");   // a triangular pane
     }
     for (const p of panes) { const j = (p.x + p.y) & 1; R(p.x - 2, p.y - 1 + j, p.w + 4, 2, ink); R(p.x - 2, p.y + p.h - 1 - j, p.w + 4, 2, ink); R(p.x - 1, p.y, 2, p.h, ink); R(p.x + p.w - 1, p.y + (j ? 1 : 0), 2, p.h - 1, ink); }   // bent leads
     R(15, 5, 2, 86, st2); R(31, 5, 2, 86, st2); R(8, 30, 32, 2, st2); R(8, 30, 32, 1, st);
@@ -2251,9 +2256,9 @@ function pewArt(broken, seed) {
     R(2, 8, 4, 15, o); R(3, 8, 2, 15, w); R(3, 8, 1, 15, wl);                                                              // left end panel
     if (!broken) { R(46, 8, 4, 15, o); R(47, 8, 2, 15, w); R(47, 8, 1, 15, wl); } else { R(46, 14, 4, 9, o); R(47, 14, 2, 9, w); for (let k = 0; k < 4; k++) R(46 + (k & 1), 10 + k, 1, 2, wl); R(44, 21, 6, 2, wd); }   // a snapped end, splinters up
     for (let i = 0; i < 3; i++) { if (broken && i === 1) continue; const x = 7 + i * 13 + (S() < 0.5 ? 1 : 0), lean = i; R(x + lean, 3, 11, 3, o); R(x + lean + 1, 3, 9, 1, wl); R(x + lean + 1, 4, 9, 2, w); }   // leaning back slats, one missing
-    R(5, 11, 42, 5, o); R(6, 11, 40, 1, wl); R(6, 12, 40, 3, w); R(6, 15, 40, 1, wd);                                       // a thick plank seat
+    R(5, 11, 42, 6, o); R(6, 11, 40, 2, wl); R(6, 13, 40, 3, w); R(6, 16, 40, 1, wd); R(2, 6, 4, 2, o); R(3, 6, 2, 1, wl);                                       // a thick plank seat
     for (let x = 10; x < 44; x += 7 + Math.floor(S() * 3)) R(x, 12, 1, 3, wd);
-    if (broken) { R(19, 11, 13, 5, "rgba(0,0,0,0)"); R(18, 14, 5, 4, o); R(27, 16, 6, 3, wd); R(30, 13, 4, 2, w); }
+    if (broken) { R(30, 21, 14, 2, o); R(31, 21, 12, 1, wl); R(19, 11, 13, 5, "rgba(0,0,0,0)"); R(18, 14, 5, 4, o); R(27, 16, 6, 3, wd); R(30, 13, 4, 2, w); }
     R(8, 16, 3, 7, o); R(9, 16, 1, 6, wd); R(40, 16, 3, 7, o); R(41, 16, 1, 6, wd);
   }, seed);
 }
@@ -2312,10 +2317,10 @@ function battlementArt(w, seed) {
     R(0, 14, W, 10, o); let bx = 0; while (bx < W) { const bw = 8 + Math.floor(S() * 8); stoneBlock(R, bx, 15, Math.min(bw, W - bx), 8, bx + seed, S, true); bx += bw; }
     R(0, 14, W, 1, "#b8b4c4");
     let x = 1, k = 0; while (x + 10 <= W) {
-      const mw = 10 + Math.floor(S() * 4), r0 = S(), mh = r0 < 0.15 ? 0 : 6 + Math.floor(S() * 8);
+      const mw = 6 + Math.floor(S() * 9), r0 = S(), mh = r0 < 0.15 ? 0 : 4 + Math.floor(S() * 9);
       if (mh === 0) { stoneBlock(R, x + 1, 10, 6, 4, k, S, true); stoneBlock(R, x + 8, 11, 4, 3, k + 1, S, true); }              // a fallen merlon, rubble on the wall top
       else { stoneBlock(R, x, 14 - mh, mw, mh, k + seed, S, true); R(x, 14 - mh, mw, 2, "#b8b4c4"); R(x + mw - 3, 14 - mh + 2, 3, mh - 2, "rgba(0,0,0,.18)"); if (r0 > 0.7) { R(x + mw - 4, 14 - mh, 4, 3, "rgba(0,0,0,0)"); R(x, 14 - mh + 2, 2, 2, "rgba(0,0,0,0)"); } }
-      x += mw + 4 + Math.floor(S() * 3); k++;
+      x += mw + 3 + Math.floor(S() * 4); k++;
     }
     for (let q = 0; q < W; q += 2 + Math.floor(S() * 3)) R(q, 22 + Math.floor(S() * 2), 2, 2, "rgba(0,0,0,0)");   // a jagged broken base
   }, seed + w);
@@ -2567,7 +2572,9 @@ function equipPack(it) {
 function bakedR(key, w, h, fn, seed) {
   const BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key];
   const c = mk(w, h), g = c.getContext("2d"); fn((a, b, ww, hh, col) => { if (col === "rgba(0,0,0,0)") { g.clearRect(a, b, ww, hh); return; } g.fillStyle = col; g.fillRect(a, b, ww, hh); }, g);
-  gritCanvas(c, seed, 0.1, 0.012, 0.98); BK[key] = c; return c;
+  gritCanvas(c, seed, 0.1, 0.012, 0.98);
+  { const g2 = c.getContext("2d"), id = g2.getImageData(0, 0, w, h), d = id.data; for (let x = 0; x < w; x++) for (let k = 0; k < 2; k++) { const i = ((h - 1 - k) * w + x) * 4; if (d[i + 3] > 128) { d[i] *= 0.68; d[i + 1] *= 0.68; d[i + 2] *= 0.68; } } g2.putImageData(id, 0, 0); }   // a grime strip along the foot of every piece
+  BK[key] = c; return c;
 }
 
 function stoneBlock(R, x, y, w, h, tone, S, mossy) {
@@ -2588,7 +2595,7 @@ function drawBridge(g, x) {
 }
 
 
-function shopPrice(kind, tier) { return kind === "armour" ? 1800 * tier : kind === "lantern" ? lanternPrice(tier) : kind === "food" ? 300 : kind === "potion" ? 500 : kind === "heart" ? 4000 : 1500 * ((tier | 0) + 1); }
+function shopPrice(kind, tier) { return kind === "weapon" ? 2500 * tier : kind === "armour" ? 1800 * tier : kind === "lantern" ? lanternPrice(tier) : kind === "food" ? 300 : kind === "potion" ? 500 : kind === "heart" ? 4000 : 1500 * ((tier | 0) + 1); }
 
 function shopkeeperArt(zone, f) {
   const cloak = ["#2a4a52", "#4a2a52", "#52402a", "#2a3a5a", "#5a2a2a", "#3a4a2a", "#4a4a4a", "#52302a"][zone % 8];
@@ -2630,20 +2637,23 @@ function drawShop(it, cx, cy, lights) {
   // a lantern on the right post
   R(33, -36, 1, 4, "#120a04"); R(31, -32, 5, 6, "#120a04"); R(32, -31, 3, 4, (t >> 3) & 1 ? "#ffd070" : "#ffb040"); R(32, -31, 1, 2, "#fff0b0");
   lights.push([it.x + 17, it.y - 20, 78, 0.95, "255,190,100"]);
-  if (!it.near && G.mode === "play") { const b = Math.round(Math.sin(t / 10) * 1.5); ctx.fillStyle = "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText("SHOP", x + 8, base - 60 + b); }
+  if (!it.near && G.mode === "play") { const b = Math.round(Math.sin(t / 10) * 1.5); ctx.fillStyle = "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText(it.inn ? "INN" : "SHOP", x + 8, base - 60 + b); }
 }
 
 function shopStock(it) {
+  if (it.inn) return innStock();
   const rows = [{ kind: "food", name: "Roast chicken", desc: "Fills your hunger gauge." }, { kind: "potion", name: "Potion", desc: "Heals 3 life." }];
   rows.push({ kind: "heart", name: "Heart charm", desc: "Adds 1 to your maximum life.", once: it.id + 1 });
   rows.push({ kind: "lantern", name: lanternName(Math.min(4, (G.lantern | 0) + 1)), desc: "Lights the area around you. Needs a backpack.", tier: Math.min(4, (G.lantern | 0) + 1) });
   { const k = ["helm", "chest", "legs", "bracer", "ring", "ring"][it.id % 6], rk = ((it.id >> 1) & 1) ? "m" : "w", tr = Math.min(5, gearTier(it.zone | 0) + 1), ps = gearPieceStats(k, tr, rk); rows.push({ kind: "armour", slot: k, rk, tier: tr, name: gearName(k, tr, rk), desc: (ps.str ? "Strength +" + ps.str + ", " : "") + "Defense +" + ps.def }); }
+  rows.push({ kind: "weapon", tier: Math.min(5, (G.weapon | 0) + 1), name: weaponName(Math.min(5, (G.weapon | 0) + 1)), desc: "Bigger, brighter ball. Reach +" + weaponReach(Math.min(5, (G.weapon | 0) + 1)) + ", Strength +" + 2 * Math.min(5, (G.weapon | 0) + 1) });
   if (it.tier >= 0) rows.push({ kind: "pack", name: packName(it.tier), desc: "Holds " + (8 + 2 * it.tier) + " things.", tier: it.tier });
   for (const r of rows) r.price = shopPrice(r.kind, r.tier);
   return rows;
 }
 
 function shopRowState(r) {
+  if (r.kind === "weapon" && (G.weapon | 0) >= 5) return "Your weapon is the finest";
   if (r.kind === "armour") { const g = G.gear || {}; const have = r.slot === "ring" ? Math.min(g.r1 ? g.r1.t : 0, g.r2 ? g.r2.t : 0) : (g[r.slot] | 0); if (have >= r.tier) return r.slot === "ring" ? "You wear better rings" : "You wear as good"; }
   if (r.kind === "heart" && G.got.has(r.once)) return "Sold out";
   if (r.kind === "lantern" && (G.lantern | 0) >= 4) return "Your lantern is the brightest";
@@ -2652,18 +2662,18 @@ function shopRowState(r) {
 }
 
 function shopLayout(n) {
-  const W = Math.min(VW - 8, 236), x = Math.round((VW - W) / 2), rowH = 20, y = 6, h = 44 + n * rowH + 36;
+  const W = Math.min(VW - 8, 236), x = Math.round((VW - W) / 2), rowH = n > 6 ? 18 : 20, y = 4, h = 44 + n * rowH + 36;
   return { x, y, w: W, h, rowH, rows0: y + 44, close: { x: Math.round(VW / 2) - 28, y: y + h - 24, w: 56, h: 16 } };
 }
 
-function shopArt(r) { return r.kind === "food" ? chickenArt() : r.kind === "potion" ? itemArt("potion") : r.kind === "heart" ? heartArt() : r.kind === "lantern" ? lanternIcon(r.tier) : r.kind === "armour" ? armourIcon(r.slot, r.tier, r.rk) : backpackArt(r.tier); }
+function shopArt(r) { return r.kind === "food" ? chickenArt() : r.kind === "potion" ? itemArt("potion") : r.kind === "heart" ? heartArt() : r.kind === "rest" ? heartArt() : r.kind === "weapon" ? weaponIcon(r.tier) : r.kind === "lantern" ? lanternIcon(r.tier) : r.kind === "armour" ? armourIcon(r.slot, r.tier, r.rk) : backpackArt(r.tier); }
 
 function drawShopUI() {
   const it = G.shopIt, rows = shopStock(it), L = shopLayout(rows.length), g = ctx, sel = Math.min(G.shopSel | 0, rows.length - 1), t = G.frame;
   g.fillStyle = "rgba(4,2,2,.72)"; g.fillRect(0, 0, VW, VH); g.imageSmoothingEnabled = false;
   g.fillStyle = "#120a04"; g.fillRect(L.x - 2, L.y - 2, L.w + 4, L.h + 4); g.fillStyle = "#4a2c14"; g.fillRect(L.x, L.y, L.w, L.h); g.fillStyle = "#6a4020"; g.fillRect(L.x, L.y, L.w, 2); g.fillStyle = "#34200e"; g.fillRect(L.x, L.y + L.h - 2, L.w, 2);
   g.drawImage(shopkeeperArt(it.zone | 0, (t >> 5) & 1), L.x + 6, L.y + 4, 30, 38);
-  g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "left"; g.fillText("THE PEDLAR", L.x + 42, L.y + 16);
+  g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "left"; g.fillText(it.inn ? "THE INNKEEPER" : "THE PEDLAR", L.x + 42, L.y + 16);
   g.fillStyle = "#d8c090"; g.font = "8px monospace"; g.fillText(G.shopMsg || "Coin first. Then goods.", L.x + 42, L.y + 28);
   g.fillStyle = "#e8c048"; g.fillText("Your zenny: " + G.zenny, L.x + 42, L.y + 39);
   rows.forEach((r, i) => {
@@ -2688,7 +2698,9 @@ function shopBuy(i) {
     if (!G.hasPack) { G.shopMsg = "You need a backpack to carry that."; return; }
     if (G.pack.length >= G.packCap) { G.shopMsg = "Your pack is full."; return; }
     G.pack.push({ kind: r.kind });
-  } else if (r.kind === "armour") { const pi = { x: h.x, y: h.y, id: -1, slot: r.slot, rk: r.rk, tier: r.tier }; takeArmour(pi); if (!pi.gone) { G.shopMsg = "That would not help you."; return; } }
+  } else if (r.kind === "rest") { h.hp = G.maxHP; G.hunger = Math.min(100, G.hunger + 50); G.shrine = { x: h.x, y: h.y }; popup(px, py, "Rested"); G.banner = "You rest at the inn. Life restored, and the game is saved here."; G.bannerT = 220; }
+  else if (r.kind === "weapon") { G.weapon = r.tier; G.banner = weaponName(r.tier) + ": a larger ball and a longer reach."; G.bannerT = 240; }
+  else if (r.kind === "armour") { const pi = { x: h.x, y: h.y, id: -1, slot: r.slot, rk: r.rk, tier: r.tier }; takeArmour(pi); if (!pi.gone) { G.shopMsg = "That would not help you."; return; } }
   else if (r.kind === "lantern") { G.lantern = r.tier; G.banner = lanternName(r.tier) + (G.hasPack ? " hangs from your pack." : ". It only works when you wear a backpack."); G.bannerT = 240; }
   else if (r.kind === "heart") { G.got.add(r.once); G.maxHP++; h.hp = G.maxHP; popup(px, py, "Life up!"); }
   else { G.packTier = r.tier; G.packCap = 8 + 2 * r.tier; G.hasPack = true; G.banner = packName(r.tier) + ": it now holds " + G.packCap + " things."; G.bannerT = 240; }
@@ -2817,6 +2829,7 @@ function houseFront(seed, side, open, zone) {
       R(wx - 3, 31, 30, 24, o); R(wx - 2, 32, 28, 22, wood); R(wx - 2, 32, 28, 2, woodL); R(wx, 34, 24, 18, "rgba(0,0,0,0)");
       R(wx - 4, 53, 32, 4, o); R(wx - 3, 53, 30, 2, tone[1]); R(wx - 3, 55, 30, 1, tone[2]);
       R(wx + 11, 34, 2, 18, wood); R(wx + 12, 34, 1, 18, woodL);
+      R(wx + 1, 47, 3, 3, "rgba(255,186,80,.55)"); R(wx + 18, 46, 4, 4, "rgba(255,186,80,.45)"); R(wx + 2, 48, 1, 1, "rgba(255,240,170,.9)");
       const sh = S() < 0.5; R(wx - 8, 34, 6, 18, o); R(wx - 7, 35, 4, 16, "#5a4020"); for (let y = 37; y < 50; y += 3) R(wx - 7, y, 4, 1, woodD); if (sh) R(wx - 6, 44, 3, 7, "rgba(0,0,0,0)");
     }
     const dx = rx(W - 16, 16);
@@ -2827,6 +2840,8 @@ function houseFront(seed, side, open, zone) {
       R(dx + 5, 40, 7, 8, "#1a1a20"); R(dx + 6, 41, 5, 6, "#b89838"); R(dx + 6, 41, 5, 1, "#e8d068"); R(dx + 8, 43, 1, 3, "#1a1208");
     } else { R(dx, 30, 16, 30, "rgba(0,0,0,0)"); R(dx + (side > 0 ? 0 : 13), 30, 3, 30, wood); R(dx + (side > 0 ? 0 : 13), 30, 1, 30, woodL); }
     R(dx - 2, 28, 20, 3, woodD); R(dx - 2, 28, 20, 1, woodL);
+    R(dx - 2, 57, 20, 3, tone[2]); R(dx - 2, 57, 20, 1, tone[1]); R(dx + 14, 57, 3, 2, "rgba(0,0,0,0)");   // a worn stone threshold
+    const lx = side > 0 ? dx - 9 : dx + 20; R(lx, 36, 1, 4, "#1a1008"); R(lx - 1, 40, 4, 5, o); R(lx, 41, 2, 3, "#ffc060"); R(lx, 41, 1, 1, "#fff0b0");   // a lantern on a bracket
   }, seed * 5 + side + (open ? 1 : 0));
 }
 
@@ -2947,7 +2962,7 @@ function statueArt(type, seed, zone) {
 }
 
 function treeArt(type, seed, zone) {
-  const pal = [["#2a5a22", "#3e7a2e", "#68a844"], ["#3a5a22", "#58782e", "#88a040"], ["#5a4a1e", "#7a6a2a", "#a89040"], ["#3a3a4a", "#50506a", "#7a7a98"], ["#4a2a1e", "#6a3a22", "#a05a2c"], ["#2a4a4a", "#3e6a6a", "#68a0a0"], ["#3a2a4a", "#5a3e6a", "#8a64a8"], ["#4a1a1a", "#7a2a1a", "#c05a2a"]][zone % 8];
+  const pal = [["#1c3a1c", "#2f5a2a", "#4a8a3a"], ["#3a5a22", "#58782e", "#88a040"], ["#5a4a1e", "#7a6a2a", "#a89040"], ["#3a3a4a", "#50506a", "#7a7a98"], ["#4a2a1e", "#6a3a22", "#a05a2c"], ["#2a4a4a", "#3e6a6a", "#68a0a0"], ["#3a2a4a", "#5a3e6a", "#8a64a8"], ["#4a1a1a", "#7a2a1a", "#c05a2a"]][zone % 8];
   return baked("tree" + type + (seed % 4) + (zone % 8), 48, 64, (R) => {
     const S = rng(seed * 23 + type * 5), o = "#0e0a06", bark = "#4a3220", barkL = "#7a5a3a", barkD = "#2a1a0e";
     const trunk = (x0, y0, x1, y1, w) => { const n = Math.max(1, Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) { const f = i / n, x = Math.round(x0 + (x1 - x0) * f + Math.sin(f * 5 + seed) * 1.5), y = y0 + (y1 - y0) * f, ww = Math.max(2, Math.round(w * (1 - f * 0.45))); R(x - (ww >> 1) - 1, y, ww + 2, 1, o); R(x - (ww >> 1), y, ww, 1, bark); R(x - (ww >> 1), y, 1, 1, barkL); R(x + (ww >> 1) - 1, y, 1, 1, barkD); } };
@@ -2955,9 +2970,9 @@ function treeArt(type, seed, zone) {
     // roots flaring at the foot
     R(14, 58, 20, 6, "rgba(0,0,0,0)");
     for (const [dx, w] of [[-8, 5], [6, 5], [-3, 4]]) { R(24 + dx, 59, w, 5, o); R(25 + dx, 60, w - 2, 4, bark); }
-    if (type === 0) {        // a round-topped little tree with a twisted trunk
-      trunk(24, 62, 22, 30, 7); trunk(23, 40, 14, 24, 3); trunk(24, 38, 33, 22, 3);
-      blob(24, 17, 14, 11); blob(11, 24, 9, 7); blob(36, 24, 9, 7); blob(24, 8, 8, 6);
+    if (type === 0) {        // a lopsided little tree: twisted trunk, a notch in the crown and a dead branch
+      trunk(24, 62, 22, 30, 7); trunk(23, 40, 14, 24, 3); trunk(24, 38, 33, 22, 3); trunk(26, 34, 42, 18, 2);
+      blob(22, 18, 12, 10); blob(10, 25, 8, 6); blob(35, 22, 8, 6); R(26, 8, 5, 6, "rgba(0,0,0,0)"); R(17, 14, 3, 3, "rgba(0,0,0,0)");
     } else if (type === 1) { // a leaning dead tree: bare branches, a few leaves
       trunk(26, 62, 20, 14, 7); trunk(22, 36, 6, 18, 3); trunk(22, 28, 38, 14, 3); trunk(20, 20, 30, 4, 2); trunk(11, 24, 4, 14, 2); trunk(34, 18, 44, 22, 2);
       for (let k = 0; k < 9; k++) R(4 + Math.floor(S() * 40), 6 + Math.floor(S() * 22), 3, 2, S() < 0.5 ? pal[0] : pal[1]);
@@ -3069,6 +3084,7 @@ function gearStats() {
   const g = G.gear || {}; let str = 0, def = 0;
   for (const s of ["helm", "chest", "legs", "bracer"]) { const p = gearPieceStats(s, g[s] | 0); str += p.str; def += p.def; }
   for (const s of ["r1", "r2"]) if (g[s]) { const p = gearPieceStats("ring", g[s].t, g[s].k); str += p.str; def += p.def; }
+  str += 2 * (G.weapon | 0);
   return { str, def };
 }
 
@@ -3091,8 +3107,8 @@ function gearAccent(t) { return ["#8a6a40", "#e8b050", "#e8eef8", "#ffd24a", "#f
 function hexRGB(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
 
 function gearImg(f) {
-  const g = G.gear; if (!g || !(g.helm || g.chest || g.legs || g.bracer)) return f.img;
-  const sig = "" + (g.helm | 0) + (g.chest | 0) + (g.legs | 0) + (g.bracer | 0), src = f.img, C = (src.__gear = src.__gear || {});
+  const g = G.gear, wl = G.weapon | 0; if (!g || !(g.helm || g.chest || g.legs || g.bracer || wl)) return f.img;
+  const sig = "" + (g.helm | 0) + (g.chest | 0) + (g.legs | 0) + (g.bracer | 0) + "w" + wl, src = f.img, C = (src.__gear = src.__gear || {});
   if (C[sig]) return C[sig];
   const W = src.width, H = src.height, c = mk(W, H), cg = c.getContext("2d"); cg.drawImage(src, 0, 0);
   const id = cg.getImageData(0, 0, W, H), d = id.data, bx0 = f.ox, bx1 = Math.min(W, f.ox + 32), by0 = f.oy, by1 = Math.min(H, f.oy + 32);
@@ -3110,7 +3126,7 @@ function gearImg(f) {
     const t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (!t) continue;
     if (band === "head" && skin(r, gg, b)) continue;     // the face stays bare
     if (lum < 0.1) continue;                              // keep the dark outline
-    const ramp = gearRamp(t), idx = Math.max(0, Math.min(4, Math.floor(lum * 5.4))), [nr, ng, nb] = hexRGB(ramp[idx]); d[i] = nr; d[i + 1] = ng; d[i + 2] = nb;
+    const ramp = gearRamp(t), idx = Math.max(0, Math.min(t === 5 ? 3 : 4, Math.floor(lum * 5.4))), [nr, ng, nb] = hexRGB(ramp[idx]); d[i] = nr; d[i + 1] = ng; d[i + 2] = nb;
   }
   const hy = top, ct = top + Math.round(BH * 0.30), lt = top + Math.round(BH * 0.58);
   if (g.helm >= 2) { const a = gearAccent(g.helm), n = 2 + g.helm; for (let k = 0; k < n; k++) { put(cx, hy + k, a); if (g.helm >= 3) put(cx - 1, hy + k, k < 2 ? a : gearRamp(g.helm)[3]); } if (g.helm >= 4) { for (let k = 0; k < 4; k++) put(cx + 1 + (k >> 1), hy + k, g.helm === 5 ? "#ff3050" : "#c82020"); } for (let x = cx - 5; x <= cx + 5; x++) put(x, ct - 1, gearRamp(g.helm)[3]); }
@@ -3123,6 +3139,25 @@ function gearImg(f) {
   if (g.legs >= 3) { for (let x = cx - 7; x <= cx + 7; x++) put(x, lt, gearAccent(g.legs)); }
   if (g.legs >= 4) { for (let x = cx - 7; x <= cx + 7; x++) { put(x, bot - 4, gearAccent(g.legs)); } }
   if (g.bracer >= 2) { const yb = top + Math.round(BH * 0.64); for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4) { put(x, yb, g.bracer >= 3 ? gearAccent(g.bracer) : gearRamp(g.bracer)[4]); if (g.bracer === 5) put(x, yb - 1, "#ffffff"); } }
+  const addW = (x, y, col) => { if (x < 0 || x >= W || y < 0 || y >= H) return; const i = (y * W + x) * 4, [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
+  if (wl > 0) {   // the morning star: recolour the chain and ball, and grow the ball
+    const ramp = weaponRamp(wl); let minX = 1e9, maxX = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4; if (d[i + 3] < 128 || (x >= bx0 && x < bx1)) continue; const lum = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255; if (lum < 0.08) continue; const [nr, ng, nb] = hexRGB(ramp[Math.max(0, Math.min(4, Math.floor(lum * 5.2)))]); d[i] = nr; d[i + 1] = ng; d[i + 2] = nb; if (x < minX) minX = x; if (x > maxX) maxX = x; }
+    if (maxX >= bx1 || minX < bx0) {
+      const right = maxX >= bx1 && (minX >= bx0 || maxX - bx1 >= bx0 - minX), endX = right ? maxX : minX; let sy2 = 0, n2 = 0;
+      for (let y = 0; y < H; y++) for (let k = 0; k < 4; k++) { const x = right ? endX - k : endX + k; if (x >= 0 && x < W && d[(y * W + x) * 4 + 3] > 128) { sy2 += y; n2++; } }
+      if (n2) { const ey = Math.round(sy2 / n2), r = Math.min(6, 2 + wl), bxc = right ? endX - 1 : endX + 1;
+        for (let y = -r - 1; y <= r + 1; y++) for (let x = -r - 1; x <= r + 1; x++) { const dd = Math.sqrt(x * x + y * y); if (dd <= r + 0.7) addW(bxc + x, ey + y, dd > r - 0.4 ? "#0c0a08" : (x + y < -r * 0.6 ? ramp[4] : x + y > r * 0.5 ? ramp[1] : ramp[2])); }
+        if (wl >= 2) for (const [sx, sy3] of [[0, -1], [0, 1], [1, 0], [-1, 0]]) for (let k = 1; k <= 2 + (wl >> 1); k++) addW(bxc + sx * (r + k), ey + sy3 * (r + k), k === 2 + (wl >> 1) ? ramp[4] : ramp[3]);
+        if (wl >= 4) for (const [sx, sy3] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) for (let k = 1; k <= 2; k++) addW(bxc + sx * (r + k - 1), ey + sy3 * (r + k - 1), ramp[3]);
+        if (wl === 5) { addW(bxc, ey, "#ffffff"); addW(bxc - 1, ey - 1, "#fff0c0"); }
+      }
+    }
+  }
+  for (let y = y1; y < bot + 1; y++) for (let x = bx0; x < bx1; x++) { const i = (y * W + x) * 4; if (d[i + 3] < 128) continue; const b = bandOf(y, x); if (b === "head") continue; const t = b === "chest" ? g.chest : b === "legs" ? g.legs : g.bracer; if (!t) continue; const fx = x - cx, fy = y - y1; if (fx < -2 && fy < BH * 0.35) { d[i] = Math.min(255, d[i] * 1.18 + 6); d[i + 1] = Math.min(255, d[i + 1] * 1.18 + 6); d[i + 2] = Math.min(255, d[i + 2] * 1.18 + 6); } else if (fx > 2 && fy > BH * 0.12) { d[i] *= 0.78; d[i + 1] *= 0.78; d[i + 2] *= 0.78; } }
+  if (g.chest) for (let x = cx - 6; x <= cx + 6; x++) put(x, lt - 1, "#14100c");           // belt line
+  if (g.legs) { const ky = lt + Math.round(BH * 0.2); for (let x = cx - 6; x <= cx + 6; x++) put(x, ky, "#14100c"); for (let x = cx - 7; x <= cx + 7; x++) put(x, bot, "#14100c"); }   // knee line and boot cuff
+  if (g.bracer) { for (let y = top + Math.round(BH * 0.40); y < top + Math.round(BH * 0.66); y++) for (let x = bx0; x < bx1; x++) { const i = (y * W + x) * 4; if (d[i + 3] > 128 && Math.abs(x - cx) >= 4 && (d[(y * W + x - 1) * 4 + 3] < 128 || d[(y * W + x + 1) * 4 + 3] < 128)) { d[i] = 12; d[i + 1] = 10; d[i + 2] = 8; } } }   // bracer outline
   // grade-specific silhouettes: pauldrons grow, the helm changes outline, grade 1 is worn and pitted
   const add = (x, y, col) => { if (x < 0 || x >= W || y < 0 || y >= H) return; const i = (y * W + x) * 4, [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
   const ext = (ya, yb) => { let a = 1e9, b = -1; for (let y = ya; y <= yb; y++) for (let x = bx0; x < bx1; x++) if (d[(y * W + x) * 4 + 3] > 128) { if (x < a) a = x; if (x > b) b = x; } return [a, b]; };
@@ -3130,14 +3165,15 @@ function gearImg(f) {
   if (g.chest >= 2 && sl < 1e9) { const s = g.chest - 1, rp = gearRamp(g.chest), ac = gearAccent(g.chest);
     for (let i = 0; i < s; i++) for (let j = 0; j < s + 1; j++) { const k = Math.max(0, 3 - i - (j > 1 ? 1 : 0)); add(sl - 1 - i, y1 + j - (i === s - 1 ? 0 : 0), j === 0 ? rp[4] : rp[k]); add(sr + 1 + i, y1 + j, j === 0 ? rp[3] : rp[Math.max(0, k - 1)]); }
     if (g.chest >= 4) for (let i = 0; i < s; i++) { add(sl - 1 - i, y1 + s + 1, ac); add(sr + 1 + i, y1 + s + 1, ac); }
-    if (g.chest === 5) { for (let k = 0; k < 3; k++) { add(sl - 3 - (k >> 1), y1 - 1 - k, rp[4]); add(sr + 3 + (k >> 1), y1 - 1 - k, rp[4]); } } }
+    if (g.chest === 5) { for (let k = 0; k < 3; k++) { add(sl - 3 - (k >> 1), y1 - 1 - k, rp[4]); add(sr + 3 + (k >> 1), y1 - 1 - k, rp[4]); } }
+    for (let yy = y1 - 4; yy <= y1 + s + 3; yy++) for (let xx = sl - s - 3; xx <= sr + s + 3; xx++) { if (xx < 0 || xx >= W || yy < 1 || yy >= H - 1) continue; const i = (yy * W + xx) * 4; if (d[i + 3] < 128) { const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const j = ((yy + b) * W + xx + a) * 4; return d[j + 3] > 128 && (xx < sl || xx > sr) && (yy >= y1 - 4); }); if (near && (xx < sl - 0 || xx > sr + 0)) { d[i] = 12; d[i + 1] = 10; d[i + 2] = 8; d[i + 3] = 255; } } } }
   if (g.helm >= 2 && hl < 1e9) { const rp = gearRamp(g.helm), ac = gearAccent(g.helm);
     for (let y = hy + 3; y < ct - 1; y++) put(cx, y, rp[1]);                                           // nasal bar
     if (g.helm >= 3) for (let y = hy + 4; y < ct; y++) { put(hl + 1, y, rp[2]); put(hr - 1, y, rp[1]); }   // cheek guards
-    if (g.helm >= 4) { for (let k = 0; k < 3; k++) { add(hl - 1 - k, hy + 2 - k, rp[4]); add(hr + 1 + k, hy + 2 - k, rp[4]); } }   // horns
+    if (g.helm >= 4) { for (let k = 0; k < 4; k++) { const c = k === 3 ? ac : rp[3]; add(hl - 1 - k, hy + 2 - k, c); add(hl - 1 - k, hy + 3 - k, rp[1]); add(hr + 1 + k, hy + 2 - k, c); add(hr + 1 + k, hy + 3 - k, rp[1]); } }   // horns, two pixels thick with a gold tip
     if (g.helm === 5) { for (let k = 0; k < 5; k++) { add(hl - 2 - k, hy + 3 - k, ac); add(hr + 2 + k, hy + 3 - k, ac); add(hl - 2 - k, hy + 4 - k, rp[2]); add(hr + 2 + k, hy + 4 - k, rp[2]); } } }   // wings
-  if (g.helm === 1 || g.chest === 1 || g.legs === 1 || g.bracer === 1) { const S = rng(7); for (let k = 0; k < 14; k++) { const x = bx0 + Math.floor(S() * 32), y = top + Math.floor(S() * BH), i = (Math.min(H - 1, y) * W + Math.min(W - 1, x)) * 4; if (d[i + 3] > 128) { const band = bandOf(y, x), t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (t === 1) { d[i] = 26; d[i + 1] = 20; d[i + 2] = 16; } } } }   // rust pits and cracks in plain gear
-  if (g.helm === 5 || g.chest === 5 || g.legs === 5 || g.bracer === 5) put(cx - 2, ct + 2, "#ffffff");   // a single specular glint
+  if (g.helm <= 2 || g.chest <= 2 || g.legs <= 2 || g.bracer <= 2) { const S = rng(7); for (let k = 0; k < 22; k++) { const x = bx0 + Math.floor(S() * 32), y = top + Math.floor(S() * BH), i = (Math.min(H - 1, y) * W + Math.min(W - 1, x)) * 4; if (d[i + 3] > 128) { const band = bandOf(y, x), t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (t >= 1 && t <= 2) { d[i] = 26; d[i + 1] = 20; d[i + 2] = 16; } } } }   // rust pits and cracks in plain gear
+  if (g.helm === 5 || g.chest === 5 || g.legs === 5 || g.bracer === 5) { put(cx - 2, ct + 2, "#ffffff"); put(cx + 3, lt - 3, "#ffffff"); put(cx - 4, lt + 3, "#fff8d0"); put(cx + 2, hy + 3, "#ffffff"); }   // a few specular glints
   cg.putImageData(id, 0, 0); C[sig] = c; return c;
 }
 
@@ -3216,7 +3252,7 @@ function placeArmour(rooms, items, standSpots, decor) {
 function bigStatueArt(type, seed, zone) {
   return baked("bigstat" + type + (seed % 3) + (zone % 4), 56, 104, (R) => {
     const S = rng(seed * 37 + type * 3), T = stoneTone(zone), o = "#0e0c08", st = T[0], lt = T[1], dk = T[2];
-    const blk = (x, y, w, h) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x, y, w, 2, lt); R(x, y, 3, h, lt); R(x + w - 4, y + 2, 4, h - 2, dk); };
+    const blk = (x, y, w, h) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x, y, w, 2, lt); R(x, y, 3, h, lt); R(x + w - 4, y + 2, 4, h - 2, dk); if (w > 8 && h > 8) { R(x - 1, y - 1, 2, 2, "rgba(0,0,0,0)"); R(x + w - 1, y - 1, 2, 2, "rgba(0,0,0,0)"); R(x - 1, y + h - 1, 1, 2, "rgba(0,0,0,0)"); R(x, y, 1, 1, lt); } };
     // plinth of three stepped courses
     blk(2, 90, 52, 14); blk(6, 80, 44, 11); blk(12, 72, 32, 9);
     for (let k = 0; k < 9; k++) R(4 + Math.floor(S() * 46), 82 + Math.floor(S() * 20), 2 + Math.floor(S() * 4), 1, dk);
@@ -3718,6 +3754,251 @@ function buildFungus(rooms, items, get, out) {
   }
 }
 
+
+
+
+
+
+
+function mapLinks() {
+  if (world.__links) return world.__links;
+  const L = [];
+  for (let cy = 0; cy < GH; cy++) for (let cx = 0; cx < GW; cx++) {
+    const i = cy * GW + cx, r1 = world.roomOf[i]; if (r1 == null || r1 < 0) continue;
+    const fy = cy * CH + CH - 1;
+    if (cx < GW - 1) { const r2 = world.roomOf[i + 1]; if (r2 != null && r2 >= 0 && r2 !== r1) { const wx = (cx + 1) * CW; if (tileAt(wx, fy - 1) !== SOLID && tileAt(wx - 1, fy - 1) !== SOLID) L.push([cx, cy, "h"]); } }
+    if (cy < GH - 1) { const r2 = world.roomOf[i + GW]; if (r2 != null && r2 >= 0 && r2 !== r1) { let ch = false; for (let x = cx * CW + 1; x < cx * CW + CW - 1 && !ch; x++) { const t = tileAt(x, fy); if (t === CHAIN || t === LEDGECHAIN) ch = true; } if (ch) L.push([cx, cy, "v"]); } }
+  }
+  world.__links = L; return L;
+}
+
+function drawMap() {
+  ctx.fillStyle = "#0b0c12"; ctx.fillRect(0, 0, VW, VH);
+  const s = Math.max(4, Math.min(6, Math.floor((VW - 22) / GW))), sy = 7, ox = 4, oy = 28, h = G.hero, mw = GW * s;
+  ctx.textAlign = "center"; ctx.fillStyle = "#ffe680"; ctx.font = "bold 10px monospace"; ctx.fillText("MAP", VW / 2, 12);
+  ctx.font = "8px monospace"; ctx.fillStyle = "#aab"; ctx.fillText(G.room ? "Level " + (G.room.zone + 1) + ": " + ZONES[G.room.zone].name : "", VW / 2, 22);
+  const seenCell = (cx, cy) => G.visited.has(cy * GW + cx) || G.debug;
+  // level bands
+  let bandStart = 0;
+  for (let cy = 0; cy <= GH; cy++) {
+    const z = cy < GH ? zoneOfCellY(cy) : -1, zp = cy > 0 ? zoneOfCellY(cy - 1) : -1;
+    if (cy < GH) { const c = ZONES[z].wall || "#223"; ctx.fillStyle = c; ctx.globalAlpha = 0.3; ctx.fillRect(ox, oy + cy * sy, mw, sy); ctx.globalAlpha = 1; }
+    if (cy === GH || (cy > 0 && z !== zp)) {
+      const zz = zp, y0 = oy + bandStart * sy, y1 = oy + cy * sy; ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fillRect(ox, y0, mw, 1);
+      ctx.fillStyle = zz === (G.room ? G.room.zone : -1) ? "#ffe680" : "#8890a8"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("L" + (zz + 1), ox + mw + 3, (y0 + y1) / 2 + 3); bandStart = cy;
+    }
+  }
+  // rooms
+  for (const r of world.rooms) {
+    let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (seenCell(r.x + i, r.y + j)) seen = true;
+    const col = seen ? (r.flood ? "#3a8ad0" : r.cave ? "#8a6a3a" : ZONES[r.zone].ledge) : "#2c3044";
+    ctx.fillStyle = col; ctx.fillRect(ox + r.x * s + 1, oy + r.y * sy + 1, r.w * s - 1, r.h * sy - 1);
+    if (G.room && r.id === G.room.id) { ctx.strokeStyle = "#ffe680"; ctx.lineWidth = 1; ctx.strokeRect(ox + r.x * s + 0.5, oy + r.y * sy + 0.5, r.w * s, r.h * sy); }
+  }
+  // paths: doors between rooms and the chains / shafts that join the floors
+  for (const [cx, cy, t] of mapLinks()) {
+    const known = seenCell(cx, cy) || seenCell(t === "h" ? cx + 1 : cx, t === "v" ? cy + 1 : cy);
+    ctx.fillStyle = known ? "#ffffff" : "#5a6078";
+    if (t === "h") ctx.fillRect(ox + (cx + 1) * s - 1, oy + cy * sy + sy - 3, 2, 2);
+    else { ctx.fillRect(ox + cx * s + (s >> 1) - 1, oy + (cy + 1) * sy - 1, 2, 2); }
+  }
+  // landmarks in rooms you have visited
+  const at = (px, py) => { const cx = px / (CW * TS), cy = py / (CH * TS); return [ox + cx * s, oy + cy * sy, seenCell(Math.floor(cx), Math.floor(cy))]; };
+  const dot = (px, py, col, sz) => { const [x, y, ok] = at(px, py); if (!ok) return; ctx.fillStyle = "#000"; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, sz + 2, sz + 2); ctx.fillStyle = col; ctx.fillRect(Math.round(x), Math.round(y), sz, sz); };
+  for (const it of world.items) {
+    if (it.kind === "shrine") dot(it.x, it.y, "#ff5a5a", 2);
+    else if (it.kind === "shop") dot(it.x, it.y, "#ffd24a", 2);
+    else if (it.kind === "house" && it.cell && !it.open) dot(it.px, it.py, "#6ab4ff", 2);
+    else if (it.kind === "fountain") dot(it.x, it.y, "#8aeaff", 2);
+  }
+  for (const r of world.rooms) for (const d of (r.decor || [])) { if (d.kind === "chapelfront") dot(d.x, d.y + 40, "#e090ff", 2); }
+  for (const r of world.rooms) if (r.town) { let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (seenCell(r.x + i, r.y + j)) seen = true; if (seen) dot((r.x + r.w / 2) * CW * TS, (r.y + r.h / 2) * CH * TS, r.town === "orc" ? "#ff7a3a" : "#6aff8a", 3); }
+  const hx = ox + (h.x + 16) / (CW * TS) * s, hy = oy + (h.y + 16) / (CH * TS) * sy;
+  ctx.fillStyle = (G.frame & 16) ? "#fff" : "#ff5030"; ctx.fillRect(Math.round(hx) - 1, Math.round(hy) - 1, 3, 3);
+  // legend
+  ctx.textAlign = "left"; ctx.font = "7px monospace"; let lx = 4; const leg = [["#ff5a5a", "shrine"], ["#ffd24a", "shop"], ["#6ab4ff", "cell"], ["#8aeaff", "fountain"], ["#e090ff", "chapel"], ["#3a8ad0", "flooded"], ["#ff7a3a", "orcs"], ["#6aff8a", "town"]];
+  for (const [c, t] of leg) { ctx.fillStyle = c; ctx.fillRect(lx, 199, 4, 4); ctx.fillStyle = "#aab"; ctx.fillText(t, lx + 6, 204); lx += 9 + t.length * 4.2; }
+  ctx.fillStyle = "#fff"; ctx.fillRect(4, 208, 3, 3); ctx.fillStyle = "#aab"; ctx.fillText("white = door or chain path   dim = not yet visited", 10, 212);
+  ctx.textAlign = "center"; ctx.fillText("Press M to close", VW / 2, 222);
+}
+
+
+
+function weaponName(l) { return ["Flail", "Iron morning star", "Bronze morning star", "Steel morning star", "Gilded morning star", "Sunforged morning star"][Math.max(0, Math.min(5, l | 0))]; }
+
+function weaponReach(l) { return 5 * Math.max(0, Math.min(5, l | 0)); }
+
+function weaponRamp(l) { return [["#2a2a30", "#5a5a66", "#8a8a98", "#b8b8c8", "#e0e0ec"], ["#2a1608", "#6a3a14", "#9a5a22", "#c88a3a", "#f0c068"], ["#14181e", "#4a5868", "#7f8fa0", "#b8c6d4", "#e6eef4"], ["#2a1a04", "#7a5a14", "#b8861e", "#e8b832", "#fff0a0"], ["#3a0a04", "#9a2008", "#e05010", "#ff9a30", "#ffe080"]][Math.max(1, Math.min(5, l)) - 1]; }
+
+function weaponIcon(l) {
+  l = Math.max(1, Math.min(5, l | 0)); const rp = weaponRamp(l);
+  return baked("weap16_" + l, 16, 16, (R) => {
+    const o = "#0c0a08"; R(1, 12, 4, 3, o); R(2, 12, 2, 2, "#6a4a2a"); for (let k = 0; k < 4; k++) R(4 + k, 11 - k, 2, 1, "#6a6a78");
+    const r = 2 + (l >> 1) + 1;
+    for (let y = -r - 1; y <= r + 1; y++) for (let x = -r - 1; x <= r + 1; x++) { const d = Math.sqrt(x * x + y * y); if (d <= r + 0.6) R(10 + x, 5 + y, 1, 1, d > r - 0.5 ? o : (x + y < -r * 0.5 ? rp[4] : x + y > r * 0.4 ? rp[1] : rp[2])); }
+    for (const [sx, sy] of [[0, -1], [0, 1], [1, 0], [-1, 0]]) R(10 + sx * (r + 1), 5 + sy * (r + 1), 1, 1, rp[3]);
+  }, l * 7);
+}
+
+
+
+
+
+function orcHutArt(seed) {
+  return baked("orchut" + (seed % 4), 56, 48, (R) => {
+    const S = rng(seed * 17 + 3), o = "#0c0806", hide = ["#3a2a1e", "#4a3424", "#5a4430"], bone = "#c8bca0";
+    for (let y = 0; y < 44; y++) { const hw = Math.round(27 * (1 - y / 52)); R(28 - hw - 1, 4 + y, hw * 2 + 2, 1, o); }
+    for (let y = 0; y < 44; y++) { const hw = Math.round(27 * (1 - y / 52)); for (let x = -hw; x < hw; x++) R(28 + x, 4 + y, 1, 1, hide[((x + 60) >> 3) % 3]); R(28 - hw, 4 + y, 2, 1, "#6a5238"); }
+    for (let k = 0; k < 7; k++) { const x = 8 + Math.floor(S() * 40); R(x, 16 + Math.floor(S() * 22), 6, 1, "#1a120a"); R(x + 1, 17 + Math.floor(S() * 22), 1, 3, "#8a7a5a"); }   // stitched patches
+    R(27, 0, 2, 10, bone); R(25, 0, 6, 2, bone); R(22, 3, 12, 2, "#8a7a5a");                                                              // crossed bone poles and a skull
+    R(24, 5, 8, 7, o); R(25, 6, 6, 5, bone); R(26, 8, 2, 2, o); R(29, 8, 2, 2, o); R(27, 10, 2, 1, o);
+    R(19, 22, 18, 26, o); R(21, 24, 14, 24, "#06040a");                                                                                    // the dark entrance
+    for (let k = 0; k < 4; k++) R(2 + k * 15, 44 + (k & 1), 4, 3, "rgba(0,0,0,0)");
+    R(0, 46, 56, 2, "#1a120a");
+  }, seed);
+}
+
+function orcBannerArt(seed) {
+  return baked("orcban" + (seed % 3), 18, 34, (R) => {
+    const S = rng(seed * 5 + 1), o = "#0c0806";
+    R(1, 0, 16, 2, "#6a5a40"); R(0, 0, 2, 3, o); R(16, 0, 2, 3, o);
+    for (let x = 2; x < 16; x++) { const len = 24 + Math.floor(S() * 8) - Math.abs(x - 9) * 1; R(x, 2, 1, len, o); R(x, 3, 1, len - 2, x % 5 === 0 ? "#6a1810" : "#8a2418"); }
+    R(7, 10, 2, 12, "#d8cfae"); R(5, 10, 2, 5, "#d8cfae"); R(9, 10, 2, 5, "#d8cfae"); R(6, 22, 1, 3, "#d8cfae"); R(10, 22, 1, 3, "#d8cfae");   // a tusked glyph
+    for (let k = 0; k < 8; k++) R(2 + Math.floor(S() * 14), 4 + Math.floor(S() * 24), 1, 2, "rgba(0,0,0,.4)");
+  }, seed);
+}
+
+function orcDrumArt(seed) {
+  return baked("orcdrum" + (seed % 3), 20, 18, (R) => {
+    const o = "#0c0806"; R(2, 6, 16, 12, o); R(3, 7, 14, 10, "#6a4420"); R(3, 7, 3, 10, "#8a5c2c"); R(14, 8, 3, 9, "#3a2410"); R(3, 11, 14, 1, "#2a2a30"); R(2, 4, 16, 4, o); R(3, 5, 14, 2, "#c8b890"); R(3, 5, 14, 1, "#e8dcb8");
+    R(5, 0, 1, 6, "#c8bca0"); R(13, 1, 1, 5, "#c8bca0"); R(4, 0, 3, 2, "#8a7a5a"); R(12, 1, 3, 2, "#8a7a5a");
+  }, seed);
+}
+
+function palisadeArt(seed) {
+  return baked("pal" + (seed % 4), 16, 34, (R) => {
+    const S = rng(seed * 3 + 5), o = "#0c0806";
+    for (let i = 0; i < 3; i++) { const x = 1 + i * 5, h = 24 + Math.floor(S() * 8); R(x - 1, 34 - h, 6, h, o); R(x, 34 - h + 3, 4, h - 3, "#5a3a20"); R(x, 34 - h + 3, 1, h - 3, "#8a5c30"); R(x + 3, 34 - h + 4, 1, h - 4, "#2e1c0e"); R(x + 1, 34 - h, 2, 3, "#5a3a20"); R(x + 1, 34 - h - 1, 2, 1, o); }
+    R(0, 20, 16, 2, "#2a2a30"); R(0, 20, 16, 1, "#5a5a66");
+    if (seed % 2) { R(5, 4, 6, 6, o); R(6, 5, 4, 4, "#c8bca0"); R(7, 7, 1, 1, o); R(9, 7, 1, 1, o); }
+  }, seed);
+}
+
+function totemArt(seed) {
+  return baked("totem" + (seed % 3), 16, 48, (R) => {
+    const o = "#0c0806"; R(5, 0, 6, 48, o); R(6, 1, 4, 46, "#5a3a20"); R(6, 1, 1, 46, "#8a5c30");
+    for (const y of [4, 18, 32]) { R(3, y, 10, 12, o); R(4, y + 1, 8, 10, "#c8bca0"); R(5, y + 4, 2, 2, o); R(9, y + 4, 2, 2, o); R(7, y + 7, 2, 2, o); R(5, y + 9, 6, 1, o); }
+    R(1, 2, 3, 2, "#c8bca0"); R(12, 2, 3, 2, "#c8bca0");
+  }, seed);
+}
+
+function lampPostArt(seed) {
+  return baked("lamp" + (seed % 2), 12, 44, (R) => {
+    const o = "#0a0a0e"; R(5, 8, 3, 36, o); R(5, 9, 2, 35, "#3a3a44"); R(5, 9, 1, 35, "#6a6a78"); R(3, 40, 7, 4, o); R(4, 41, 5, 3, "#4a4a56");
+    R(1, 1, 10, 9, o); R(2, 2, 8, 7, "#ffcf70"); R(2, 2, 3, 7, "#fff0b0"); R(8, 3, 2, 6, "#e0a040"); R(0, 0, 12, 2, o); R(1, 0, 10, 1, "#6a6a78"); R(5, 10, 3, 2, o);
+  }, seed);
+}
+
+function stallArt(seed, zone) {
+  return baked("stall" + (seed % 3) + (zone % 4), 48, 40, (R) => {
+    const S = rng(seed * 9 + 2), o = "#0c0806", cols = [["#8a2820", "#d8c8a0"], ["#20508a", "#d8c8a0"], ["#2a6a30", "#d8c8a0"]][seed % 3];
+    R(2, 8, 3, 32, o); R(3, 8, 1, 32, "#6a4a28"); R(43, 8, 3, 32, o); R(44, 8, 1, 32, "#6a4a28");
+    for (let i = 0; i < 48; i += 6) { const c = (i / 6) & 1 ? cols[1] : cols[0]; R(i, 0, 6, 9, c); const d = 2 + Math.floor(S() * 4); R(i, 9, 6, d, c); R(i + 1, 9 + d, 4, 1, "rgba(0,0,0,0)"); } R(0, 0, 48, 1, "#e8dcc0"); R(0, 7, 48, 2, "rgba(0,0,0,.3)");
+    R(0, 26, 48, 14, o); R(1, 27, 46, 4, "#7a5230"); R(1, 27, 46, 1, "#b08850"); R(1, 31, 46, 8, "#4a2e16");
+    for (let k = 0; k < 6; k++) { const x = 4 + k * 7, c = ["#c04a38", "#e8c048", "#6aa040", "#d8d0a8", "#8a5c2c", "#b06090"][k]; R(x, 21, 5, 6, o); R(x + 1, 22, 3, 4, c); R(x + 1, 22, 1, 2, "rgba(255,255,255,.4)"); }
+  }, seed + zone);
+}
+
+function drawTown(d, cx, cy, lights) {
+  const x = Math.round(d.x - cx), y = Math.round(d.y - cy), z = d.zone != null ? d.zone : G.room.zone, t = G.frame + (d.seed | 0);
+  switch (d.kind) {
+    case "orchut": ctx.drawImage(orcHutArt(d.seed), x - 4, y + 16 - 48); lights.push([d.x + 24, d.y, 26, 0.4, "255,120,50"]); break;
+    case "orcbanner": { const sw = Math.round(Math.sin(t / 40) * 1); ctx.drawImage(orcBannerArt(d.seed), x + sw, y); break; }
+    case "orcdrum": ctx.drawImage(orcDrumArt(d.seed), x - 2, y + 16 - 18); break;
+    case "palisade": ctx.drawImage(palisadeArt(d.seed), x, y + 16 - 34); break;
+    case "totem": ctx.drawImage(totemArt(d.seed), x, y + 16 - 48); lights.push([d.x + 8, d.y - 20, 22, 0.3, "255,90,40"]); break;
+    case "lamppost": ctx.drawImage(lampPostArt(d.seed), x + 2, y + 16 - 44); lights.push([d.x + 8, d.y - 22, 54 + Math.sin(t / 9) * 2, 0.9, "255,200,110"]); break;
+    case "stall": ctx.drawImage(stallArt(d.seed, z), x - 8, y + 16 - 40); lights.push([d.x + 16, d.y - 6, 30, 0.5, "255,190,100"]); break;
+    case "bunting": { ctx.fillStyle = "#14100c"; for (let i = 0; i < d.w; i++) { const sag = Math.round(Math.sin(i / d.w * Math.PI) * 5); ctx.fillRect(x + i, y + sag, 1, 1); if (i % 8 === 4) { const c = ["#e04a3a", "#e8c048", "#4a8ae0", "#6ac060"][((i >> 3) + (d.seed | 0)) % 4]; ctx.fillStyle = c; ctx.fillRect(x + i - 2, y + sag + 1 + (Math.round(Math.sin(t / 30 + i) * 0.6)), 5, 4); ctx.fillStyle = "#14100c"; ctx.fillRect(x + i, y + sag + 5, 1, 1); } } break; }
+    case "cottage": { ctx.drawImage(houseBack(d.seed, z), x + 16, y + 32); ctx.drawImage(houseFront(d.seed, d.side, false, z), x, y + 4); lights.push([d.x + 56, d.y + 40, 44, 0.6, "255,190,100"]); break; }
+  }
+}
+
+function drawVillager(it, cx, cy, zone) {
+  const f = ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3], im = Art.obj("frozen", f, 0, zone);
+  ctx.drawImage(im.img, Math.round(it.x) - im.ox - cx, Math.round(it.y) - im.oy - cy);
+  if (it.say && it.sayT > 0) { const tx = Math.round(it.x - cx) + 16, ty = Math.round(it.y - cy) - 4, w = Math.min(VW - 8, it.say.length * 4 + 8); ctx.fillStyle = "rgba(10,8,6,.85)"; ctx.fillRect(Math.max(2, Math.min(VW - w - 2, tx - w / 2)), ty - 11, w, 11); ctx.fillStyle = "#ffe680"; ctx.font = "7px monospace"; ctx.textAlign = "center"; ctx.fillText(it.say, Math.max(2, Math.min(VW - w - 2, tx - w / 2)) + w / 2, ty - 3); }
+}
+
+function updateVillager(it, hb) {
+  it.t = (it.t || 0) + 1; if (it.sayT > 0) it.sayT--;
+  if (it.t % 160 === 0) it.dir = (it.dir || 1) * (Math.random() < 0.5 ? -1 : 1);
+  const nx = it.x + (it.t % 4 === 0 ? it.dir * 0.8 : 0); if (Math.abs(nx - it.homeX) < 40 && !solid(Math.floor((nx + (it.dir > 0 ? 28 : 4)) / TS), Math.floor((it.y + 8) / TS))) it.x = nx; else it.dir = -(it.dir || 1);
+  const near = overlap(hb, { x: it.x - 12, y: it.y, w: 56, h: 32 });
+  if (near && !it.near) { it.near = true; it.say = townLines()[Math.floor(Math.random() * townLines().length)]; it.sayT = 220; } else if (!near) it.near = false;
+}
+
+function townLines() { return ["Welcome. No orc dares come here.", "The inn will heal you for a few coins.", "Orcs keep camps on the third level.", "Mushrooms are safe to eat.", "Free the prisoners. Each level has five.", "A bigger backpack helps a lot.", "The fountain water is clean.", "A morning star hits much harder.", "Keys open the locked houses.", "Stay a while and rest."]; }
+
+function innStock() { return [{ kind: "rest", name: "A night at the inn", desc: "Full life, fills hunger, saves.", price: 300 }, { kind: "food", name: "Roast chicken", desc: "Fills your hunger gauge.", price: 300 }, { kind: "potion", name: "Potion", desc: "Heals 3 life.", price: 500 }]; }
+
+function townCluster(rooms, E, S, roomOf, ci, zone, n, seedRoom, taken) {
+  const adj = {}; for (const r of rooms) adj[r.id] = [];
+  for (let cy = 0; cy < GH; cy++) for (let cx = 0; cx < GW; cx++) {
+    const a = roomOf[ci(cx, cy)]; if (a == null || a < 0) continue;
+    if (cx < GW - 1 && E[ci(cx, cy)]) { const b = roomOf[ci(cx + 1, cy)]; if (b != null && b >= 0 && a !== b) { adj[a].push(b); adj[b].push(a); } }
+    if (cy < GH - 1 && S[ci(cx, cy)]) { const b = roomOf[ci(cx, cy + 1)]; if (b != null && b >= 0 && a !== b) { adj[a].push(b); adj[b].push(a); } }
+  }
+  const out = [seedRoom], seen = new Set([seedRoom.id]);
+  for (let i = 0; i < out.length && out.length < n; i++) for (const b of adj[out[i].id]) { const rb = rooms[b]; if (!seen.has(b) && rb.zone === zone && !taken.has(b) && rb.id > 0 && !rb.cave && !rb.ruin && !rb.flood && out.length < n) { seen.add(b); out.push(rb); } }
+  return out;
+}
+
+function buildTowns(rooms, items, spawns, traps, get, set, out, E, S, roomOf, ci, standSpots) {
+  const taken = new Set(), R0 = rng(4242);
+  const runs = (r, need) => { const res = [], fl = r.ty + r.th - 1; let run = 0; for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) { let ok = get(x, fl) === SOLID; for (let y = fl - 4; y <= fl - 1 && ok; y++) if (get(x, y) !== EMPTY) ok = false; if (ok) { run++; if (run >= need) res.push(x - need + 1); } else run = 0; } return res; };
+  const clearRoom = (r) => { for (let i = spawns.length - 1; i >= 0; i--) if (spawns[i].room === r.id) spawns.splice(i, 1); };
+  const usedX = {}, mark = (r, x, w) => { (usedX[r.id] = usedX[r.id] || []).push([x, x + w]); }, isFree = (r, x, w) => !(usedX[r.id] || []).some(([a, b]) => x < b + 1 && x + w + 1 > a);
+  const placeOn = (r, w, S2) => { const c = runs(r, w).filter(x => isFree(r, x, w) && !out.some(d => ["housefront", "chapelfront", "cellfront", "fountain", "bigstatue"].includes(d.kind) && d.x >= (x - 7) * TS && d.x < (x + w + 1) * TS && d.y >= (r.ty) * TS && d.y < (r.ty + r.th) * TS)); if (!c.length) return -1; const x = c[Math.floor(S2() * c.length)]; mark(r, x, w); return x; };
+  const zRooms = z => rooms.filter(r => r.zone === z && r.id > 0 && !r.cave && !r.ruin && !r.flood);
+  // orc towns on level 3
+  const oz = zRooms(2), seeds = []; for (let k = oz.length - 1; k > 0; k--) { const j = Math.floor(R0() * (k + 1)); [oz[k], oz[j]] = [oz[j], oz[k]]; }
+  for (const s of oz) { if (seeds.length >= 3) break; if (seeds.every(q => Math.abs(q.x - s.x) + Math.abs(q.y - s.y) > 8)) { const cl = townCluster(rooms, E, S, roomOf, ci, 2, 5, s, taken); if (cl.length >= 4) { seeds.push(s); cl.forEach(r => taken.add(r.id)); cl.forEach(r => r.town = "orc"); s.__cl = cl; } } }
+  for (const s of seeds) for (const r of s.__cl) {
+    const S2 = rng(r.id * 29 + 5), fl = r.ty + r.th - 1;
+    clearRoom(r);
+    const hp = ENEMY_TYPES.orc.hp + 1, spots = []; for (let x = r.tx + 3; x < r.tx + r.tw - 4; x++) if (get(x, fl - 1) === EMPTY && get(x + 1, fl - 1) === EMPTY && get(x, fl - 2) === EMPTY && get(x + 1, fl - 2) === EMPTY && get(x, fl) === SOLID && get(x + 1, fl) === SOLID) spots.push(x);
+    for (let k = 0, n = 2 + Math.floor(S2() * 2); k < n && spots.length; k++) { const x = spots.splice(Math.floor(S2() * spots.length), 1)[0]; spawns.push({ room: r.id, type: "orc", x: x * TS, y: (fl - 2) * TS, hp }); }
+    let x;
+    if ((x = placeOn(r, 4, S2)) >= 0) out.push({ kind: "orchut", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2, ww: 64 });
+    if ((x = placeOn(r, 2, S2)) >= 0) out.push({ kind: "palisade", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
+    if ((x = placeOn(r, 1, S2)) >= 0) out.push({ kind: "totem", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
+    if ((x = placeOn(r, 2, S2)) >= 0 && S2() < 0.7) out.push({ kind: "orcdrum", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
+    if ((x = placeOn(r, 2, S2)) >= 0 && S2() < 0.6) out.push({ kind: "campfire", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2, heal: 0 });
+    for (let k = 0; k < 2; k++) out.push({ kind: "orcbanner", x: (r.tx + 3 + Math.floor(S2() * (r.tw - 8))) * TS, y: (r.ty + 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
+    if (S2() < 0.45 && (x = placeOn(r, 2, S2)) >= 0) items.push({ id: r.id * 100 + 29, kind: "chest", x: x * TS, y: (fl - 2) * TS });
+  }
+  // a friendly town on level 5
+  const fz = zRooms(4).sort((a, b) => b.w * b.h - a.w * a.h), fs = fz[0];
+  if (fs) {
+    const cl = townCluster(rooms, E, S, roomOf, ci, 4, 8, fs, new Set()); cl.forEach(r => r.town = "friendly");
+    let shopMade = false, innMade = false, fountMade = false;
+    cl.forEach((r, ri) => {
+      const S2 = rng(r.id * 31 + 9), fl = r.ty + r.th - 1; clearRoom(r);
+      for (let i = traps.length - 1; i >= 0; i--) if (traps[i].room === r.id) traps.splice(i, 1);
+      let x;
+      for (let k = 0; k < 2; k++) if ((x = placeOn(r, 7, S2)) >= 0) out.push({ kind: "cottage", x: x * TS, y: (fl - 4) * TS, seed: Math.floor(S2() * 999), side: S2() < 0.5 ? 1 : -1, zone: 4, ww: 112 });
+      for (let k = 0; k < 2; k++) if ((x = placeOn(r, 1, S2)) >= 0) out.push({ kind: "lamppost", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 4 });
+      if ((x = placeOn(r, 3, S2)) >= 0) out.push({ kind: "stall", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 4 });
+      if (!fountMade && (x = placeOn(r, 4, S2)) >= 0) { const d = { kind: "fountain", x: (x + 0) * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 4 }, it = { id: r.id * 100 + 80, kind: "fountain", x: d.x, y: d.y, dry: 0 }; d.it = it; out.push(d); items.push(it); fountMade = true; }
+      else if (!shopMade && (x = placeOn(r, 3, S2)) >= 0) { items.push({ id: r.id * 100 + 56, kind: "shop", tier: 4, zone: 4, x: x * TS, y: (fl - 1) * TS }); shopMade = true; }
+      else if (!innMade && (x = placeOn(r, 3, S2)) >= 0) { items.push({ id: r.id * 100 + 57, kind: "shop", inn: true, tier: -1, zone: 4, x: x * TS, y: (fl - 1) * TS }); innMade = true; }
+      out.push({ kind: "bunting", x: (r.tx + 2) * TS, y: (r.ty + 3) * TS, w: (r.tw - 4) * TS, seed: ri, zone: 4 });
+      for (let k = 0, n = 1 + (r.w > 1 ? 1 : 0); k < n; k++) if ((x = placeOn(r, 2, S2)) >= 0) items.push({ id: r.id * 100 + 31 + k, kind: "villager", x: x * TS, y: (fl - 2) * TS, homeX: x * TS, dir: S2() < 0.5 ? 1 : -1, zone: 4 });
+    });
+  }
+}
+
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
 // ---- atmosphere drawing (all original art) ----
@@ -3779,20 +4060,6 @@ function drawHUD() {
   }
   if (G.bannerT) { const a = Math.min(1, G.bannerT / 30); ctx.globalAlpha = a; ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(0, 92, VW, 24); ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = VW < 256 ? "bold 9px monospace" : "bold 11px monospace"; ctx.fillText(G.banner, VW / 2, 108); ctx.globalAlpha = 1; }
   if (G.mode === "dead" && G.dead < 70) { ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(0, 96, VW, 28); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 10px monospace"; ctx.fillText("Back to the last shrine…", VW / 2, 114); }
-}
-function drawMap() {
-  ctx.fillStyle = "#0b0c12"; ctx.fillRect(0, 0, VW, VH);
-  const s = Math.min(6, Math.floor(VW / GW)), sy = 5, ox = (VW - GW * s) / 2, oy = 34, h = G.hero;
-  ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = "bold 10px monospace"; ctx.fillText("MAP", VW / 2, 14);
-  ctx.font = "8px monospace"; ctx.fillStyle = "#aab"; ctx.fillText(G.room ? ZONES[G.room.zone].name : "", VW / 2, 26);
-  for (const r of world.rooms) {
-    let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (G.visited.has((r.y + j) * GW + r.x + i)) seen = true;
-    if (!seen && !G.debug) continue;
-    ctx.fillStyle = seen ? ZONES[r.zone].ledge : "#333"; ctx.fillRect(ox + r.x * s + 1, oy + r.y * sy + 1, r.w * s - 1, r.h * sy - 1);
-  }
-  const hcx = (h.x + 16) / (CW * TS), hcy = (h.y + 16) / (CH * TS);
-  if (G.frame & 16) { ctx.fillStyle = "#fff"; ctx.fillRect(ox + hcx * s - 1, oy + hcy * sy - 1, 3, 3); }
-  ctx.fillStyle = "#aab"; ctx.fillText("Press M to close", VW / 2, 216);
 }
 function drawDebug() {
   const h = G.hero, r = G.room;
