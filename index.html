@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.48">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.48">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.49">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.49">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.48</title>
+<title>Black Tiger: The Depths v0.49</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.48";   // bump by 0.01 with every change
+const VERSION = "0.49";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4077,6 +4077,7 @@ function bossArt(kind, zone, pose, flash) {
       else { R(38 + ln, 30, 4, 34, "#6a4a2e"); for (let k = 0; k < 6; k++) R(38 + ln, 36 + k * 5, 4, 1, "#2a1a0e"); hamm(32 + ln, 56, 16, 14); shd(36 + ln, 28, 8, 10, sk[2], sk[3], sk[1]); }
       shd(-1 + ln, 28 + dy, 10, 20, sk[1], sk[2], sk[0]);
     }
+    roundBoss(g);
     if (flash) { g.globalCompositeOperation = "source-atop"; g.fillStyle = "rgba(255,255,255,.7)"; g.fillRect(0, 0, 64, 76); g.globalCompositeOperation = "source-over"; }
   }, zone * 5 + (kind === "chief" ? 1 : 0));
 }
@@ -4159,6 +4160,27 @@ function buildBosses(rooms, items, spawns, get, out) {
 }
 
 
+
+
+
+function roundBoss(g) {
+  const W = 64, H = 76, id = g.getImageData(0, 0, W, H), d = id.data;
+  const A = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? 0 : d[(y * W + x) * 4 + 3];
+  const dark = (x, y) => { if (x < 0 || y < 0 || x >= W || y >= H) return true; const i = (y * W + x) * 4; return d[i + 3] < 100 || (d[i] < 24 && d[i + 1] < 24 && d[i + 2] < 24); };
+  for (let pass = 0; pass < 2; pass++) {
+    const kill = [], erase = [];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4; if (d[i + 3] < 100) continue;
+      const u = dark(x, y - 1), dn = dark(x, y + 1), l = dark(x - 1, y), r = dark(x + 1, y);
+      if ((d[i] < 24 && d[i + 1] < 24 && d[i + 2] < 24)) { if (pass === 0 && ((A(x, y - 1) < 100 && A(x - 1, y) < 100 && A(x + 1, y + 1) > 100) || (A(x, y - 1) < 100 && A(x + 1, y) < 100) || (A(x, y + 1) < 100 && A(x - 1, y) < 100) || (A(x, y + 1) < 100 && A(x + 1, y) < 100))) erase.push(i); continue; }
+      const run = (dx, dy) => { for (let k = 1; k <= 4; k++) if (dark(x + dx * k, y + dy * k)) return false; return true; };
+      if ((u && l && !dn && !r && run(1, 0) && run(0, 1)) || (u && r && !dn && !l && run(-1, 0) && run(0, 1)) || (dn && l && !u && !r && run(1, 0) && run(0, -1)) || (dn && r && !u && !l && run(-1, 0) && run(0, -1))) kill.push(i);
+    }
+    for (const i of kill) { d[i] = 10; d[i + 1] = 8; d[i + 2] = 6; }
+    for (const i of erase) d[i + 3] = 0;
+  }
+  g.putImageData(id, 0, 0);
+}
 
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
