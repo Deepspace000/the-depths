@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.79">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.79">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.80">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.80">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.79</title>
+<title>Black Tiger: The Depths v0.80</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.79";   // bump by 0.01 with every change
+const VERSION = "0.80";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -959,7 +959,7 @@ document.querySelectorAll("#touch [data-k]").forEach(b => {
 // On iOS the pad only shows up after its first button press. Polled every frame; keys it holds are released if the pad goes away.
 const padHeld = {};
 function pollPad() {
-  const pads = navigator.getGamepads ? navigator.getGamepads() : [], gp = [...pads].find(g => g && g.connected);
+  const pads = navigator.getGamepads ? navigator.getGamepads() : [], gp = [...pads].find(g => g && g.connected); window.__padOn = !!gp;
   const want = {};
   if (gp) {
     const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
@@ -4507,7 +4507,7 @@ function drawHUD() {
   ctx.drawImage(chickenArt(), 4, 38, 10, 10);
   { const hw = 54, f = G.hunger / 100; ctx.fillStyle = "#000"; ctx.fillRect(16, 40, hw + 2, 6); ctx.fillStyle = "#3a2410"; ctx.fillRect(17, 41, hw, 4); ctx.fillStyle = f > 0.5 ? "#e0a030" : f > 0.25 ? "#e07020" : ((G.frame >> 4) & 1 ? "#e03020" : "#a02010"); ctx.fillRect(17, 41, Math.round(hw * f), 4); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(17, 41, Math.round(hw * f), 1); }
   ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(3, 50, 98, 38);
-  { const z = G.room ? G.room.zone : 0; ctx.fillStyle = "#c8e0a0"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("PRISONERS " + prisonersFreed(z) + "/5", 6, 66); drawExitArrows(); ctx.textAlign = "left"; ctx.fillStyle = z > 6 ? "#7a8098" : bigKeyHeld(z) ? "#ff7070" : "#9a6a6a"; ctx.fillText(z > 6 ? "LAST LEVEL" : "RED KEY: " + (bigKeyHeld(z) ? "FOUND" : "NOT FOUND"), 6, 75); if (!matchMedia("(pointer:coarse)").matches) { ctx.fillStyle = "#b8bccc"; ctx.font = "bold 6px monospace"; ctx.fillText("I: PACK   G: GEAR   M: MAP", 6, 85); } }
+  { const z = G.room ? G.room.zone : 0; ctx.fillStyle = "#c8e0a0"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("PRISONERS " + prisonersFreed(z) + "/5", 6, 66); drawExitArrows(); ctx.textAlign = "left"; ctx.fillStyle = z > 6 ? "#7a8098" : bigKeyHeld(z) ? "#ff7070" : "#9a6a6a"; ctx.fillText(z > 6 ? "LAST LEVEL" : "RED KEY: " + (bigKeyHeld(z) ? "FOUND" : "NOT FOUND"), 6, 75); if (window.__padOn || !matchMedia("(pointer:coarse)").matches) { ctx.fillStyle = "#b8bccc"; ctx.font = "bold 6px monospace"; ctx.fillText(window.__padOn ? "LB: PACK  LT: GEAR  Y: MAP" : "I: PACK   G: GEAR   M: MAP", 6, 85); } }
   drawBossBar();
   { const s = gearStats(); if (s.str || s.def) { ctx.fillStyle = "#ff9a60"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("STR " + s.str, 6, 56); ctx.fillStyle = "#80c0ff"; ctx.fillText("DEF " + s.def, 36, 56); } }
   // minimap: 5 x 3 cells around the hero
