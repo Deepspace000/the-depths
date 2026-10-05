@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.57">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.57">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.58">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.58">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.57</title>
+<title>Black Tiger: The Depths v0.58</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -58,9 +58,9 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 }
 #touch .mid{align-self:flex-start;margin-top:2px;display:flex;gap:6px}
 #crt{position:relative;display:block;width:fit-content;max-width:100%;line-height:0;border-radius:10px / 12px;overflow:hidden}
-#crtfx{display:none;position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,.34) 50%) 0 0 / 100% calc(100% / 224),repeating-linear-gradient(90deg, rgba(255,40,40,.07) 0 1px, rgba(40,255,40,.06) 1px 2px, rgba(60,80,255,.07) 2px 3px),radial-gradient(ellipse at center, rgba(0,0,0,0) 52%, rgba(0,0,0,.5) 100%);box-shadow:inset 0 0 26px rgba(0,0,0,.55);animation:crtflick 4s steps(2) infinite}
+#crtfx{display:none;position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,.34) 50%) 0 0 / 100% calc(100% / 224),radial-gradient(ellipse at center, rgba(0,0,0,0) 52%, rgba(0,0,0,.5) 100%);}
 #crt.on #crtfx{display:block}
-#crt.on #screen{filter:contrast(1.1) saturate(1.15) brightness(1.08) blur(.45px)}
+#crt.lite #crtfx{background:linear-gradient(rgba(0,0,0,0) 50%, rgba(0,0,0,.3) 50%) 0 0 / 100% calc(100% / 224)} #crt.lite2 #crtfx{display:none}
 @keyframes crtflick{0%,100%{opacity:1}48%{opacity:.96}52%{opacity:1}}
 #touch .mid{flex-direction:column;gap:6px}
 html,body{overflow-x:hidden}
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.57";   // bump by 0.01 with every change
+const VERSION = "0.58";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3349,12 +3349,11 @@ function drawChapelBack(d, cx, cy, lights) {
 function drawChapelFront(d, cx, cy) {
   const x = Math.round(d.x - cx), y = Math.round(d.fy - cy), G3 = glassPal(d.pal);
   ctx.drawImage(chapelFront(d.seed, d.side, d.pal, d.zone), x, y);
-  // coloured glow spilling outward from each window and the rose
-  ctx.save(); ctx.globalCompositeOperation = "lighter";
+  if ((window.__QL | 0) >= 2) return;
+  ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.9 + Math.sin(G.frame / 40 + d.seed) * 0.1;
   const wins = d.side > 0 ? [26, 58, 90] : [144 - 26, 144 - 58, 144 - 90];
-  const tw = Math.sin(G.frame / 40 + d.seed) * 0.04;
-  wins.forEach((wx, i) => { const gx = x + wx, gy = y + 60, gr = ctx.createRadialGradient(gx, gy, 2, gx, gy, 44); const [r, g, b] = hexRGB(G3[i % 3]); gr.addColorStop(0, "rgba(" + r + "," + g + "," + b + "," + (0.42 + tw) + ")"); gr.addColorStop(1, "rgba(" + r + "," + g + "," + b + ",0)"); ctx.fillStyle = gr; ctx.fillRect(gx - 44, gy - 44, 88, 88); });
-  { const gx = x + 72, gy = y + 22, gr = ctx.createRadialGradient(gx, gy, 2, gx, gy, 34); const [r, g, b] = hexRGB(G3[1]); gr.addColorStop(0, "rgba(" + r + "," + g + "," + b + "," + (0.5 + tw) + ")"); gr.addColorStop(1, "rgba(" + r + "," + g + "," + b + ",0)"); ctx.fillStyle = gr; ctx.fillRect(gx - 34, gy - 34, 68, 68); }
+  wins.forEach((wx, i) => { const s = lightSprite(1, 44, 2.1, hexRGB(G3[i % 3]).join(",")); ctx.drawImage(s, x + wx - 44, y + 60 - 44); });
+  { const s = lightSprite(1, 34, 2.5, hexRGB(G3[1]).join(",")); ctx.drawImage(s, x + 72 - 34, y + 22 - 34); }
   ctx.restore();
 }
 
@@ -3490,17 +3489,12 @@ function floodFx(cx, cy, lights) {
 }
 
 function floodTint(cx, cy) {
-  const r = G.room; if (!r || !r.flood) return; const F = r.flood;
-  ctx.save(); ctx.fillStyle = "rgba(10,50,120,.22)"; ctx.fillRect(0, 0, VW, VH);
-  ctx.globalCompositeOperation = "lighter";
-  for (let k = 0; k < 4; k++) {   // slanting shafts of blue light with a slow sway
-    const bx = (r.tx + r.tw * (0.12 + 0.25 * k)) * TS - cx + Math.sin(G.frame / 140 + k * 2) * 10, by = F.top * TS - cy, ey = F.fl * TS - cy; if (ey < 0 || by > VH) continue;
-    const g = ctx.createLinearGradient(0, by, 0, ey); g.addColorStop(0, "rgba(90,170,255,.20)"); g.addColorStop(1, "rgba(90,170,255,0)");
-    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 22, by); ctx.lineTo(bx + 62, ey); ctx.lineTo(bx + 30, ey); ctx.closePath(); ctx.fill();
-  }
-  ctx.restore();
+  const r = G.room; if (!r || !r.flood) return; const F = r.flood, QL = window.__QL | 0;
+  ctx.fillStyle = "rgba(10,50,120,.22)"; ctx.fillRect(0, 0, VW, VH);
+  if (QL < 2) { ctx.save(); ctx.globalCompositeOperation = "lighter";
+    for (let k = 0; k < 4; k++) { const bx = (r.tx + r.tw * (0.12 + 0.25 * k)) * TS - cx + Math.sin(G.frame / 140 + k * 2) * 10, by = F.top * TS - cy, ey = F.fl * TS - cy; if (ey < 0 || by > VH || bx > VW || bx < -70) continue; const s = beamSprite(ey - by); ctx.drawImage(s, Math.round(bx), Math.round(by)); }
+    ctx.restore(); }
   ctx.fillStyle = "rgba(200,235,255,.7)"; for (const b of (G.bubbles || [])) { const x = Math.round(b.x - cx), y = Math.round(b.y - cy); if (x < -4 || x > VW + 4 || y < -4 || y > VH + 4) continue; ctx.fillRect(x, y, b.r, b.r); ctx.fillStyle = "rgba(240,250,255,.9)"; ctx.fillRect(x, y, 1, 1); ctx.fillStyle = "rgba(200,235,255,.7)"; }
-  // a bright shimmering surface line across the room
   const sy = F.top * TS - cy; if (sy > -4 && sy < VH) { ctx.fillStyle = "rgba(150,220,255,.55)"; for (let x = 0; x < VW; x += 3) ctx.fillRect(x, sy + Math.round(Math.sin((x + G.frame) / 6) * 1.2), 2, 1); }
 }
 
@@ -4033,7 +4027,7 @@ function bossArt(kind, zone, pose, flash) {
       // legs: lean, with claw toes (not for the Wraith)
       if (zone !== 5) {   // longer, hunched legs: knees pushed outward, shins back under the hips, ending in clawed feet
         const lh1 = hz(zone * 5 + 3, 2), lh2 = hz(zone * 5 + 4, 6), lw = 9 + Math.floor(lh1 * 3), rw = 9 + Math.floor(lh2 * 3) + wide;
-        for (const a of [{ S: { x: 25 + ll, y: 45 }, E: { x: 12 + ll - Math.round(lh1 * 3), y: 58 }, W: { x: 21 + ll, y: 71 }, w0: lw + 2, w1: lw - 3 }, { S: { x: 39 + ll, y: 45 }, E: { x: 54 + ll + Math.round(lh2 * 3), y: 57 }, W: { x: 43 + ll, y: 71 }, w0: rw + 2, w1: rw - 3 }]) curveArm(R, a, st, lt, dk, o, null, false);
+        for (const a of [{ S: { x: 25 + ll, y: 45 }, E: { x: 17 + ll - Math.round(lh1 * 2), y: 58 }, W: { x: 21 + ll, y: 71 }, w0: lw + 2, w1: lw - 3 }, { S: { x: 39 + ll, y: 45 }, E: { x: 49 + ll + Math.round(lh2 * 2), y: 57 }, W: { x: 43 + ll, y: 71 }, w0: rw + 2, w1: rw - 3 }]) curveArm(R, a, st, lt, dk, o, null, false);
         blk(15 - wide + ll, 70, 14, 5); blk(34 + ll, 70, 14 + wide, 5); for (const fx of [14, 33]) claws(fx - wide + ll + 1, 72, 3, 5);
         if (slam) { R(8, 72, 10, 2, "rgba(220,210,190,.5)"); R(48, 72, 12, 2, "rgba(220,210,190,.5)"); R(2, 74, 6, 2, "rgba(220,210,190,.4)"); R(58, 74, 6, 2, "rgba(220,210,190,.4)"); } }
       else { for (let y = 0; y < 22; y++) { const hw = Math.round(14 - y * 0.55); R(32 + lean - hw - 1, 52 + y, hw * 2 + 2, 1, y < 18 ? o : E); R(32 + lean - hw, 52 + y, hw * 2, 1, y < 16 ? "rgba(90,84,112,.8)" : "rgba(90,84,112,.35)"); } for (const [sx, sy] of [[10, 66], [50, 70], [32, 74]]) { R(sx + lean, sy, 3, 5, o); R(sx + lean + 1, sy + 1, 1, 3, gl); } }
@@ -4081,7 +4075,7 @@ function bossArt(kind, zone, pose, flash) {
     } else {
       const sk = ["#1c3a14", "#2e5a22", "#4a8a34", "#78b850"], lea = ["#2a1a0e", "#4a3220", "#6a4a2e"], ln = chg ? 6 : 0, dy = up ? 2 : slam ? 3 : 0, hdx = chg ? 5 : up ? -2 : 0;
       const shd = (x, y, w, h, c, l, d) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, c); R(x, y, w, 2, l); R(x, y, 2, h, l); R(x + w - 3, y + 2, 3, h - 2, d); };
-      curveArm(R, { S: { x: 18 + ln, y: 46 }, E: { x: 4 + ln, y: 58 }, W: { x: 16 + ln, y: 71 }, w0: 12, w1: 8 }, sk[1], sk[2], sk[0], o, null, false); curveArm(R, { S: { x: 30 + ln, y: 46 }, E: { x: 46 + ln, y: 58 }, W: { x: 31 + ln, y: 71 }, w0: 12, w1: 8 }, sk[1], sk[2], sk[0], o, null, false); shd(11 + ln, 68, 12, 6, lea[1], lea[2], lea[0]); shd(25 + ln, 68, 12, 6, lea[1], lea[2], lea[0]);
+      curveArm(R, { S: { x: 18 + ln, y: 46 }, E: { x: 11 + ln, y: 58 }, W: { x: 16 + ln, y: 71 }, w0: 11, w1: 8 }, sk[1], sk[2], sk[0], o, null, false); curveArm(R, { S: { x: 30 + ln, y: 46 }, E: { x: 39 + ln, y: 58 }, W: { x: 31 + ln, y: 71 }, w0: 11, w1: 8 }, sk[1], sk[2], sk[0], o, null, false); shd(11 + ln, 68, 12, 6, lea[1], lea[2], lea[0]); shd(25 + ln, 68, 12, 6, lea[1], lea[2], lea[0]);
       taperTorso(R, 24 + ln, 24 + dy, 28, 14, 10, sk[1], sk[2], sk[0], o); taperTorso(R, 24 + ln, 32 + dy, 17, 12, 9, lea[1], lea[2], lea[0], o); R(22 + ln, 34 + dy, 4, 12, "#c8bca0"); R(23 + ln, 36 + dy, 2, 2, o); R(23 + ln, 42 + dy, 2, 2, o); R(9 + ln, 46 + dy, 30, 2, "#1a1208");
       shd(2 + ln, 20 + dy, 14, 12, "#5a5a66", "#9a9aa8", "#2a2a32"); shd(34 + ln, 20 + dy, 14, 12, "#5a5a66", "#9a9aa8", "#2a2a32"); for (const [sx, sy] of [[5, 17], [11, 16], [37, 16], [43, 17]]) { R(sx + ln, sy + dy, 2, 5, o); R(sx + ln, sy + dy + 1, 1, 3, "#c8c8d8"); }   // spiked pauldrons
       shd(14 + ln + hdx, 6 + dy, 22, 20, sk[2], sk[3], sk[1]); R(17 + ln + hdx, 14 + dy, 5, 4, o); R(27 + ln + hdx, 14 + dy, 5, 4, o); R(18 + ln + hdx, 15 + dy, 3, 2, "#ff3020"); R(28 + ln + hdx, 15 + dy, 3, 2, "#ff3020"); R(17 + ln + hdx, 12 + dy, 6, 2, o); R(27 + ln + hdx, 12 + dy, 6, 2, o);
@@ -4304,24 +4298,50 @@ function itemGrid(items) {
 
 
 
+
+function lightSprite(kind, r, a, col) {
+  r = Math.max(2, Math.round(r / 2) * 2); const ak = Math.round(a * 20) / 20, key = "ls" + kind + r + "_" + ak + (col || ""), BK = (window.__BAKED = window.__BAKED || {});
+  if (BK[key]) return BK[key];
+  const c = mk(r * 2, r * 2), g = c.getContext("2d"), gr = g.createRadialGradient(r, r, 0, r, r, r);
+  if (kind === 0) { gr.addColorStop(0, "rgba(0,0,0," + ak + ")"); gr.addColorStop(0.55, "rgba(0,0,0," + (ak * 0.6) + ")"); gr.addColorStop(1, "rgba(0,0,0,0)"); }
+  else { gr.addColorStop(0, col ? "rgba(" + col + "," + (0.2 * ak) + ")" : "rgba(255,150,60," + (0.22 * ak) + ")"); gr.addColorStop(1, col ? "rgba(" + col + ",0)" : "rgba(255,120,40,0)"); }
+  g.fillStyle = gr; g.fillRect(0, 0, r * 2, r * 2); BK[key] = c; return c;
+}
+
+function drawLighting(cx, cy, lights) {
+  const h = G.hero, dim = G.room.dark, cave = G.room.cave, hall = G.room.id === 0, QL = window.__QL | 0;
+  lgx.globalCompositeOperation = "source-over"; lgx.clearRect(0, 0, VW, VH);
+  lgx.fillStyle = `rgba(3,2,8,${cave ? LOOK.caveDim : dim ? LOOK.darkDim : hall ? LOOK.hallLit : LOOK.darkLit})`; lgx.fillRect(0, 0, VW, VH);
+  lgx.globalCompositeOperation = "destination-out";
+  const hole = (x, y, r, a) => { const s = lightSprite(0, r, a); lgx.drawImage(s, Math.round(x - s.width / 2), Math.round(y - s.height / 2)); };
+  hole(h.x + 16 - cx, h.y + 14 - cy, cave ? LOOK.caveHeroLight : dim ? LOOK.heroLightDim : hall ? LOOK.heroLight * 1.6 : LOOK.heroLight, 0.95);
+  const vis = []; for (const L of lights) { const x = L[0] - cx, y = L[1] - cy, r = L[2]; if (x + r < 0 || x - r > VW || y + r < 0 || y - r > VH) continue; vis.push(L); }
+  if (QL >= 1 && vis.length > 12) vis.length = 12;
+  for (const [x, y, r, a] of vis) hole(x - cx, y - cy, r, a);
+  ctx.drawImage(lightCanvas, 0, 0);
+  if (QL < 2) { ctx.globalCompositeOperation = "lighter"; for (const [x, y, r, a, col] of vis) { const s = lightSprite(1, r * 0.45, 1, col); ctx.drawImage(s, Math.round(x - cx - s.width / 2), Math.round(y - cy - s.height / 2)); } ctx.globalCompositeOperation = "source-over"; }
+}
+
+function beamSprite(h) {
+  h = Math.max(8, Math.round(h / 8) * 8); const key = "beam" + h, BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key];
+  const c = mk(64, h), g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "rgba(90,170,255,.20)"); gr.addColorStop(1, "rgba(90,170,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.lineTo(22, 0); g.lineTo(62, h); g.lineTo(30, h); g.closePath(); g.fill(); BK[key] = c; return c;
+}
+
+function adaptQuality(dt) {
+  const A = (window.__AQ = window.__AQ || { ema: 16, n: 0, fast: 0 }); if (dt > 250) return;
+  A.ema = A.ema * 0.96 + dt * 0.04; A.n++;
+  if (A.n > 150 && A.ema > 24 && (window.__QL | 0) < 2) { window.__QL = (window.__QL | 0) + 1; A.n = 0; A.ema = 16; setQL(); }
+  else if (A.ema < 14.5) { if (++A.fast > 900 && (window.__QL | 0) > 0) { window.__QL--; A.fast = 0; A.n = 0; setQL(); } } else A.fast = 0;
+}
+
+function setQL() { const box = document.getElementById("crt"); if (!box) return; box.classList.toggle("lite", (window.__QL | 0) >= 1); box.classList.toggle("lite2", (window.__QL | 0) >= 2); }
+
+
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
 // ---- atmosphere drawing (all original art) ----
 const lightCanvas = mk(256, 224), lgx = lightCanvas.getContext("2d");   // resized with the view in fit()
-function drawLighting(cx, cy, lights) {
-  const h = G.hero, dim = G.room.dark, cave = G.room.cave, hall = G.room.id === 0;
-  lgx.globalCompositeOperation = "source-over"; lgx.clearRect(0, 0, VW, VH);
-  lgx.fillStyle = `rgba(3,2,8,${cave ? LOOK.caveDim : dim ? LOOK.darkDim : hall ? LOOK.hallLit : LOOK.darkLit})`; lgx.fillRect(0, 0, VW, VH);
-  lgx.globalCompositeOperation = "destination-out";
-  const hole = (x, y, r, a) => { const gr = lgx.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); gr.addColorStop(1, "rgba(0,0,0,0)"); lgx.fillStyle = gr; lgx.fillRect(x - r, y - r, r * 2, r * 2); };
-  hole(h.x + 16 - cx, h.y + 14 - cy, cave ? LOOK.caveHeroLight : dim ? LOOK.heroLightDim : hall ? LOOK.heroLight * 1.6 : LOOK.heroLight, 0.95);
-  for (const [x, y, r, a] of lights) hole(x - cx, y - cy, r, a);
-  ctx.drawImage(lightCanvas, 0, 0);
-  // warm glow on top
-  ctx.globalCompositeOperation = "lighter";
-  for (const [x, y, r, a, col] of lights) { const gr = ctx.createRadialGradient(x - cx, y - cy, 0, x - cx, y - cy, r * 0.45); gr.addColorStop(0, col ? `rgba(${col},.2)` : "rgba(255,150,60,.22)"); gr.addColorStop(1, col ? `rgba(${col},0)` : "rgba(255,120,40,0)"); ctx.fillStyle = gr; ctx.fillRect(x - cx - r, y - cy - r, r * 2, r * 2); }
-  ctx.globalCompositeOperation = "source-over";
-}
 function drawTorch(g, x, y, t) {
   g.fillStyle = "#3a2a1a"; g.fillRect(x + 6, y + 8, 4, 8); g.fillStyle = "#6a5030"; g.fillRect(x + 5, y + 7, 6, 2);
   const f = (t >> 2) % 3, fl = [[0, 0], [1, -1], [-1, 1]][f];
@@ -4400,7 +4420,7 @@ document.addEventListener("touchend", e => { const now = Date.now(); if (now - l
    14. START-UP
    ====================================================================== */
 let running = false, last = 0, acc = 0;
-function loop(t) { pollPad(); acc += Math.min(100, t - last); last = t; while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; } draw(); requestAnimationFrame(loop); }
+function loop(t) { pollPad(); adaptQuality(t - last); acc += Math.min(100, t - last); last = t; while (acc >= 1000 / 60) { update(); acc -= 1000 / 60; } draw(); requestAnimationFrame(loop); }
 function begin() {
   const urlSeed = +new URLSearchParams(location.search).get("seed"), saved = loadSave();
   if (urlSeed) newGame(urlSeed, saved && saved.seed === urlSeed ? saved : null);
