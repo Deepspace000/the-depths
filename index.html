@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.80">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.80">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.84">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.84">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.80</title>
+<title>Black Tiger: The Depths v0.84</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -126,10 +126,10 @@ html,body{overflow-x:hidden}
     <span><kbd>Z</kbd>/<kbd>Space</kbd> jump</span>
     <span><kbd>X</kbd> flail</span>
     <span><kbd>M</kbd> map</span>
-    <span style="font-weight:700"><kbd>I</kbd> open inventory (backpack)</span>
+    <span style="font-weight:700"><kbd>I</kbd> open inventory (requires backpack)</span>
     <span style="font-weight:700"><kbd>G</kbd> open gear &amp; armour page</span>
     <span><kbd>↑</kbd>+<kbd>X</kbd> upward swing</span>
-    <span>Gamepad: stick/d-pad move, A jump, B/X flail, Y map, LB/RB inventory, LT gear page</span>
+    <span>Gamepad: stick/d-pad move, A jump, B/X flail, Y map, LB/RB inventory (requires backpack), LT gear page</span>
     <span><kbd>`</kbd> debug view</span>
   </div>
   <div class="row">
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.80";   // bump by 0.01 with every change
+const VERSION = "0.84";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -904,7 +904,7 @@ function newGame(seed, saved) {
     cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, killed: new Set(), lantern: 0, weapon: 0, gear: { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
   };
   if (saved) {
-    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; if (saved.gear) G.gear = saved.gear; G.weapon = saved.weapon | 0; G.killed = new Set(saved.killed || []); G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
+    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.lantern = saved.lantern | 0; if (saved.gear) G.gear = saved.gear; G.stash = saved.stash || []; G.weapon = saved.weapon | 0; G.killed = new Set(saved.killed || []); G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
     G.got = new Set(saved.got); G.visited = new Set(saved.visited); G.shrine = saved.shrine;
   }
   if (saved && hitsSolid(G.hero, G.hero.x, G.hero.y)) {   // the world's layout changed since this save: start at the entrance
@@ -919,7 +919,7 @@ function newGame(seed, saved) {
 }
 function saveRaw() {
   const h = G.hero;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, killed: [...G.killed], weapon: G.weapon | 0, gear: G.gear, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, lantern: G.lantern | 0, killed: [...G.killed], weapon: G.weapon | 0, gear: G.gear, stash: G.stash || [], packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
 }
 function save() { saveRaw(); try { const raw = localStorage.getItem(SAVE_KEY), slot = G.slot || 1; localStorage.setItem("btdepths.slot." + slot, JSON.stringify({ t: Date.now(), area: G.room ? ZONES[G.room.zone].name : "Upper Halls", zone: G.room ? G.room.zone : 0, seed: world.seed, d: JSON.parse(raw) })); localStorage.setItem("btdepths.lastSlot", String(slot)); } catch (e) {} }
 function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
@@ -1491,7 +1491,7 @@ function draw() {
   for (const b of G.shots) put(Art.obj(b.art, "idle", 0, zone), b.x, b.y);
   drawPebbles(cx, cy); drawFlies(cx, cy, lights); drawGauges(cx, cy);
   const h = G.hero;
-  if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); if (G.hasPack && G.mode !== "dead") drawWornPack(h, cx, cy); ctx.drawImage(gearImg(f), Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); if (h.atkUp && h.atk > 0 && G.mode !== "dead") drawUpSwing(h, cx, cy); }
+  if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); if (G.hasPack && G.mode !== "dead") drawWornPack(h, cx, cy); if (h.atkUp && h.atk > 0 && G.mode !== "dead") drawUpSwing(h, cx, cy); else ctx.drawImage(gearImg(f), Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); }
   drawFore(cx, cy);
   for (const f of G.fires) if (!f.delay) put(Art.obj(f.blue ? "bluefire" : "fire", f.t <= 10 ? "small" : (f.t >> 2) & 1 ? "f1" : "f0", 0, zone), f.x, f.y);
   if (G.confuse > 0 && (G.frame & 16)) { ctx.fillStyle = "#80c0ff"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center"; ctx.fillText("CONFUSED", VW / 2, 52); }
@@ -2677,6 +2677,7 @@ function shopRowState(r) {
   if (r.kind === "weapon" && (G.weapon | 0) >= 5) return "Your weapon is the finest";
   if (r.kind === "armour") { const g = G.gear || {}; const have = r.slot === "ring" ? Math.min(g.r1 ? g.r1.t : 0, g.r2 ? g.r2.t : 0) : (g[r.slot] | 0); if (have >= r.tier) return r.slot === "ring" ? "You wear better rings" : "You wear as good"; }
   if (r.kind === "heart" && G.got.has(r.once)) return "Sold out";
+  if (r.kind === "lantern" && !G.hasPack) return "Needs a backpack first";
   if (r.kind === "lantern" && (G.lantern | 0) >= 4) return "Your lantern is the brightest";
   if (r.kind === "pack" && r.tier <= G.packTier) return "You have one this big";
   return "";
@@ -3218,41 +3219,62 @@ function armourIcon(slot, tier, rk) {
 }
 
 function takeArmour(it) {
-  const g = (G.gear = G.gear || { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }), px = it.x + 8, py = it.y;
-  if (it.slot === "ring") {
-    const free = !g.r1 ? "r1" : !g.r2 ? "r2" : null, low = free || ((g.r1.t <= g.r2.t) ? "r1" : "r2");
-    if (!free && it.tier <= g[low].t) { if (!it.fullT || G.frame - it.fullT > 120) { popup(px, py, "You wear better rings"); it.fullT = G.frame; } return; }
-    g[low] = { t: it.tier, k: it.rk };
-  } else {
-    if (it.tier <= (g[it.slot] | 0)) { if (!it.fullT || G.frame - it.fullT > 120) { popup(px, py, "Yours is as good"); it.fullT = G.frame; } return; }
-    g[it.slot] = it.tier;
-  }
-  it.gone = true; if (it.id >= 0) G.got.add(it.id); const s = gearStats();
-  popup(px, py, gearName(it.slot, it.tier, it.rk)); G.banner = gearName(it.slot, it.tier, it.rk) + " equipped. Strength " + s.str + ", Defense " + s.def + "."; G.bannerT = 260; save();
+  const g = (G.gear = G.gear || { helm: 0, chest: 0, legs: 0, bracer: 0, r1: null, r2: null }), px = it.x + 8, py = it.y; G.stash = G.stash || [];
+  const piece = { slot: it.slot, tier: it.tier, rk: it.rk };
+  let better = false;
+  if (it.slot === "ring") { const free = !g.r1 ? "r1" : !g.r2 ? "r2" : null, low = free || ((g.r1.t <= g.r2.t) ? "r1" : "r2"); if (free || it.tier > g[low].t) { better = true; if (!free) G.stash.push({ slot: "ring", tier: g[low].t, rk: g[low].k }); g[low] = { t: it.tier, k: it.rk }; } }
+  else if (it.tier > (g[it.slot] | 0)) { better = true; if (g[it.slot]) G.stash.push({ slot: it.slot, tier: g[it.slot], rk: "m" }); g[it.slot] = it.tier; }
+  it.gone = true; if (it.id >= 0) G.got.add(it.id);
+  if (!better) { G.stash.push(piece); popup(px, py, gearName(it.slot, it.tier, it.rk) + " (bag)"); G.banner = gearName(it.slot, it.tier, it.rk) + " put in your gear bag. Press G to manage gear."; G.bannerT = 200; try { save(); } catch (e) {} return; }
+  const s = gearStats(); popup(px, py, gearName(it.slot, it.tier, it.rk)); G.banner = gearName(it.slot, it.tier, it.rk) + " equipped. Strength " + s.str + ", Defense " + s.def + "."; G.bannerT = 260; try { save(); } catch (e) {}
 }
 
 function drawGear() {
-  const g = ctx, G2 = G.gear || {}, S = gearStats(), rows = [["helm", "Helm"], ["chest", "Chest"], ["legs", "Legs"], ["bracer", "Bracers"], ["r1", "Ring"], ["r2", "Ring"]];
-  const W = Math.min(VW - 8, 240), x = Math.round((VW - W) / 2), y = 8, rowH = 22, h = 150 + 48, t = G.frame;
-  g.fillStyle = "rgba(4,2,2,.74)"; g.fillRect(0, 0, VW, VH); g.imageSmoothingEnabled = false;
-  g.fillStyle = "#120a04"; g.fillRect(x - 2, y - 2, W + 4, h + 4); g.fillStyle = "#3a2a3e"; g.fillRect(x, y, W, h); g.fillStyle = "#5a4262"; g.fillRect(x, y, W, 2); g.fillStyle = "#241830"; g.fillRect(x, y + h - 2, W, 2);
-  g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "left"; g.fillText("ARMOUR", x + 8, y + 14);
-  g.fillStyle = "#ff9a60"; g.fillText("STR " + S.str, x + 70, y + 14); g.fillStyle = "#80c0ff"; g.fillText("DEF " + S.def, x + 112, y + 14);
-  g.fillStyle = "#c8b8d8"; g.font = "7px monospace"; g.fillText("hits deal " + strDamage() + "  |  " + Math.round(defReduction() * 100) + "% of each hit absorbed", x + 8, y + 24);
-  const f = Art.hero(heroFrame(), 1), img = gearImg(f); g.fillStyle = "#1c1228"; g.fillRect(x + 8, y + 30, 52, 70); g.drawImage(img, f.ox, f.oy, 32, 32, x + 12, y + 36, 44, 44);
-  rows.forEach(([s, label], i) => {
-    const ry = y + 30 + i * rowH, v = G2[s], tier = s.length === 2 ? (v ? v.t : 0) : (v | 0), rk = s.length === 2 && v ? v.k : "m";
-    g.fillStyle = "#241830"; g.fillRect(x + 66, ry, W - 74, rowH - 3); if (tier) { g.drawImage(armourIcon(s.length === 2 ? "ring" : s, tier, rk), x + 69, ry + 2, 16, 16); }
-    g.fillStyle = tier ? "#ffe680" : "#7a6a8a"; g.font = "bold 8px monospace"; g.textAlign = "left"; g.fillText(tier ? gearName(s.length === 2 ? "ring" : s, tier, rk) : label + ": none", x + 90, ry + 9);
-    const p = tier ? gearPieceStats(s.length === 2 ? "ring" : s, tier, rk) : null; g.fillStyle = "#b8a8c8"; g.font = "7px monospace"; g.fillText(p ? ("grade " + tier + (p.str ? "  STR +" + p.str : "") + (p.def ? "  DEF +" + p.def : "")) : "find or buy one", x + 90, ry + 17);
+  const g = ctx, G2 = G.gear || {}, S = gearStats(), L = gearLayout(), t = G.frame; G.stash = G.stash || []; G.gearSel = G.gearSel | 0; G.gearTab = G.gearTab | 0; G.gearBagSel = Math.max(0, Math.min(G.gearBagSel | 0, Math.max(0, G.stash.length - 1)));
+  g.fillStyle = "rgba(4,2,2,.78)"; g.fillRect(0, 0, VW, VH); g.imageSmoothingEnabled = false;
+  g.fillStyle = "#120a04"; g.fillRect(L.x - 2, L.y - 2, L.W + 4, L.h + 4); g.fillStyle = "#3a2a3e"; g.fillRect(L.x, L.y, L.W, L.h); g.fillStyle = "#5a4262"; g.fillRect(L.x, L.y, L.W, 2); g.fillStyle = "#241830"; g.fillRect(L.x, L.y + L.h - 2, L.W, 2);
+  g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "left"; g.fillText("GEAR", L.x + 8, L.y + 14); g.fillStyle = "#ff9a60"; g.fillText("STR " + S.str, L.x + 48, L.y + 14); g.fillStyle = "#80c0ff"; g.fillText("DEF " + S.def, L.x + 94, L.y + 14);
+  g.fillStyle = "#c8b8d8"; g.font = "7px monospace"; g.fillText("hits deal " + strDamage() + "  |  " + Math.round(defReduction() * 100) + "% absorbed", L.x + 8, L.y + 24);
+  const c = L.close; g.fillStyle = "#120a04"; g.fillRect(c.x - 1, c.y - 1, c.w + 2, c.h + 2); g.fillStyle = "#6a4a80"; g.fillRect(c.x, c.y, c.w, c.h); g.fillStyle = "#ffe680"; g.font = "bold 7px monospace"; g.textAlign = "center"; g.fillText("CLOSE", c.x + c.w / 2, c.y + 9);
+  const f = Art.hero(heroFrame(), 1), img = gearImg(f); g.fillStyle = "#1c1228"; g.fillRect(L.x + 8, L.row0, 44, 60); g.drawImage(img, f.ox, f.oy, 32, 32, L.x + 14, L.row0 + 8, 32, 32);
+  gearSlots_().forEach((s2, i) => {
+    const ry = L.row0 + i * L.rowH, p = gearOf(s2), on = G.gearTab === 0 && i === G.gearSel, label = { helm: "Helm", chest: "Chest", legs: "Legs", bracer: "Bracers", r1: "Ring", r2: "Ring" }[s2];
+    g.fillStyle = on ? ((t >> 3) & 1 ? "#f0c860" : "#c89a40") : "#241830"; g.fillRect(L.x + 56, ry - 1, L.W - 64, L.rowH - 1); g.fillStyle = "#241830"; g.fillRect(L.x + 58, ry + 1, L.W - 68, L.rowH - 5);
+    if (p) g.drawImage(armourIcon(p.slot, p.tier, p.rk), L.x + 60, ry + 1, 14, 14);
+    g.textAlign = "left"; g.fillStyle = p ? "#ffe680" : "#7a6a8a"; g.font = "bold 7px monospace"; g.fillText(p ? gearName(p.slot, p.tier, p.rk) : label + ": empty", L.x + 78, ry + 8);
+    const st = p ? gearPieceStats(p.slot, p.tier, p.rk) : null; g.fillStyle = "#b8a8c8"; g.font = "6px monospace"; g.fillText(p ? ("STR +" + st.str + "  DEF +" + st.def) : (G.stash.some(b => b.slot === (s2[0] === "r" ? "ring" : s2)) ? "Z: choose from bag" : "nothing to wear"), L.x + 78, ry + 14);
+    if (on && p) { g.fillStyle = "#1c1228"; g.fillRect(L.x + L.W - 62, ry + 2, 54, 10); g.fillStyle = "#ff9a80"; g.font = "bold 6px monospace"; g.textAlign = "center"; g.fillText("Z: UNEQUIP", L.x + L.W - 35, ry + 9); }
   });
-  g.fillStyle = "#a89870"; g.font = "7px monospace"; g.textAlign = "center"; g.fillText("close: X / B / G", VW / 2, y + h + 12);
-  const b = { x: Math.round(VW / 2) - 28, y: y + h - 22, w: 56, h: 15 }; g.fillStyle = "#120a04"; g.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2); g.fillStyle = "#6a4a80"; g.fillRect(b.x, b.y, b.w, b.h); g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.fillText("CLOSE", b.x + b.w / 2, b.y + 11);
+  g.fillStyle = "#c8b8d8"; g.textAlign = "left"; g.font = "bold 7px monospace"; g.fillText("GEAR BAG (" + G.stash.length + ")", L.x + 8, L.bag0 - 3);
+  const per = 12, sw = 19;
+  for (let i = 0; i < Math.min(G.stash.length, 24); i++) { const b = G.stash[i], bx = L.x + 8 + (i % per) * sw, by = L.bag0 + Math.floor(i / per) * sw, on = G.gearTab === 1 && i === G.gearBagSel; g.fillStyle = on ? ((t >> 3) & 1 ? "#f0c860" : "#c89a40") : "#120a04"; g.fillRect(bx - 1, by - 1, 18, 18); g.fillStyle = "#241830"; g.fillRect(bx, by, 16, 16); g.drawImage(armourIcon(b.slot, b.tier, b.rk), bx, by, 16, 16); }
+  if (!G.stash.length) { g.fillStyle = "#7a6a8a"; g.font = "7px monospace"; g.fillText("Unequipped pieces are kept here.", L.x + 8, L.bag0 + 10); }
+  const sel = G.gearTab === 1 ? G.stash[G.gearBagSel] : null; g.textAlign = "left"; g.fillStyle = "#ffe680"; g.font = "bold 7px monospace";
+  if (sel) { const st = gearPieceStats(sel.slot, sel.tier, sel.rk); g.fillText(gearName(sel.slot, sel.tier, sel.rk) + "  STR +" + st.str + " DEF +" + st.def, L.x + 8, L.y + L.h - 16); }
+  g.fillStyle = "#a89870"; g.font = "6px monospace"; g.textAlign = "center"; g.fillText(G.gearTab === 1 ? "arrows: choose   Z: wear it   X: back" : "up/down: choose   Z: unequip or open bag   X / G: close", VW / 2, L.y + L.h - 5);
 }
 
-function gearTap(px, py) { const W = Math.min(VW - 8, 240), h = 198, y = 8, b = { x: Math.round(VW / 2) - 28, y: y + h - 22, w: 56, h: 15 }; if ((px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) || px < (VW - W) / 2 || px > (VW + W) / 2 || py > y + h + 2) G.mode = "play"; }
+function gearTap(px, py) {
+  const L = gearLayout(), c = L.close; G.stash = G.stash || [];
+  if (px >= c.x && px <= c.x + c.w && py >= c.y && py <= c.y + c.h) { G.mode = "play"; return; }
+  for (let i = 0; i < 6; i++) { const ry = L.row0 + i * L.rowH; if (px >= L.x + 56 && px <= L.x + L.W - 8 && py >= ry - 1 && py <= ry + L.rowH - 2) { if (G.gearTab === 0 && G.gearSel === i) gearAction(); else { G.gearTab = 0; G.gearSel = i; } return; } }
+  for (let i = 0; i < Math.min(G.stash.length, 24); i++) { const bx = L.x + 8 + (i % 12) * 19, by = L.bag0 + Math.floor(i / 12) * 19; if (px >= bx && px <= bx + 16 && py >= by && py <= by + 16) { if (G.gearTab === 1 && G.gearBagSel === i) { gearEquipFromBag(i); G.gearTab = G.stash.length ? 1 : 0; G.gearBagSel = Math.min(G.gearBagSel, Math.max(0, G.stash.length - 1)); } else { G.gearTab = 1; G.gearBagSel = i; } return; } }
+  if (!(px >= L.x && px <= L.x + L.W && py >= L.y && py <= L.y + L.h)) G.mode = "play";
+}
 
-function gearInput() { if (pressed.attack || pressed.jump || pressed.enter || pressed.pack) G.mode = "play"; }
+function gearInput() {
+  G.stash = G.stash || []; G.gearSel = G.gearSel | 0; G.gearTab = G.gearTab | 0;
+  if (G.gearTab === 0) {
+    if (pressed.up) { G.gearSel = (G.gearSel + 5) % 6; sfx("menu"); } if (pressed.down) { G.gearSel = (G.gearSel + 1) % 6; sfx("menu"); }
+    if (pressed.jump || pressed.enter) gearAction();
+    if (pressed.attack || pressed.pack) G.mode = "play";
+  } else {
+    const n = G.stash.length; if (!n) { G.gearTab = 0; return; }
+    if (pressed.left) G.gearBagSel = (G.gearBagSel + n - 1) % n; if (pressed.right) G.gearBagSel = (G.gearBagSel + 1) % n; if (pressed.up) G.gearBagSel = Math.max(0, G.gearBagSel - 12); if (pressed.down) G.gearBagSel = Math.min(n - 1, G.gearBagSel + 12);
+    if (pressed.jump || pressed.enter) { gearEquipFromBag(G.gearBagSel); G.gearBagSel = Math.min(G.gearBagSel, Math.max(0, G.stash.length - 1)); G.gearTab = 0; }
+    if (pressed.attack || pressed.pack) G.gearTab = 0;
+  }
+}
 
 function placeArmour(rooms, items, standSpots, decor) {
   const slots = [["helm"], ["chest"], ["legs"], ["bracer"], ["ring", "m"], ["ring", "w"]];
@@ -4445,21 +4467,20 @@ function drawExitArrows() {
 
 
 function upSwing(h) {
-  const t = Math.max(0, Math.min(1, (h.atk - 6) / 20)), th = t * Math.PI, R = 36 + weaponReach(G.weapon) * 0.5, px = h.x + 16, py = h.y + (h.crouch ? 18 : 10);
-  return { px, py, R, t, th, bx: px + h.dir * Math.cos(th) * R, by: py - Math.sin(th) * R };
+  const P = upParts(), th = upAngle(h.atk), px = h.x + 16 + h.dir * (P.PX - 16), py = h.y - P.f.oy + P.PY;
+  return { th, R: P.R, bx: px + h.dir * Math.cos(th) * P.R, by: py - Math.sin(th) * P.R, px, py };
 }
 
-function upSwingBox(h) { if (!h.atkUp || h.atk < 7 || h.atk > 26) return null; const s = upSwing(h); return { x: s.bx - 12, y: s.by - 12, w: 24, h: 24 }; }
+function upSwingBox(h) { if (!h.atkUp || h.atk < 7 || h.atk > 27) return null; const s = upSwing(h); return { x: s.bx - 12, y: s.by - 12, w: 24, h: 24 }; }
 
 function drawUpSwing(h, cx, cy) {
-  const s = upSwing(h), wl = G.weapon | 0, ramp = weaponRamp(Math.max(1, wl)), r = 3 + wl * 0.7, x0 = s.px - cx, y0 = s.py - cy;
-  ctx.save();
-  if (h.atk > 6) { ctx.strokeStyle = "rgba(235,240,255,.35)"; ctx.lineWidth = 3; ctx.beginPath(); const a1 = s.th, a0 = Math.max(0, s.th - 1.1); for (let k = 0; k <= 10; k++) { const a = a0 + (a1 - a0) * k / 10, x = x0 + h.dir * Math.cos(a) * s.R, y = y0 - Math.sin(a) * s.R; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); } ctx.stroke(); }
-  const bx = Math.round(s.bx - cx), by = Math.round(s.by - cy);
-  ctx.fillStyle = "#c8c8d8"; for (let k = 1; k < 8; k++) { const f = k / 8; ctx.fillRect(Math.round(x0 + (bx - x0) * f), Math.round(y0 + (by - y0) * f), 1, 1); }
-  ctx.fillStyle = "#0c0a08"; ctx.beginPath(); ctx.arc(bx, by, r + 1.2, 0, 6.3); ctx.fill(); ctx.fillStyle = ramp[2]; ctx.beginPath(); ctx.arc(bx, by, r, 0, 6.3); ctx.fill(); ctx.fillStyle = ramp[4]; ctx.fillRect(bx - Math.round(r * 0.5), by - Math.round(r * 0.5), Math.max(1, Math.round(r * 0.4)), Math.max(1, Math.round(r * 0.4)));
-  ctx.fillStyle = ramp[3]; for (const [sx, sy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) ctx.fillRect(bx + sx * (Math.round(r) + 1), by + sy * (Math.round(r) + 1), 1, 1);
-  ctx.restore();
+  const P = upParts(), f = P.f, th = upAngle(h.atk), hx = h.x + 16 - cx;
+  ctx.save(); ctx.translate(hx, 0); if (h.dir < 0) ctx.scale(-1, 1); ctx.translate(-hx, 0);
+  const ox = Math.round(h.x - f.ox - cx), oy = Math.round(h.y - f.oy - cy);
+  ctx.drawImage(P.body, ox, oy);
+  const piece = (a) => { ctx.save(); ctx.translate(ox + P.PX, oy + P.PY); ctx.rotate(-a); ctx.drawImage(P.piece, 0, -P.PY); ctx.restore(); };
+  if (h.atk > 6) for (const [k, al] of [[2, 0.14], [1, 0.26]]) { ctx.globalAlpha = al; piece(th - k * 0.3); }
+  ctx.globalAlpha = 1; piece(th); ctx.restore();
 }
 
 
@@ -4470,6 +4491,45 @@ function drawBanner() {
   const lh = 11, h = lines.length * lh + 9, y0 = 92;
   ctx.fillStyle = "rgba(0,0,0,.72)"; ctx.fillRect(0, y0, VW, h); ctx.fillStyle = "#ffe680"; lines.forEach((l, i) => ctx.fillText(l, VW / 2, y0 + 12 + i * lh)); ctx.restore();
 }
+
+
+function upParts() {
+  const f1 = Art.hero("strike1", 1), f2 = Art.hero("strike1", 1), key = (G.weapon | 0) + "_" + ((G.gear && (G.gear.helm | 0) + "" + (G.gear.chest | 0) + (G.gear.legs | 0) + (G.gear.bracer | 0)) || ""), C = (window.__UPP = window.__UPP || {});
+  if (C[key]) return C[key]; const PX = 22, i1 = gearImg(f1), i2 = gearImg(f2), H = i2.height, W2 = i2.width;
+  let sy = 0, sn = 0; const cg = i2.getContext("2d"), col = cg.getImageData(PX + 14, 0, 1, H).data; for (let y = 0; y < H; y++) if (col[y * 4 + 3] > 100) { sy += y; sn++; } const PY = sn ? Math.round(sy / sn) : 14;
+  const body = mk(PX, i1.height), bg = body.getContext("2d"); bg.drawImage(i1, 0, 0, PX, i1.height, 0, 0, PX, i1.height);
+  const piece = mk(W2 - PX, H), pg = piece.getContext("2d"); pg.drawImage(i2, PX, 0, W2 - PX, H, 0, 0, W2 - PX, H);
+  const pd = pg.getImageData(0, 0, W2 - PX, H).data; let maxX = 0; for (let x = 0; x < W2 - PX; x++) for (let y = 0; y < H; y++) if (pd[(y * (W2 - PX) + x) * 4 + 3] > 100) maxX = x;
+  return (C[key] = { f: f2, body, piece, PX, PY, R: Math.max(24, maxX - 7), ballR: 7 });
+}
+
+function upAngle(atk) { if (atk <= 6) return -0.9 + 0.9 * (atk / 6); if (atk <= 26) { const u = (atk - 6) / 20; return u * u * (3 - 2 * u) * Math.PI; } return Math.PI + 0.12 * Math.min(2, atk - 26); }
+
+
+function gearSlots_() { return ["helm", "chest", "legs", "bracer", "r1", "r2"]; }
+
+function gearOf(slot) { const g = G.gear || {}; if (slot === "r1" || slot === "r2") return g[slot] ? { slot: "ring", tier: g[slot].t, rk: g[slot].k } : null; return g[slot] ? { slot, tier: g[slot], rk: "m" } : null; }
+
+function gearUnequip(slot) {
+  const p = gearOf(slot); if (!p) return false; (G.stash = G.stash || []).push(p); if (slot === "r1" || slot === "r2") G.gear[slot] = null; else G.gear[slot] = 0;
+  popup(G.hero.x + 16, G.hero.y - 6, "Unequipped"); sfx("menu"); try { save(); } catch (e) {} return true;
+}
+
+function gearEquipFromBag(idx) {
+  const p = (G.stash || [])[idx]; if (!p) return false; const g = G.gear; G.stash.splice(idx, 1);
+  if (p.slot === "ring") { const slot = !g.r1 ? "r1" : !g.r2 ? "r2" : (g.r1.t <= g.r2.t ? "r1" : "r2"); if (g[slot]) G.stash.push({ slot: "ring", tier: g[slot].t, rk: g[slot].k }); g[slot] = { t: p.tier, k: p.rk }; }
+  else { if (g[p.slot]) G.stash.push({ slot: p.slot, tier: g[p.slot], rk: "m" }); g[p.slot] = p.tier; }
+  popup(G.hero.x + 16, G.hero.y - 6, "Equipped"); sfx("pickup"); try { save(); } catch (e) {} return true;
+}
+
+function gearLayout() { const W = Math.min(VW - 8, 240), x = Math.round((VW - W) / 2), y = 4, h = 212; return { W, x, y, h, row0: y + 30, rowH: 19, bag0: y + 158, close: { x: x + W - 44, y: y + 4, w: 38, h: 12 } }; }
+
+function gearAction() {
+  G.stash = G.stash || []; const slot = gearSlots_()[G.gearSel | 0];
+  if (gearOf(slot)) { gearUnequip(slot); return; }
+  const want = slot[0] === "r" ? "ring" : slot, idx = G.stash.findIndex(b => b.slot === want); if (idx >= 0) { G.gearTab = 1; G.gearBagSel = idx; }
+}
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
