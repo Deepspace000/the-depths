@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.35">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.35">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.36">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.36">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.35</title>
+<title>Black Tiger: The Depths v0.36</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.35";   // bump by 0.01 with every change
+const VERSION = "0.36";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -736,7 +736,8 @@ function generateWorld(seed) {
     for (const r of rooms) { if (r.id === 0 || r.zone !== z || r.cave || r.ruin) continue; const d = Math.abs(r.x + r.w / 2 - cx0) * 0.5 + Math.abs(r.y - cy0) * 2 + r.id * 0.0001; if (d < bd) { const sp = standSpots(r); if (sp.length) { bd = d; best = [r, sp]; } } }
     if (!best) continue;
     const [r, sp] = best, fl = sp.filter(([x, y]) => y === r.ty + r.th - 2 && !items.some(i => Math.abs(i.x - x * TS) < 24 && Math.abs(i.y - y * TS) < 24)), [x, y] = fl.length ? fl[Math.floor(fl.length / 2)] : sp[0];
-    items.push({ id: r.id * 100 + 56, kind: "backpack", tier: z, art: "backpack" + z, x: x * TS, y: y * TS });
+    if (z & 1) items.push({ id: r.id * 100 + 56, kind: "shop", tier: z, zone: z, x: x * TS, y: y * TS });   // half the backpacks are sold by a pedlar
+    else items.push({ id: r.id * 100 + 56, kind: "backpack", tier: z, art: "backpack" + z, x: x * TS, y: y * TS });
   }
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
   const decor = [...ruinDecor];
@@ -1069,6 +1070,7 @@ function updateItems() {
     }
     if (it.kind === "chest") { updateChest(it, box, hb); continue; }
     if (it.kind === "frozen") { updateFrozen(it, box, hb); continue; }
+    if (it.kind === "shop") { updateShop(it, hb); continue; }
     if (!overlap(hb, box)) continue;
     if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; popup(it.x + 8, it.y, "+" + it.value); }
     if (it.kind === "potion" || it.kind === "food") takeStorable(it);
@@ -1353,6 +1355,7 @@ function update() {
   if (G.mode === "map") { clearPressed(); return; }
   if (pressed.pack && G.hasPack && G.mode !== "dead") G.mode = G.mode === "pack" ? "play" : "pack";
   if (G.mode === "pack") { packInput(); clearPressed(); return; }
+  if (G.mode === "shop") { shopInput(); clearPressed(); return; }
   if (G.mode === "dead") {
     { const h = G.hero; h.climb = false; h.atk = 0; h.crouch = false; h.vy = Math.min(h.vy + CFG.gravity, CFG.maxFall); moveY(h, h.vy); updateCamera(); }   // the body falls to the floor
     if (--G.dead <= 0) { const h = G.hero; Object.assign(h, { x: G.shrine.x, y: G.shrine.y, vx: 0, vy: 0, hp: G.maxHP, inv: 90, climb: false, atk: 0 }); G.mode = "play"; G.room = null; enterRoom(roomAtPx(h.x + 16, h.y + 16), true); }
@@ -1418,6 +1421,7 @@ function draw() {
     if (it.kind === "frozen") { const f = it.thawed ? ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3] : it.thawT ? ((it.thawT >> 2) & 1 ? "stone" : "man0") : "stone"; put(Art.obj("frozen", f, 0, zone), it.x, it.y); continue; }
     if (it.kind === "pot" || it.kind === "key") { put(Art.obj(it.kind, "idle", 0, zone), it.x + (it.shake ? Math.round(Math.sin(it.shake * 1.7) * 2) : 0), it.y); continue; }
     if (it.kind === "shrine") { drawShrine(it, cx, cy, lights); continue; }
+    if (it.kind === "shop") { drawShop(it, cx, cy, lights); continue; }
     if (it.kind === "treasure") { put(Art.obj(it.art, "idle", 0, zone), it.x, it.y); continue; }
     const bob = it.kind === "coin" && !it.falling ? Math.round(Math.sin((G.frame + it.x) / 12) * 1.5) : 0;
     const art = it.kind === "shrine" ? ((G.frame >> 3) & 1 ? "shrineA" : "shrineB") : it.art;
@@ -1443,6 +1447,7 @@ function draw() {
   drawLighting(cx, cy, lights);
   drawHUD();
   if (G.mode === "pack") drawPack();
+  if (G.mode === "shop") drawShopUI();
   if (G.debug) drawDebug();
 }
 /* ======================================================================
@@ -2541,6 +2546,139 @@ function drawBridge(g, x) {
   if ((x & 3) === 0) { g.fillStyle = "#6a4a2a"; g.fillRect(1, 5, 1, 4); g.fillStyle = "#3a2410"; g.fillRect(2, 8, 1, 2); }
 }
 
+
+function shopPrice(kind, tier) { return kind === "food" ? 300 : kind === "potion" ? 500 : kind === "heart" ? 4000 : 1500 * ((tier | 0) + 1); }
+
+function shopkeeperArt(zone, f) {
+  const cloak = ["#2a4a52", "#4a2a52", "#52402a", "#2a3a5a", "#5a2a2a", "#3a4a2a", "#4a4a4a", "#52302a"][zone % 8];
+  return baked("keeper" + (zone % 8) + "_" + f, 30, 38, (R) => {
+    const o = "#0a0806", cl = cloak, cd = shade(cloak, 0.6), cb = shade(cloak, 1.35), bob = f ? 1 : 0;
+    // sacks and rolled bedding piled on the back
+    R(1, 10 + bob, 11, 24, o); R(2, 11 + bob, 9, 22, "#6a5030"); R(2, 11 + bob, 2, 22, "#8a6a40"); R(8, 13 + bob, 3, 20, "#3a2a14"); R(3, 15 + bob, 6, 1, "#2a1c0c"); R(3, 24 + bob, 6, 1, "#2a1c0c");
+    R(0, 6 + bob, 8, 8, o); R(1, 7 + bob, 6, 6, "#8a7048"); R(1, 7 + bob, 2, 6, "#a88a58"); R(4, 9 + bob, 2, 1, "#2a1c0c");
+    R(4, 2 + bob, 3, 6, o); R(5, 3 + bob, 1, 5, "#c8c0a0");
+    // cloak body, wider at the hem
+    for (let y = 14; y < 38; y++) { const w = 12 + Math.floor((y - 14) * 0.5), x0 = 17 - (w >> 1); R(x0 - 1, y + bob * (y < 30 ? 1 : 0), w + 2, 1, o); R(x0, y + bob * (y < 30 ? 1 : 0), w, 1, cl); R(x0, y + bob * (y < 30 ? 1 : 0), 2, 1, cb); R(x0 + w - 3, y + bob * (y < 30 ? 1 : 0), 3, 1, cd); }
+    for (const [x, y, l] of [[12, 22, 10], [16, 20, 12], [20, 24, 9], [23, 26, 8]]) R(x, y + bob, 1, l, cd);   // folds
+    R(10, 35, 3, 3, "rgba(0,0,0,0)"); R(22, 36, 3, 2, "rgba(0,0,0,0)"); R(15, 37, 2, 1, "rgba(0,0,0,0)");        // ragged hem
+    R(13, 20 + bob, 9, 2, "#c8a850"); R(13, 20 + bob, 9, 1, "#e8d078"); R(17, 20 + bob, 2, 3, "#8a6a28");          // a belt and purse
+    // the hood and a hollow face
+    R(10, 3 + bob, 15, 14, o); R(11, 2 + bob, 13, 14, cl); R(13, 1 + bob, 9, 2, cl); R(11, 3 + bob, 2, 12, cb); R(22, 4 + bob, 2, 11, cd);
+    R(13, 6 + bob, 9, 8, "#050404"); R(14, 5 + bob, 7, 1, "#050404");
+    R(14, 8 + bob, 3, 1, "#f0c040"); R(19, 8 + bob, 3, 1, "#f0c040"); R(15, 8 + bob, 1, 1, "#fff0a0"); R(20, 8 + bob, 1, 1, "#fff0a0");   // narrow glowing eyes
+    R(17, 10 + bob, 2, 2, "#2a2018"); R(15, 12 + bob, 6, 1, "#8a8070"); R(16, 13 + bob, 1, 2, "#8a8070"); R(19, 13 + bob, 2, 1, "#8a8070");   // hooked nose, grey stubble
+    // gnarled hands resting out front
+    R(9, 28, 4, 3, o); R(10, 28, 3, 2, "#a08060"); R(11, 30, 1, 2, "#a08060"); R(22, 28, 4, 3, o); R(23, 28, 3, 2, "#a08060"); R(22, 30, 1, 2, "#a08060");
+  }, zone * 3 + f);
+}
+
+function drawShop(it, cx, cy, lights) {
+  const x = Math.round(it.x) - cx, base = Math.round(it.y) - cy + 16, z = it.zone | 0, t = G.frame + (it.id | 0);
+  const R = (a, b, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x + a, base + b, w, h); };
+  // posts and a torn striped awning
+  R(-17, -44, 3, 44, "#120a04"); R(-16, -44, 1, 44, "#6a4a28"); R(31, -44, 3, 44, "#120a04"); R(32, -44, 1, 44, "#6a4a28");
+  const aw = baked("awn" + (z % 4), 56, 14, (Q) => { const col = [["#8a2820", "#d8c8a0"], ["#20508a", "#d8c8a0"], ["#2a6a30", "#d8c8a0"], ["#6a2a6a", "#d8c8a0"]][z % 4], S = rng(z * 5 + 3); for (let i = 0; i < 56; i += 7) { const c = (i / 7) & 1 ? col[1] : col[0]; Q(i, 0, 7, 10, c); const d = 3 + Math.floor(S() * 5); Q(i, 10, 7, d - 3 > 0 ? d - 3 : 1, c); Q(i + 1, 10 + d - 3, 5, 1, "rgba(0,0,0,0)"); } Q(0, 0, 56, 1, "#e0d0b0"); Q(0, 8, 56, 2, "rgba(0,0,0,.28)"); for (let i = 0; i < 4; i++) Q(Math.floor(S() * 52), 3 + Math.floor(S() * 4), 3, 2, "rgba(0,0,0,0)"); }, z);
+  ctx.drawImage(aw, x - 20, base - 54);
+  // hanging wares: potion bottles, a chicken, a sack
+  for (const [wx, k] of [[-10, 0], [2, 1], [14, 0], [26, 2]]) { const sw = Math.round(Math.sin((t + wx * 3) / 28) * 1); R(wx + sw, -40, 1, 8, "#3a2a18"); if (k === 0) { R(wx - 2 + sw, -32, 5, 7, "#120808"); R(wx - 1 + sw, -31, 3, 5, "#c02040"); R(wx - 1 + sw, -31, 1, 4, "#ff7088"); R(wx - 1 + sw, -34, 3, 2, "#c8c0a0"); } else if (k === 1) { R(wx - 3 + sw, -32, 7, 7, "#1a0c04"); R(wx - 2 + sw, -31, 5, 5, "#b87030"); R(wx - 2 + sw, -31, 2, 2, "#e8a850"); R(wx + 2 + sw, -26, 3, 3, "#c8a870"); } else { R(wx - 3 + sw, -32, 7, 8, "#120c06"); R(wx - 2 + sw, -31, 5, 6, "#6a5030"); R(wx - 1 + sw, -33, 3, 2, "#3a2a14"); } }
+  ctx.drawImage(shopkeeperArt(z, (t >> 5) & 1), x - 8, base - 38 + 2);
+  // the counter
+  const ct = baked("ctr" + (z % 4), 52, 16, (Q) => { const S = rng(z + 11); Q(0, 0, 52, 16, "#0e0804"); Q(1, 1, 50, 4, "#7a5230"); Q(1, 1, 50, 1, "#b08850"); Q(1, 5, 50, 10, "#4a2e16"); for (let i = 3; i < 50; i += 8 + Math.floor(S() * 4)) Q(i, 5, 1, 10, "#2a1a0a"); Q(1, 14, 50, 1, "#2a1a0a"); Q(0, 0, 2, 1, "rgba(0,0,0,0)"); Q(46, 1, 4, 2, "rgba(0,0,0,0)"); Q(30, 8, 4, 3, "#2a1a0a"); }, z);
+  ctx.drawImage(ct, x - 18, base - 14);
+  R(3, -15, 5, 2, "#8a6a10"); R(4, -17, 4, 2, "#e8c048"); R(5, -18, 3, 1, "#fff0a0"); R(20, -15, 4, 2, "#8a6a10"); R(21, -17, 3, 2, "#e8c048");   // coin stacks on the counter
+  // a lantern on the right post
+  R(33, -36, 1, 4, "#120a04"); R(31, -32, 5, 6, "#120a04"); R(32, -31, 3, 4, (t >> 3) & 1 ? "#ffd070" : "#ffb040"); R(32, -31, 1, 2, "#fff0b0");
+  lights.push([it.x + 17, it.y - 20, 78, 0.95, "255,190,100"]);
+  if (!it.near && G.mode === "play") { const b = Math.round(Math.sin(t / 10) * 1.5); ctx.fillStyle = "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText("SHOP", x + 8, base - 60 + b); }
+}
+
+function shopStock(it) {
+  const rows = [{ kind: "food", name: "Roast chicken", desc: "Fills your hunger gauge." }, { kind: "potion", name: "Potion", desc: "Heals 3 life." }];
+  rows.push({ kind: "heart", name: "Heart charm", desc: "Adds 1 to your maximum life.", once: it.id + 1 });
+  if (it.tier >= 0) rows.push({ kind: "pack", name: packName(it.tier), desc: "Holds " + (8 + 2 * it.tier) + " things.", tier: it.tier });
+  for (const r of rows) r.price = shopPrice(r.kind, r.tier);
+  return rows;
+}
+
+function shopRowState(r) {
+  if (r.kind === "heart" && G.got.has(r.once)) return "Sold out";
+  if (r.kind === "pack" && r.tier <= G.packTier) return "You have one this big";
+  return "";
+}
+
+function shopLayout(n) {
+  const W = Math.min(VW - 8, 236), x = Math.round((VW - W) / 2), rowH = 24, y = 12, h = 44 + n * rowH + 36;
+  return { x, y, w: W, h, rowH, rows0: y + 44, close: { x: Math.round(VW / 2) - 28, y: y + h - 24, w: 56, h: 16 } };
+}
+
+function shopArt(r) { return r.kind === "food" ? chickenArt() : r.kind === "potion" ? itemArt("potion") : r.kind === "heart" ? heartArt() : backpackArt(r.tier); }
+
+function drawShopUI() {
+  const it = G.shopIt, rows = shopStock(it), L = shopLayout(rows.length), g = ctx, sel = Math.min(G.shopSel | 0, rows.length - 1), t = G.frame;
+  g.fillStyle = "rgba(4,2,2,.72)"; g.fillRect(0, 0, VW, VH); g.imageSmoothingEnabled = false;
+  g.fillStyle = "#120a04"; g.fillRect(L.x - 2, L.y - 2, L.w + 4, L.h + 4); g.fillStyle = "#4a2c14"; g.fillRect(L.x, L.y, L.w, L.h); g.fillStyle = "#6a4020"; g.fillRect(L.x, L.y, L.w, 2); g.fillStyle = "#34200e"; g.fillRect(L.x, L.y + L.h - 2, L.w, 2);
+  g.drawImage(shopkeeperArt(it.zone | 0, (t >> 5) & 1), L.x + 6, L.y + 4, 30, 38);
+  g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "left"; g.fillText("THE PEDLAR", L.x + 42, L.y + 16);
+  g.fillStyle = "#d8c090"; g.font = "8px monospace"; g.fillText(G.shopMsg || "Coin first. Then goods.", L.x + 42, L.y + 28);
+  g.fillStyle = "#e8c048"; g.fillText("Your zenny: " + G.zenny, L.x + 42, L.y + 39);
+  rows.forEach((r, i) => {
+    const y = L.rows0 + i * L.rowH, on = i === sel, st = shopRowState(r), can = !st && G.zenny >= r.price;
+    g.fillStyle = on ? ((t >> 3) & 1 ? "#f0c860" : "#c89a40") : "#1c1208"; g.fillRect(L.x + 6, y - 1, L.w - 12, L.rowH - 2);
+    g.fillStyle = "#2a1a0c"; g.fillRect(L.x + 8, y + 1, L.w - 16, L.rowH - 6);
+    g.drawImage(shopArt(r), L.x + 11, y + 2, 16, 16);
+    g.fillStyle = st ? "#8a7a5a" : "#ffe680"; g.font = "bold 8px monospace"; g.textAlign = "left"; g.fillText(r.name, L.x + 32, y + 9);
+    g.fillStyle = "#b8a070"; g.font = "7px monospace"; g.fillText(st || r.desc, L.x + 32, y + 17);
+    g.textAlign = "right"; g.fillStyle = st ? "#6a5a3a" : can ? "#7ae060" : "#e06050"; g.font = "bold 9px monospace"; if (!st) g.fillText(r.price, L.x + L.w - 12, y + 12);
+  });
+  const b = L.close; g.fillStyle = "#120a04"; g.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2); g.fillStyle = "#7a5028"; g.fillRect(b.x, b.y, b.w, b.h); g.fillStyle = "#a8743a"; g.fillRect(b.x, b.y, b.w, 2); g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "center"; g.fillText("LEAVE", b.x + b.w / 2, b.y + 11);
+  g.fillStyle = "#a89870"; g.font = "7px monospace"; g.fillText("choose: up/down   buy: Z / A   leave: X / B", VW / 2, L.y + L.h + 12);
+}
+
+function shopBuy(i) {
+  const rows = shopStock(G.shopIt), r = rows[i]; if (!r) return;
+  const st = shopRowState(r); if (st) { G.shopMsg = st + "."; return; }
+  if (G.zenny < r.price) { G.shopMsg = "Not enough zenny."; return; }
+  const h = G.hero, px = h.x + 16, py = h.y - 4;
+  if (r.kind === "food" || r.kind === "potion") {
+    if (!G.hasPack) { G.shopMsg = "You need a backpack to carry that."; return; }
+    if (G.pack.length >= G.packCap) { G.shopMsg = "Your pack is full."; return; }
+    G.pack.push({ kind: r.kind });
+  } else if (r.kind === "heart") { G.got.add(r.once); G.maxHP++; h.hp = G.maxHP; popup(px, py, "Life up!"); }
+  else { G.packTier = r.tier; G.packCap = 8 + 2 * r.tier; G.hasPack = true; G.banner = packName(r.tier) + ": it now holds " + G.packCap + " things."; G.bannerT = 240; }
+  G.zenny -= r.price; G.shopMsg = "Sold. Spend it well."; save();
+}
+
+function shopInput() {
+  const n = shopStock(G.shopIt).length; let s = Math.min(G.shopSel | 0, n - 1);
+  if (pressed.up) s = (s + n - 1) % n; if (pressed.down) s = (s + 1) % n;
+  if (s !== G.shopSel) G.shopMsg = ""; G.shopSel = s;
+  if (pressed.jump || pressed.enter) shopBuy(s);
+  if (pressed.attack || pressed.pack) { G.mode = "play"; G.shopCool = 30; }
+}
+
+function shopTap(px, py) {
+  const rows = shopStock(G.shopIt), L = shopLayout(rows.length), b = L.close;
+  if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h) { G.mode = "play"; return; }
+  for (let i = 0; i < rows.length; i++) { const y = L.rows0 + i * L.rowH; if (px >= L.x + 6 && px <= L.x + L.w - 6 && py >= y - 1 && py <= y + L.rowH - 3) { if (G.shopSel === i) shopBuy(i); else { G.shopSel = i; G.shopMsg = ""; } return; } }
+  if (!(px >= L.x && px <= L.x + L.w && py >= L.y && py <= L.y + L.h)) G.mode = "play";
+}
+
+function updateShop(it, hb) {
+  if (G.shopCool > 0) G.shopCool--;
+  const near = overlap(hb, { x: it.x - 20, y: it.y - 24, w: 56, h: 48 });
+  if (!near) { it.near = false; return; }
+  if (!it.near && !(G.shopCool > 0) && G.mode === "play") { it.near = true; G.mode = "shop"; G.shopIt = it; G.shopSel = 0; G.shopMsg = "What do you need?"; }
+}
+
+function heartArt() {
+  return baked("heart16", 16, 16, (R) => {
+    const o = "#1a0408"; R(2, 3, 5, 3, o); R(9, 3, 5, 3, o); R(1, 4, 14, 5, o); R(2, 9, 12, 2, o); R(4, 11, 8, 2, o); R(6, 13, 4, 1, o);
+    R(3, 4, 4, 2, "#d03040"); R(9, 4, 4, 2, "#d03040"); R(2, 6, 12, 3, "#c02838"); R(3, 9, 10, 2, "#a02030"); R(5, 11, 6, 1, "#801828"); R(7, 12, 2, 1, "#601020");
+    R(3, 4, 2, 1, "#ff8090"); R(3, 5, 1, 2, "#ff8090"); R(11, 8, 2, 2, "#701018");
+  }, 5);
+}
+
+
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
 // ---- atmosphere drawing (all original art) ----
@@ -2671,7 +2809,7 @@ async function handle(list) {
 }
 (function () { const box = $("crt"); let on = true; try { on = localStorage.getItem("btdepths.crt") !== "0"; } catch (e) {} const apply = () => { box.classList.toggle("on", on); $("crtBtn").textContent = "CRT: " + (on ? "on" : "off"); try { localStorage.setItem("btdepths.crt", on ? "1" : "0"); } catch (e) {} }; $("crtBtn").onclick = () => { on = !on; apply(); }; addEventListener("keydown", e => { if (e.code === "KeyC" && !e.repeat) { on = !on; apply(); } }); apply(); })();
 $("ver").textContent = "v" + VERSION; document.title = "Black Tiger: The Depths v" + VERSION;
-scr.addEventListener("pointerdown", e => { if (!G || G.mode !== "pack") return; const rc = scr.getBoundingClientRect(); packTap((e.clientX - rc.left) * VW / rc.width, (e.clientY - rc.top) * VH / rc.height); e.preventDefault(); });
+scr.addEventListener("pointerdown", e => { if (!G || (G.mode !== "pack" && G.mode !== "shop")) return; const rc = scr.getBoundingClientRect(); (G.mode === "shop" ? shopTap : packTap)((e.clientX - rc.left) * VW / rc.width, (e.clientY - rc.top) * VH / rc.height); e.preventDefault(); });
 $("openBtn").onclick = () => $("fileIn").click();
 $("fileIn").onchange = e => { const l = [...e.target.files]; e.target.value = ""; if (l.length) handle(l); };
 $("newWorld").onclick = () => { if (!confirm("Start a new world? Your current progress will be lost.")) return; try { localStorage.removeItem(SAVE_KEY); } catch (e) {} newGame((Math.random() * 1e9) | 0, null); scr.focus(); };
