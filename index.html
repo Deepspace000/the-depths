@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.49">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.49">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.50">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.50">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.49</title>
+<title>Black Tiger: The Depths v0.50</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.49";   // bump by 0.01 with every change
+const VERSION = "0.50";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4014,53 +4014,61 @@ function bossName(it) { return it.kind2 === "chief" ? ["Grub the Chieftain", "Go
 function bossGlow(z) { return ["#ff8030", "#90ff60", "#ffd060", "#60c0ff", "#ff6040", "#c080ff", "#ff4a20", "#40ffd0"][z % 8]; }
 
 function bossArt(kind, zone, pose, flash) {
-  return bakedR("boss2" + kind + zone + pose + (flash ? "f" : ""), 64, 76, (R, g) => {
+  return bakedR("boss3" + kind + zone + pose + (flash ? "f" : ""), 64, 76, (R, g) => {
     const o = "#0a0806", E = "rgba(0,0,0,0)", gl = bossGlow(zone);
     const up = pose === "windup", slam = pose === "slam", chg = pose === "charge", lean = chg ? 4 : 0, cr = up ? 2 : 0, hd = slam ? 3 : 0;
     if (kind === "guardian") {
       const T = zone === 4 ? ["#566274", "#8c9ab0", "#222a38"] : zone === 3 ? ["#2e6a62", "#58a89a", "#10302c"] : zone === 7 ? ["#b8b098", "#ece4cc", "#5a5444"] : zone === 6 ? ["#5a3a30", "#8a5a46", "#241410"] : zone === 5 ? ["#5a5470", "#8a84a8", "#241e34"] : stoneTone(zone);
-      const st = T[0], lt = T[1], dk = T[2], wide = zone === 1 ? 3 : zone === 4 ? 3 : 0;
-      // a block: outline, three tones (lit top-left, mid, dark bottom-right), chipped corners, a crack on the edge
-      const blk = (x, y, w, h, crack) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x + 1, y + 1, w - 3, h - 3, shade(st, 1.08)); R(x, y, w, 2, lt); R(x, y, 2, h, lt); R(x + w - 3, y + 2, 3, h - 2, dk); R(x + 2, y + h - 3, w - 2, 3, dk); R(x - 1, y - 1, 2, 2, E); R(x + w - 1, y + h - 1, 2, 2, E); if (crack) { R(x + w - 6, y + 2, 1, 4, o); R(x + w - 5, y + 5, 1, 3, o); } };
-      // legs (not for the Wraith, whose body tapers away)
-      if (zone !== 5) { blk(14 - wide + lean, 54, 15 + (wide >> 1), 20, true); blk(35 + lean, 54, 15 + wide, 20); blk(12 - wide + lean, 70, 19, 6); blk(33 + lean, 70, 19 + wide, 6); if (slam) { R(10, 71, 8, 2, "rgba(220,210,190,.5)"); R(48, 71, 10, 2, "rgba(220,210,190,.5)"); R(6, 72, 5, 2, "rgba(220,210,190,.4)"); R(54, 72, 6, 2, "rgba(220,210,190,.4)"); } }
-      else { for (let y = 0; y < 22; y++) { const hw = Math.round(17 - y * 0.55); R(32 + lean - hw - 1, 54 + y - 0, hw * 2 + 2, 1, y < 18 ? o : E); R(32 + lean - hw, 54 + y, hw * 2, 1, y < 16 ? "rgba(90,84,112,.8)" : "rgba(90,84,112,.35)"); } for (const [sx, sy] of [[10, 66], [50, 70], [32, 74]]) { R(sx + lean, sy, 3, 5, o); R(sx + lean + 1, sy + 1, 1, 3, gl); } }
-      // torso
-      if (zone === 5) { blk(12 + lean, 24 + cr, 12, 30, true); blk(40 + lean, 24 + cr, 12, 30); R(24 + lean, 26 + cr, 16, 26, "rgba(20,14,40,.65)"); for (const [sx, sy] of [[28, 30], [34, 38], [30, 46]]) { R(sx + lean - 1, sy + cr - 1, 5, 7, o); R(sx + lean, sy + cr, 3, 5, gl); R(sx + lean, sy + cr, 1, 2, "#fff"); } }
-      else blk(14 - wide + lean, 22 + cr, 36 + wide * 2, 34, true);
-      // shoulders and arms
-      const sh = zone === 1 ? -4 : 0;
-      blk(5 - wide + lean, 16 + sh + cr, 15, 13); blk(44 + wide + lean, 16 + sh + cr, 15, 13);
-      if (up) { blk(4 + lean, 0, 10, 20, true); blk(50 + lean, 0, 10, 20); blk(2 + lean, -1, 14, 8); blk(48 + lean, -1, 14, 8); R(6 + lean, 6, 4, 2, gl); R(52 + lean, 6, 4, 2, gl); }
-      else if (slam) { blk(0, 44, 12, 28); blk(52, 44, 12, 28); blk(-1, 64, 17, 12); blk(48, 64, 17, 12); R(2, 60, 8, 2, gl); R(54, 60, 8, 2, gl); }
-      else { const dx = chg ? -6 : 0; blk(4 + dx + lean, 28 + cr, 10, 28, true); blk(50 + dx + lean, 28 + cr, 10, 28); blk(2 + dx + lean, 54 + cr, 14, 11); blk(48 + dx + lean, 54 + cr, 14, 11); for (const kx of [4, 8, 12]) R(kx + dx + lean, 63 + cr, 1, 2, o); for (const kx of [50, 54, 58]) R(kx + dx + lean, 63 + cr, 1, 2, o); if (zone === 6) { R(6 + dx + lean, 32 + cr, 1, 20, gl); R(56 + dx + lean, 32 + cr, 1, 20, gl); } }
-      { const nx = [8, 48, 6, 50, 10, 46, 52, 7][zone % 8]; R(nx - wide + lean, 16 + sh + cr, 3, 3, E); R(2 + lean + (zone % 3), 63 + cr, 2, 2, E); R(60 + lean - (zone % 4), 64 + cr, 2, 2, E); if (zone !== 5) { R(21 + lean, 73, 2, 3, E); R(42 + lean, 73, 2, 3, E); } }
-      // head, per guardian
-      const hx = 22 + lean + (chg ? 3 : 0), hy = 6 + hd + cr;
-      if (zone === 4) { blk(18 + lean, 14 + hd + cr, 28, 12); R(22 + lean, 19 + hd + cr, 20, 3, o); R(24 + lean, 20 + hd + cr, 5, 1, gl); R(35 + lean, 20 + hd + cr, 5, 1, gl); for (const rx2 of [20, 30, 42]) R(rx2 + lean, 15 + hd + cr, 2, 2, "#c06a2a"); for (let k = 0; k < 4; k++) R(22 + k * 7 + lean, 28 + cr, 1, 8 + (k % 2) * 4, "#8a4a22"); }
-      else if (zone === 7) { for (let y = 0; y < 18; y++) { const t = (y - 10) / 10, hw = Math.round(14 * Math.sqrt(Math.max(0, 1 - t * t))); R(32 + lean - hw - 1, 4 + hd + cr + y, hw * 2 + 2, 1, o); } for (let y = 0; y < 17; y++) { const t = (y - 10) / 10, hw = Math.round(14 * Math.sqrt(Math.max(0, 1 - t * t))); R(32 + lean - hw, 4 + hd + cr + y, hw * 2, 1, y < 5 ? lt : st); } R(27 + lean, 12 + hd + cr, 10, 7, o); R(28 + lean, 13 + hd + cr, 8, 5, gl); R(30 + lean, 14 + hd + cr, 4, 3, "#fff"); }
+      const st = T[0], lt = T[1], dk = T[2], wide = zone === 1 ? 2 : zone === 4 ? 2 : 0, S = rng(zone * 31 + pose.length);
+      const blk = (x, y, w, h, crack) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x + 1, y + 1, w - 3, h - 3, shade(st, 1.06)); R(x, y, w, 2, lt); R(x, y, 2, h, lt); R(x + w - 3, y + 2, 3, h - 2, dk); R(x + 2, y + h - 3, w - 2, 3, dk); if (crack) { R(x + w - 5, y + 2, 1, 5, o); R(x + w - 4, y + 6, 1, 4, o); R(x + 2, y + h - 8, 3, 1, o); } };
+      const spike = (x, y, w, h, dir) => { for (let k = 0; k < h; k++) { const ww = Math.max(1, Math.round(w * (1 - k / h))); R(x + (w - ww >> 1) - 1, y + (dir > 0 ? k : -k) , ww + 2, 1, o); } for (let k = 0; k < h; k++) { const ww = Math.max(1, Math.round(w * (1 - k / h))); R(x + (w - ww >> 1), y + (dir > 0 ? k : -k), ww, 1, k < h / 2 ? lt : st); } };
+      const claws = (x, y, n, sp) => { for (let k = 0; k < n; k++) { const cx = x + k * sp; R(cx - 1, y, 4, 2, o); R(cx, y, 2, 6, o); R(cx, y + 1, 2, 4, "#d8d0b8"); R(cx, y + 5, 1, 2, "#d8d0b8"); } };
+      // legs: lean, with claw toes (not for the Wraith)
+      if (zone !== 5) { blk(18 - wide + lean, 52, 11, 20, true); blk(36 + lean, 52, 11 + wide, 20); blk(15 - wide + lean, 70, 15, 5); blk(34 + lean, 70, 15 + wide, 5); for (const fx of [14, 33]) claws(fx - wide + lean, 72, 3, 5);
+        if (slam) { R(8, 72, 10, 2, "rgba(220,210,190,.5)"); R(48, 72, 12, 2, "rgba(220,210,190,.5)"); R(2, 74, 6, 2, "rgba(220,210,190,.4)"); R(58, 74, 6, 2, "rgba(220,210,190,.4)"); } }
+      else { for (let y = 0; y < 22; y++) { const hw = Math.round(14 - y * 0.55); R(32 + lean - hw - 1, 52 + y, hw * 2 + 2, 1, y < 18 ? o : E); R(32 + lean - hw, 52 + y, hw * 2, 1, y < 16 ? "rgba(90,84,112,.8)" : "rgba(90,84,112,.35)"); } for (const [sx, sy] of [[10, 66], [50, 70], [32, 74]]) { R(sx + lean, sy, 3, 5, o); R(sx + lean + 1, sy + 1, 1, 3, gl); } }
+      // gaunt torso with ribs
+      if (zone === 5) { blk(14 + lean, 24 + cr, 10, 28, true); blk(40 + lean, 24 + cr, 10, 28); R(24 + lean, 26 + cr, 16, 24, "rgba(20,14,40,.7)"); for (const [sx, sy] of [[28, 30], [34, 38], [30, 46]]) { R(sx + lean - 1, sy + cr - 1, 5, 7, o); R(sx + lean, sy + cr, 3, 5, gl); R(sx + lean, sy + cr, 1, 2, "#fff"); } }
+      else { blk(17 - wide + lean, 24 + cr, 30 + wide * 2, 30, true); for (let k = 0; k < 4; k++) { R(20 - wide + lean, 38 + cr + k * 4, 11, 1, o); R(35 + lean, 38 + cr + k * 4, 11 + wide, 1, o); R(20 - wide + lean, 39 + cr + k * 4, 11, 1, dk); R(35 + lean, 39 + cr + k * 4, 11 + wide, 1, dk); } }
+      // spiked shoulders, long thin arms that end in claws
+      const sh = zone === 1 ? -3 : 0;
+      blk(7 - wide + lean, 18 + sh + cr, 12, 10); blk(45 + wide + lean, 18 + sh + cr, 12, 10);
+      spike(9 - wide + lean, 17 + sh + cr, 6, 8, -1); spike(48 + wide + lean, 17 + sh + cr, 6, 8, -1); spike(15 - wide + lean, 18 + sh + cr, 4, 5, -1);
+      if (up) { blk(5 + lean, 0, 8, 26, true); blk(51 + lean, 0, 8, 26); blk(4 + lean, -2, 10, 7); blk(50 + lean, -2, 10, 7); claws(5 + lean, -7, 3, 3); claws(51 + lean, -7, 3, 3); R(6 + lean, 6, 4, 2, gl); R(52 + lean, 6, 4, 2, gl); }
+      else if (slam) { blk(3, 26, 9, 44, true); blk(52, 26, 9, 44); blk(1, 66, 11, 8); blk(52, 66, 11, 8); claws(2, 72, 3, 3); claws(53, 72, 3, 3); R(3, 62, 6, 2, gl); R(55, 62, 6, 2, gl); }
+      else { const dx = chg ? -6 : 0; blk(6 + dx + lean, 26 + cr, 8, 34, true); blk(50 + dx + lean, 26 + cr, 8, 34); blk(5 + dx + lean, 58 + cr, 10, 7); blk(49 + dx + lean, 58 + cr, 10, 7); claws(5 + dx + lean, 64 + cr, 3, 3); claws(49 + dx + lean, 64 + cr, 3, 3); if (zone === 6) { R(8 + dx + lean, 30 + cr, 1, 24, gl); R(53 + dx + lean, 30 + cr, 1, 24, gl); } }
+      // head, per guardian: narrower, a jutting jaw, slanted eyes, jagged teeth
+      const hx = 22 + lean + (chg ? 3 : 0), hy = 5 + hd + cr;
+      const face = () => {
+        R(hx + 4, hy + 6, 5, 4, o); R(hx + 11, hy + 6, 5, 4, o);
+        R(hx + 3, hy + 4, 3, 1, o); R(hx + 5, hy + 5, 3, 1, o); R(hx + 12, hy + 5, 3, 1, o); R(hx + 14, hy + 4, 3, 1, o);          // brows slanting down to the nose
+        const ec = up ? 4 : 3; R(hx + 5, hy + 7, ec, ec - 1, gl); R(hx + 11, hy + 7, ec, ec - 1, gl); R(hx + 6, hy + 7, 1, 1, "#fff"); R(hx + 12, hy + 7, 1, 1, "#fff");
+        R(hx + 5, hy + 12, 10, 4, o); for (let k = 0; k < 5; k++) { R(hx + 5 + k * 2, hy + 12, 1, 2 + (k % 2), "#e8e0c8"); R(hx + 6 + k * 2, hy + 15, 1, 1 + ((k + 1) % 2), "#e8e0c8"); }   // jagged teeth
+        if (zone !== 3) R(hx + 9, hy + 16, 1, 4, gl);   // ichor drool
+      };
+      if (zone === 4) { blk(hx - 1, hy + 8 + hd * 0, 24, 11); R(hx + 3, hy + 12, 16, 3, o); R(hx + 5, hy + 13, 4, 1, gl); R(hx + 13, hy + 13, 4, 1, gl); for (const rx2 of [2, 10, 19]) R(hx + rx2, hy + 9, 2, 2, "#c06a2a"); for (let k = 0; k < 4; k++) R(hx + 3 + k * 4, hy + 18, 2, 3, "#d8d0b8"); }
+      else if (zone === 7) { for (let y = 0; y < 17; y++) { const t = (y - 10) / 10, hw = Math.round(12 * Math.sqrt(Math.max(0, 1 - t * t))); R(32 + lean - hw - 1, 3 + hd + cr + y, hw * 2 + 2, 1, o); R(32 + lean - hw, 3 + hd + cr + y, hw * 2, 1, y < 5 ? lt : st); } R(27 + lean, 10 + hd + cr, 10, 7, o); R(28 + lean, 11 + hd + cr, 8, 5, gl); R(29 + lean, 11 + hd + cr, 6, 5, "#fff"); R(31 + lean, 12 + hd + cr, 2, 4, gl); for (let k = 0; k < 5; k++) R(28 + lean + k * 2, 18 + hd + cr, 1, 3, "#e8e0c8"); }
       else {
-        blk(hx, hy, 20, 18);
-        if (zone === 2) { for (let k = 0; k < 6; k++) { R(hx + 4 + k, hy - 2 - k, 12 - 2 * k, 1, o); R(hx + 5 + k, hy - 2 - k, 10 - 2 * k, 1, k < 2 ? lt : st); } R(hx + 8, hy - 8, 4, 3, gl); R(hx - 2, hy + 14, 24, 2, gl); }
-        if (zone === 3) { R(hx + 1, hy + 8, 18, 3, o); for (let k = 0; k < 5; k++) { R(hx + 6 + k * 2, hy - 8 + (k % 2) * 2, 2, 9, o); R(hx + 7 + k * 2, hy - 7 + (k % 2) * 2, 1, 8, "#2a8a50"); } }
-        if (zone === 6) { for (let k = 0; k < 5; k++) { const x2 = hx + 1 + k * 4, hh = 5 + (k % 3) * 3; R(x2 - 1, hy - hh - 1, 4, hh + 1, o); R(x2, hy - hh, 2, hh, k % 2 ? "#ff7030" : "#c04020"); } }
-        if (zone === 0) R(hx - 2, hy - 2, 24, 3, lt);
-        if (up && zone !== 3) { R(hx + 3, hy + 6, 6, 4, gl); R(hx + 11, hy + 6, 6, 4, gl); }
-        if (zone !== 3) { R(hx + 3, hy + 6, 5, 3, o); R(hx + 12, hy + 6, 5, 3, o); R(hx + 4, hy + 7, 3, 2, gl); R(hx + 13, hy + 7, 3, 2, gl); R(hx + 5, hy + 7, 1, 1, "#fff"); R(hx + 14, hy + 7, 1, 1, "#fff"); R(hx + 2, hy + 3, 7, 2, o); R(hx + 11, hy + 3, 7, 2, o); }
-        else { R(hx + 3, hy + 8, 14, 2, gl); R(hx + 7, hy + 8, 2, 1, "#fff"); }
-        R(hx + 6, hy + 13, 8, 2, o); R(hx + 7, hy + 13, 2, 1, "#e8e0c8"); R(hx + 11, hy + 13, 2, 1, "#e8e0c8");   // a mouth slit with teeth
+        blk(hx + 2, hy, 16, 14); R(hx + 4, hy + 13, 12, 5, o); R(hx + 4, hy + 13, 12, 1, st); R(hx + 3, hy + 12, 14, 2, dk);
+        if (zone === 2) { for (let k = 0; k < 6; k++) { R(hx + 6 + k, hy - 2 - k, 8 - 2 * k + 2, 1, o); R(hx + 7 + k, hy - 2 - k, 6 - 2 * k + 2, 1, k < 2 ? lt : st); } R(hx + 9, hy - 8, 3, 3, gl); R(hx + 1, hy + 11, 18, 2, gl); }
+        if (zone === 3) { R(hx + 3, hy + 7, 14, 2, o); for (let k = 0; k < 5; k++) { R(hx + 6 + k * 2, hy - 8 + (k % 2) * 2, 2, 9, o); R(hx + 7 + k * 2, hy - 7 + (k % 2) * 2, 1, 8, "#2a8a50"); } }
+        if (zone === 6) { for (let k = 0; k < 5; k++) { const x2 = hx + 3 + k * 3, hh = 6 + (k % 3) * 3; spike(x2, hy - 1, 3, hh, -1); R(x2 + 1, hy - hh + 2, 1, hh - 2, k % 2 ? "#ff7030" : "#c04020"); } }
+        if (zone === 0) { R(hx, hy - 2, 20, 3, lt); R(hx + 1, hy - 3, 4, 2, lt); R(hx + 12, hy - 4, 3, 3, lt); }
+        if (zone === 1) { for (let k = 0; k < 5; k++) R(hx + 3 + k * 3, hy - 1 - (k % 2), 2, 3, "#3a7a30"); }
+        if (zone !== 3) face(); else { R(hx + 3, hy + 7, 14, 2, gl); R(hx + 8, hy + 7, 2, 1, "#fff"); R(hx + 5, hy + 12, 10, 4, o); for (let k = 0; k < 5; k++) R(hx + 5 + k * 2, hy + 12, 1, 2 + (k % 2), "#e8e0c8"); }
       }
-      if (chg) for (let k = 0; k < 5; k++) R(2 + k * 2, 30 + k * 9, 2, 2, gl);   // embers trailing behind
-      if (slam) { R(2, 73, 60, 1, o); R(10, 74, 14, 1, "#0a0806"); for (const [sx, sy] of [[6, 56], [58, 52], [2, 66], [62, 62]]) { R(sx, sy, 3, 3, st); R(sx, sy, 3, 1, lt); } R(4, 68, 10, 6, "rgba(220,210,190,.5)"); R(50, 66, 12, 8, "rgba(220,210,190,.5)"); R(0, 70, 3, 1, "#ffffff"); R(61, 70, 3, 1, "#ffffff"); }
-      // chest glyph: a jagged glowing seam with a halo
-      const gx = 32 + lean, gy = 30 + cr; if (up) R(gx - 3, gy - 2, 7, 20, gl + "60");
-      if (zone !== 5) { R(gx - 3, gy - 1, 7, 18, gl.replace("#", "#") + "40"); const zz = [[0, 0], [1, 3], [-1, 6], [1, 9], [-1, 12], [0, 15]]; for (let k = 0; k < zz.length - 1; k++) { R(gx + zz[k][0], gy + zz[k][1], 2, 4, gl); R(gx + zz[k][0], gy + zz[k][1], 1, 4, "#fff"); } R(gx - 7, gy + 8, 6, 1, gl); R(gx + 3, gy + 5, 6, 1, gl); }
-      if (zone === 2) for (let k = 0; k < 4; k++) R(15 + lean, 46 + cr + k * 3, 34, 1, gl);   // a belt of stripes
-      if (zone === 1) for (const mx of [10, 24, 38, 52]) for (let k = 0; k < 7; k++) R(mx + lean + (k % 2), 28 + cr + k, 2, 1, "#4a8a38");   // hanging moss
-      if (zone === 4) for (let y2 = 28; y2 < 54; y2 += 8) for (const rx2 of [16, 46]) { R(rx2 + lean, y2 + cr, 2, 2, "#c06a2a"); R(rx2 + lean, y2 + cr, 1, 1, "#f0a050"); }
-      if (zone === 3) for (let k = 0; k < 7; k++) R(16 + k * 5 + lean, 30 + cr, 1, 10 + (k * 3) % 8, "rgba(10,40,40,.55)");   // wet dark streaks
-      if (zone === 3) { for (let k = 0; k < 6; k++) R(14 + k * 7 + lean, 50 + cr, 1, 5 + (k % 3), "rgba(120,190,255,.7)"); R(56 + lean, 42 + cr, 2, 20, o); R(56 + lean, 36 + cr, 2, 8, "#9a9aa8"); }   // drips and a broken sword hilt
-      if (zone === 6) { R(18 + lean, 24 + cr, 1, 10, gl); R(44 + lean, 36 + cr, 1, 12, gl); R(24 + lean, 46 + cr, 8, 1, gl); }
+      // raw wounds: a glowing split in the chest instead of a neat glyph, bone and ichor
+      const gx = 32 + lean, gy = 29 + cr;
+      if (zone !== 5) { R(gx - 3, gy - 1, 7, 18, gl + "40"); const zz = [[0, 0], [2, 3], [-2, 6], [2, 9], [-1, 12], [1, 15]]; for (let k = 0; k < zz.length - 1; k++) { R(gx + zz[k][0], gy + zz[k][1], 2, 4, gl); R(gx + zz[k][0], gy + zz[k][1], 1, 4, "#fff"); } R(gx - 8, gy + 8, 7, 1, gl); R(gx + 3, gy + 5, 7, 1, gl); R(gx - 6, gy + 3, 3, 1, o); R(gx + 5, gy + 12, 4, 1, o); }
+      if (up) R(gx - 4, gy - 2, 9, 21, gl + "60");
+      if (chg) for (let k = 0; k < 5; k++) R(2 + k * 2, 30 + k * 9, 2, 2, gl);
+      if (slam) { R(4, 68, 10, 6, "rgba(220,210,190,.5)"); R(50, 66, 12, 8, "rgba(220,210,190,.5)"); for (const [sx, sy] of [[6, 56], [58, 52], [2, 64], [62, 60]]) { R(sx, sy, 3, 3, st); R(sx, sy, 3, 1, lt); } R(0, 70, 3, 1, "#fff"); R(61, 70, 3, 1, "#fff"); }
+      if (zone === 2) for (let k = 0; k < 4; k++) R(18 + lean, 48 + cr + k * 3, 28, 1, gl);
+      if (zone === 1) for (const mx of [10, 24, 38, 52]) for (let k = 0; k < 8; k++) R(mx + lean + (k % 2), 28 + cr + k, 2, 1, "#4a8a38");
+      if (zone === 4) for (let y2 = 28; y2 < 52; y2 += 8) for (const rx2 of [19, 43]) { R(rx2 + lean, y2 + cr, 2, 2, "#c06a2a"); R(rx2 + lean, y2 + cr, 1, 1, "#f0a050"); }
+      if (zone === 3) { for (let k = 0; k < 7; k++) R(18 + k * 4 + lean, 30 + cr, 1, 10 + (k * 3) % 8, "rgba(10,40,40,.55)"); for (let k = 0; k < 6; k++) R(14 + k * 7 + lean, 50 + cr, 1, 5 + (k % 3), "rgba(120,190,255,.7)"); R(56 + lean, 40 + cr, 2, 22, o); R(56 + lean, 34 + cr, 2, 8, "#9a9aa8"); }
+      if (zone === 6) { R(20 + lean, 26 + cr, 1, 10, gl); R(43 + lean, 38 + cr, 1, 12, gl); R(24 + lean, 48 + cr, 8, 1, gl); }
+      for (let k = 0; k < 3; k++) R(Math.floor(S() * 50) + 6, 30 + Math.floor(S() * 28), 2, 1, "#6a1a12");   // dried blood
     } else {
       const sk = ["#1c3a14", "#2e5a22", "#4a8a34", "#78b850"], lea = ["#2a1a0e", "#4a3220", "#6a4a2e"], ln = chg ? 6 : 0, dy = up ? 2 : slam ? 3 : 0, hdx = chg ? 5 : up ? -2 : 0;
       const shd = (x, y, w, h, c, l, d) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, c); R(x, y, w, 2, l); R(x, y, 2, h, l); R(x + w - 3, y + 2, 3, h - 2, d); };
@@ -4076,8 +4084,9 @@ function bossArt(kind, zone, pose, flash) {
       else if (chg) { R(2, 72, 6, 2, "rgba(220,210,190,.55)"); R(14, 73, 8, 2, "rgba(220,210,190,.45)"); R(34 + ln - 18, 60, 22, 4, "#6a4a2e"); hamm(14 + ln - 12, 58, 14, 14); shd(36 + ln, 34, 8, 10, sk[2], sk[3], sk[1]); for (let k = 0; k < 3; k++) R(0, 30 + k * 12, 10 + k * 3, 1, "rgba(220,210,190,.55)"); }
       else { R(38 + ln, 30, 4, 34, "#6a4a2e"); for (let k = 0; k < 6; k++) R(38 + ln, 36 + k * 5, 4, 1, "#2a1a0e"); hamm(32 + ln, 56, 16, 14); shd(36 + ln, 28, 8, 10, sk[2], sk[3], sk[1]); }
       shd(-1 + ln, 28 + dy, 10, 20, sk[1], sk[2], sk[0]);
+      for (let k = 0; k < 4; k++) R(21 + ln + hdx + k * 2, 24 + dy, 1, 2 + (k % 2), "#e8e0c8"); R(13 + ln + hdx, 12 + dy, 2, 4, E); R(12 + ln, 30 + dy, 9, 1, "#6a1a12"); R(14 + ln, 31 + dy, 6, 1, "#6a1a12"); R(2 + ln, 30 + dy, 1, 8, "#6a1a12");   // fangs, a torn ear and fresh wounds
     }
-    roundBoss(g);
+    roundBoss(g); jagBoss(g, zone * 7 + (kind === "chief" ? 3 : 0));
     if (flash) { g.globalCompositeOperation = "source-atop"; g.fillStyle = "rgba(255,255,255,.7)"; g.fillRect(0, 0, 64, 76); g.globalCompositeOperation = "source-over"; }
   }, zone * 5 + (kind === "chief" ? 1 : 0));
 }
@@ -4179,6 +4188,15 @@ function roundBoss(g) {
     for (const i of kill) { d[i] = 10; d[i + 1] = 8; d[i + 2] = 6; }
     for (const i of erase) d[i + 3] = 0;
   }
+  g.putImageData(id, 0, 0);
+}
+
+
+
+function jagBoss(g, seed) {
+  const W = 64, H = 76, id = g.getImageData(0, 0, W, H), d = id.data, S = rng(seed * 13 + 5), A = (x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? 0 : d[(y * W + x) * 4 + 3];
+  const edges = []; for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) if (A(x, y) > 100 && (A(x - 1, y) < 100 || A(x + 1, y) < 100 || A(x, y - 1) < 100 || A(x, y + 1) < 100)) edges.push([x, y]);
+  for (let k = 0; k < 26 && edges.length; k++) { const [x, y] = edges[Math.floor(S() * edges.length)]; const w = 1 + Math.floor(S() * 2), h = 1 + Math.floor(S() * 2); for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = ((y + yy) * W + x + xx) * 4; if (d[i + 3] > 100) d[i + 3] = 0; } }
   g.putImageData(id, 0, 0);
 }
 
