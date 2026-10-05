@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.92">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.92">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.93">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.93">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.92</title>
+<title>Black Tiger: The Depths v0.93</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.92";   // bump by 0.01 with every change
+const VERSION = "0.93";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4763,7 +4763,9 @@ function applySettings() { const s = titleSettings(); window.__QLforce = s.quali
 function titleMenuItems() {
   const inGame = TITLE.fromGame && typeof G !== "undefined" && G, any = latestSlot() > 0, it = [];
   if (inGame) it.push({ id: "resume", label: "RESUME" });
-  it.push({ id: "start", label: "START" }, { id: "continue", label: "CONTINUE", off: !any, hint: any ? "" : "no saved game" }, { id: "load", label: "LOAD" }, { id: "settings", label: "SETTINGS" }, { id: "quit", label: "QUIT" });
+  it.push({ id: "start", label: "START" }, { id: "continue", label: "CONTINUE", off: !any, hint: any ? "" : "no saved game" }, { id: "load", label: "LOAD" }, { id: "settings", label: "SETTINGS" });
+  if (typeof Art === "undefined" || Art.mode !== "rom") it.push({ id: "rom", label: "LOAD BLKTIGER.ZIP", hint: "using placeholder art - pick your zip for the arcade graphics" });
+  it.push({ id: "quit", label: "QUIT" });
   return it;
 }
 function titleRender() {
@@ -4805,6 +4807,7 @@ function titleRender() {
 function titleMark() { const bs = $("titleMenu").querySelectorAll(".tbtn"); bs.forEach((b, i) => b.classList.toggle("sel", TITLE.view === "main" ? i === TITLE.sel : i === (TITLE.vsel | 0))); }
 function titleChoose(id) {
   if (id === "resume") { titleHide(); return; }
+  if (id === "rom") { const r = $("remember"); if (r) r.checked = true; window.__romReload = true; $("fileIn").click(); return; }
   if (id === "start") { TITLE.view = "newslot"; titleRender(); }
   else if (id === "continue") { const n = latestSlot(), d = readSlot(n); if (!d) return; titleLaunch(() => newGame(d.d.seed, d.d), n); }
   else if (id === "load") { TITLE.view = "loadslot"; titleRender(); }
@@ -4917,7 +4920,7 @@ async function startWithFiles(f, restored) {
   const missing = NAMES.filter(n => !f[n]); if (missing.length) throw new Error("These files are missing:\n" + missing.join(", ") + "\nUse the Black Tiger zip from MAME (blktiger.zip).");
   const bad = Object.values(NEED).flat().filter(([n, c]) => crc32(f[n]) !== c).map(r => r[0]); if (bad.length) throw new Error("These files are a different version than expected:\n" + bad.join(", "));
   Art.loadRom(f);
-  if ($("remember").checked && !restored) { const keep = {}; NAMES.forEach(n => keep[n] = f[n]); await idbPut(keep); }
+  if ($("remember").checked && !restored) { const keep = {}; NAMES.forEach(n => keep[n] = f[n]); await idbPut(keep); } if (window.__romReload) { location.reload(); return; }   // picked from the title menu: restart so every picture is drawn from the arcade graphics
   begin();
 }
 async function handle(list) {
