@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.85">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.85">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.86">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.86">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.85</title>
+<title>Black Tiger: The Depths v0.86</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.85";   // bump by 0.01 with every change
+const VERSION = "0.86";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4501,8 +4501,9 @@ function upParts() {
   if (C[key]) return C[key]; const PX = 22, i1 = gearImg(f1), i2 = gearImg(f2), H = i2.height, W2 = i2.width;
   let sy = 0, sn = 0; const cg = i2.getContext("2d"), col = cg.getImageData(PX + 14, 0, 1, H).data; for (let y = 0; y < H; y++) if (col[y * 4 + 3] > 100) { sy += y; sn++; } const PY = sn ? Math.round(sy / sn) : 14;
   const body = mk(PX, i1.height), bg = body.getContext("2d"); bg.drawImage(i1, 0, 0, PX, i1.height, 0, 0, PX, i1.height);
-  const piece = mk(W2 - PX, H), pg = piece.getContext("2d"); pg.drawImage(i2, PX, 0, W2 - PX, H, 0, 0, W2 - PX, H);
-  const pd = pg.getImageData(0, 0, W2 - PX, H).data; let maxX = 0; for (let x = 0; x < W2 - PX; x++) for (let y = 0; y < H; y++) if (pd[(y * (W2 - PX) + x) * 4 + 3] > 100) maxX = x;
+  const PW = W2 - PX, EX = 8, piece = mk(PW + EX, H), pg = piece.getContext("2d");   // the chain is lengthened by one repeat of its link pattern
+  pg.drawImage(i2, PX, 0, 23, H, 0, 0, 23, H); pg.drawImage(i2, PX + 15, 0, 8, H, 23, 0, 8, H); pg.drawImage(i2, PX + 15, 0, PW - 15, H, 31, 0, PW - 15, H);
+  const PWW = PW + EX, pd = pg.getImageData(0, 0, PWW, H).data; let maxX = 0; for (let x = 0; x < PWW; x++) for (let y = 0; y < H; y++) if (pd[(y * PWW + x) * 4 + 3] > 100) maxX = x;
   return (C[key] = { f: f2, body, piece, PX, PY, R: Math.max(24, maxX - 7), ballR: 7 });
 }
 
@@ -4548,6 +4549,7 @@ function upBody(atk) {   // body pose: [dy px, lean rad]
   if (atk <= 28) return [-1, 0.04];
   return [atk > 31 ? 1 : 0, 0];                                                  // settle
 }
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
