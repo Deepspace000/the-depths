@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.86">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.86">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.88">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.88">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.86</title>
+<title>Black Tiger: The Depths v0.88</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.86";   // bump by 0.01 with every change
+const VERSION = "0.88";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3129,7 +3129,7 @@ function hexRGB(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5)
 
 function gearImg(f) {
   const g = G.gear, wl = G.weapon | 0; if (!g || !(g.helm || g.chest || g.legs || g.bracer || wl)) return f.img;
-  const sig = "" + (g.helm | 0) + (g.chest | 0) + (g.legs | 0) + (g.bracer | 0) + "w" + wl, src = f.img, C = (src.__gear = src.__gear || {});
+  const sig = "v2" + (g.helm | 0) + (g.chest | 0) + (g.legs | 0) + (g.bracer | 0) + "w" + wl, src = f.img, C = (src.__gear = src.__gear || {});
   if (C[sig]) return C[sig];
   const W = src.width, H = src.height, c = mk(W, H), cg = c.getContext("2d"); cg.drawImage(src, 0, 0);
   const id = cg.getImageData(0, 0, W, H), d = id.data, bx0 = f.ox, bx1 = Math.min(W, f.ox + 32), by0 = f.oy, by1 = Math.min(H, f.oy + 32);
@@ -3140,6 +3140,7 @@ function gearImg(f) {
   for (let y = y1; y < y2; y++) for (let x = bx0; x < bx1; x++) if (d[(y * W + x) * 4 + 3] > 128) { sx += x; sn++; }
   const cx = sn ? Math.round(sx / sn) : bx0 + 16;
   const put = (x, y, col) => { if (x < bx0 || x >= bx1 || y < 0 || y >= H) return; const i = (y * W + x) * 4; if (d[i + 3] < 128) return; const [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; };
+  const isArm = (x, y) => { if (x < 0 || x >= W || y < 0 || y >= H) return false; const i = (y * W + x) * 4; return d[i + 3] > 128 && d[i] > 60 && d[i] !== 12; };
   const skin = (r, gg, b) => r > 140 && gg > 80 && b < 140 && r > gg && gg > b && (r - b) > 55;
   const bandOf = (y, x) => y < y1 ? "head" : (y >= top + Math.round(BH * 0.40) && y < top + Math.round(BH * 0.66) && Math.abs(x - cx) >= 4) ? "bracer" : y < y2 ? "chest" : "legs";
   for (let y = by0; y < by1; y++) for (let x = bx0; x < bx1; x++) {
@@ -3147,19 +3148,20 @@ function gearImg(f) {
     const t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (!t) continue;
     if (band === "head" && skin(r, gg, b)) continue;     // the face stays bare
     if (lum < 0.1) continue;                              // keep the dark outline
-    const ramp = gearRamp(t), idx = Math.max(0, Math.min(t === 5 ? 3 : 4, Math.floor(lum * 5.4))), [nr, ng, nb] = hexRGB(ramp[idx]); d[i] = nr; d[i + 1] = ng; d[i + 2] = nb;
+    if (band === "bracer" && !(r > 120 && r > gg && gg > b)) { if (!g.chest) continue; }
+    const ramp = (band === "bracer" && t === 1) ? ["#140c06", "#2a1a0c", "#4a2e14", "#6a4420", "#8a5c2c"] : gearRamp(t), idx = Math.max(0, Math.min(t === 5 ? 3 : 4, Math.floor(lum * 5.4))), [nr, ng, nb] = hexRGB(ramp[idx]); d[i] = nr; d[i + 1] = ng; d[i + 2] = nb;
   }
   const hy = top, ct = top + Math.round(BH * 0.30), lt = top + Math.round(BH * 0.58);
-  if (g.helm >= 2) { const a = gearAccent(g.helm), n = 2 + g.helm; for (let k = 0; k < n; k++) { put(cx, hy + k, a); if (g.helm >= 3) put(cx - 1, hy + k, k < 2 ? a : gearRamp(g.helm)[3]); } if (g.helm >= 4) { for (let k = 0; k < 4; k++) put(cx + 1 + (k >> 1), hy + k, g.helm === 5 ? "#ff3050" : "#c82020"); } for (let x = cx - 5; x <= cx + 5; x++) put(x, ct - 1, gearRamp(g.helm)[3]); }
+  if (g.helm >= 2) { const a = gearAccent(g.helm), n = 2 + g.helm; for (let k = 0; k < n; k++) { put(cx, hy + k, a); if (g.helm >= 3) put(cx - 1, hy + k, k < 2 ? a : gearRamp(g.helm)[3]); } if (g.helm >= 4) { for (let k = 0; k < 4; k++) put(cx + 1 + (k >> 1), hy + k, g.helm === 5 ? "#ff3050" : "#c82020"); } }
   if (g.helm === 5) { put(cx, ct - 2, "#ff3050"); put(cx + 1, ct - 2, "#ffb0b8"); }
   if (g.chest >= 2) { for (let y = ct + 1; y < lt - 1; y++) put(cx, y, gearRamp(g.chest)[0]); }
-  if (g.chest >= 3) { for (let x = cx - 6; x <= cx + 6; x++) { put(x, ct + 1, gearAccent(g.chest)); put(x, lt - 2, gearAccent(g.chest)); } }
+  if (g.chest >= 3) { for (let x = cx - 2; x <= cx + 3; x++) put(x, ct + 1, gearAccent(g.chest)); for (let x = cx - 3; x <= cx + 4; x++) put(x, lt - 2, gearAccent(g.chest)); }
   if (g.chest >= 4) { put(cx - 1, ct + 4, gearAccent(g.chest)); put(cx + 1, ct + 4, gearAccent(g.chest)); }
   if (g.chest === 5) { put(cx, ct + 3, "#ff3050"); put(cx, ct + 4, "#ff3050"); put(cx - 1, ct + 3, "#ffb0b8"); }
   if (g.legs >= 2) { for (let x = cx - 6; x <= cx + 6; x++) put(x, lt + Math.round(BH * 0.18), gearRamp(g.legs)[4]); }
   if (g.legs >= 3) { for (let x = cx - 7; x <= cx + 7; x++) put(x, lt, gearAccent(g.legs)); }
-  if (g.legs >= 4) { for (let x = cx - 7; x <= cx + 7; x++) { put(x, bot - 4, gearAccent(g.legs)); } }
-  if (g.bracer >= 2) { const yb = top + Math.round(BH * 0.64); for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4) { put(x, yb, g.bracer >= 3 ? gearAccent(g.bracer) : gearRamp(g.bracer)[4]); if (g.bracer === 5) put(x, yb - 1, "#ffffff"); } }
+
+  if (g.bracer >= 1) { const yb = top + Math.round(BH * 0.64), ya = top + Math.round(BH * 0.42); for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4 && isArm(x, yb)) { put(x, yb, g.bracer >= 3 ? gearAccent(g.bracer) : gearRamp(g.bracer)[4]); put(x, yb - 1, gearRamp(g.bracer)[1]); if (g.bracer === 5) put(x, yb - 2, "#ffffff"); } for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4 && isArm(x, ya)) { put(x, ya, gearRamp(g.bracer)[g.bracer === 1 ? 3 : 4]); put(x, ya + 1, gearRamp(g.bracer)[1]); } }
   const addW = (x, y, col) => { if (x < 0 || x >= W || y < 0 || y >= H) return; const i = (y * W + x) * 4, [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
   if (wl > 0) {   // the morning star: recolour the chain and ball, and grow the ball
     const ramp = weaponRamp(wl); let minX = 1e9, maxX = -1;
@@ -3177,22 +3179,23 @@ function gearImg(f) {
   }
   for (let y = y1; y < bot + 1; y++) for (let x = bx0; x < bx1; x++) { const i = (y * W + x) * 4; if (d[i + 3] < 128) continue; const b = bandOf(y, x); if (b === "head") continue; const t = b === "chest" ? g.chest : b === "legs" ? g.legs : g.bracer; if (!t) continue; const fx = x - cx, fy = y - y1; if (fx < -2 && fy < BH * 0.35) { d[i] = Math.min(255, d[i] * 1.18 + 6); d[i + 1] = Math.min(255, d[i + 1] * 1.18 + 6); d[i + 2] = Math.min(255, d[i + 2] * 1.18 + 6); } else if (fx > 2 && fy > BH * 0.12) { d[i] *= 0.78; d[i + 1] *= 0.78; d[i + 2] *= 0.78; } }
   if (g.chest) for (let x = cx - 6; x <= cx + 6; x++) put(x, lt - 1, "#14100c");           // belt line
-  if (g.legs) { const ky = lt + Math.round(BH * 0.2); for (let x = cx - 6; x <= cx + 6; x++) put(x, ky, "#14100c"); for (let x = cx - 7; x <= cx + 7; x++) put(x, bot, "#14100c"); }   // knee line and boot cuff
+  if (g.legs) { const ky = lt + Math.round(BH * 0.2); for (let x = cx - 6; x <= cx + 6; x++) put(x, ky, "#14100c"); }   // knee line
   if (g.bracer) { for (let y = top + Math.round(BH * 0.40); y < top + Math.round(BH * 0.66); y++) for (let x = bx0; x < bx1; x++) { const i = (y * W + x) * 4; if (d[i + 3] > 128 && Math.abs(x - cx) >= 4 && (d[(y * W + x - 1) * 4 + 3] < 128 || d[(y * W + x + 1) * 4 + 3] < 128)) { d[i] = 12; d[i + 1] = 10; d[i + 2] = 8; } } }   // bracer outline
   // grade-specific silhouettes: pauldrons grow, the helm changes outline, grade 1 is worn and pitted
   const add = (x, y, col) => { if (x < 0 || x >= W || y < 0 || y >= H) return; const i = (y * W + x) * 4, [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
   const ext = (ya, yb) => { let a = 1e9, b = -1; for (let y = ya; y <= yb; y++) for (let x = bx0; x < bx1; x++) if (d[(y * W + x) * 4 + 3] > 128) { if (x < a) a = x; if (x > b) b = x; } return [a, b]; };
-  const [sl, sr] = ext(y1, y1 + 1), [hl, hr] = ext(hy + 2, hy + 4);
-  if (g.chest >= 2 && sl < 1e9) { const s = g.chest - 1, rp = gearRamp(g.chest), ac = gearAccent(g.chest);
-    for (let i = 0; i < s; i++) for (let j = 0; j < s + 1; j++) { const k = Math.max(0, 3 - i - (j > 1 ? 1 : 0)); add(sl - 1 - i, y1 + j - (i === s - 1 ? 0 : 0), j === 0 ? rp[4] : rp[k]); add(sr + 1 + i, y1 + j, j === 0 ? rp[3] : rp[Math.max(0, k - 1)]); }
-    if (g.chest >= 4) for (let i = 0; i < s; i++) { add(sl - 1 - i, y1 + s + 1, ac); add(sr + 1 + i, y1 + s + 1, ac); }
-    if (g.chest === 5) { for (let k = 0; k < 3; k++) { add(sl - 3 - (k >> 1), y1 - 1 - k, rp[4]); add(sr + 3 + (k >> 1), y1 - 1 - k, rp[4]); } }
-    for (let yy = y1 - 4; yy <= y1 + s + 3; yy++) for (let xx = sl - s - 3; xx <= sr + s + 3; xx++) { if (xx < 0 || xx >= W || yy < 1 || yy >= H - 1) continue; const i = (yy * W + xx) * 4; if (d[i + 3] < 128) { const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => { const j = ((yy + b) * W + xx + a) * 4; return d[j + 3] > 128 && (xx < sl || xx > sr) && (yy >= y1 - 4); }); if (near && (xx < sl - 0 || xx > sr + 0)) { d[i] = 12; d[i + 1] = 10; d[i + 2] = 8; d[i + 3] = 255; } } } }
+  const [hl, hr] = ext(hy + 2, hy + 4); let sl = 1e9, sr = -1; for (let y = y1; y <= y1 + 2; y++) for (let x = Math.max(bx0, cx - 11); x <= Math.min(bx1 - 1, cx + 11); x++) if (d[(y * W + x) * 4 + 3] > 128) { if (x < sl) sl = x; if (x > sr) sr = x; }
+  const blob = (x0, y0, r, side, rp, ac, rim) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const dd = Math.sqrt(x * x + y * y * 1.3); if (dd > r + 0.4) continue; const px = x0 + side * x, py = y0 + y; if (y > 1 && Math.abs(x) < 2) continue; add(px, py, dd > r - 0.6 ? (y < 0 ? rp[4] : "#0c0a08") : (y < 0 ? rp[3] : rp[side < 0 ? 2 : 1])); } if (rim) add(x0 - side, y0 - r, ac); };
+  if (g.chest >= 2 && sl < 1e9) { sl = Math.max(sl, cx - 8); sr = Math.min(sr, cx + 8); const r = Math.min(4, g.chest), rp = gearRamp(g.chest), ac = gearAccent(g.chest);
+    blob(sl + 1 - (r >> 1), y1 + 1, r, -1, rp, ac, g.chest >= 4); blob(sr - 1 + (r >> 1), y1 + 1, r, 1, rp, ac, g.chest >= 4);
+    if (g.chest === 5) for (let k = 0; k < 4; k++) { add(sl - r + 1 + (k >> 1), y1 - r - k, rp[4]); add(sr + r - 1 - (k >> 1), y1 - r - k, rp[4]); } }
   if (g.helm >= 2 && hl < 1e9) { const rp = gearRamp(g.helm), ac = gearAccent(g.helm);
+    for (let x = hl + 1; x <= hr - 1; x++) put(x, hy, rp[4]);                                             // dome highlight
     for (let y = hy + 3; y < ct - 1; y++) put(cx, y, rp[1]);                                           // nasal bar
     if (g.helm >= 3) for (let y = hy + 4; y < ct; y++) { put(hl + 1, y, rp[2]); put(hr - 1, y, rp[1]); }   // cheek guards
-    if (g.helm >= 4) { for (let k = 0; k < 4; k++) { const c = k === 3 ? ac : rp[3]; add(hl - 1 - k, hy + 2 - k, c); add(hl - 1 - k, hy + 3 - k, rp[1]); add(hr + 1 + k, hy + 2 - k, c); add(hr + 1 + k, hy + 3 - k, rp[1]); } }   // horns, two pixels thick with a gold tip
-    if (g.helm === 5) { for (let k = 0; k < 5; k++) { add(hl - 2 - k, hy + 3 - k, ac); add(hr + 2 + k, hy + 3 - k, ac); add(hl - 2 - k, hy + 4 - k, rp[2]); add(hr + 2 + k, hy + 4 - k, rp[2]); } } }   // wings
+    if (g.helm >= 4) { for (const side of [-1, 1]) { const bx = side < 0 ? hl : hr; for (let k = 0; k < 5; k++) { const th = k < 2 ? 3 : k < 4 ? 2 : 1, y0 = hy + 3 - Math.floor(k * 0.9); for (let j = 0; j < th; j++) add(bx + side * (1 + k), y0 + j, k === 4 ? ac : (j === 0 ? rp[4] : rp[2])); } } }   // thick curved horns with a gold tip
+    if (g.helm >= 4) { const pl = g.helm === 5 ? 6 : 5; for (let k = 0; k < pl; k++) { const c = g.helm === 5 ? (k < 2 ? "#ffb0b8" : "#ff3050") : (k < 2 ? "#ff7060" : "#c82020"); add(cx + 1 + (k > 3 ? 1 : 0), hy - 1 - k + 3, c); add(cx + 2 + (k > 3 ? 1 : 0), hy - 1 - k + 3, k < 3 ? c : "#7a1018"); } }   // a full plume
+    if (g.helm === 5) { for (const side of [-1, 1]) { const bx = side < 0 ? hl : hr; for (let i = 1; i <= 6; i++) { const th = i < 3 ? 3 : i < 5 ? 2 : 1, y0 = hy + 4 - i; for (let j = 0; j < th; j++) add(bx + side * (i + 1), y0 + j, j === 0 ? "#fff0a0" : ac); if (i < 5) add(bx + side * (i + 1), y0 + th + 1, rp[2]); } } } }   // swept wings
   if (g.helm <= 2 || g.chest <= 2 || g.legs <= 2 || g.bracer <= 2) { const S = rng(7); for (let k = 0; k < 22; k++) { const x = bx0 + Math.floor(S() * 32), y = top + Math.floor(S() * BH), i = (Math.min(H - 1, y) * W + Math.min(W - 1, x)) * 4; if (d[i + 3] > 128) { const band = bandOf(y, x), t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (t >= 1 && t <= 2) { d[i] = 26; d[i + 1] = 20; d[i + 2] = 16; } } } }   // rust pits and cracks in plain gear
   if (g.helm === 5 || g.chest === 5 || g.legs === 5 || g.bracer === 5) { put(cx - 2, ct + 2, "#ffffff"); put(cx + 3, lt - 3, "#ffffff"); put(cx - 4, lt + 3, "#fff8d0"); put(cx + 2, hy + 3, "#ffffff"); }   // a few specular glints
   cg.putImageData(id, 0, 0); C[sig] = c; return c;
@@ -3202,7 +3205,7 @@ function armourIcon(slot, tier, rk) {
   tier = Math.max(1, Math.min(5, tier | 0)); const k = slot === "ring" ? "ring" + rk : slot;
   return baked("gear16_" + k + tier, 16, 16, (R) => {
     const o = "#0c0a08", rp = gearRamp(tier), ac = gearAccent(tier);
-    if (slot === "helm") { R(3, 3, 10, 9, o); R(4, 4, 8, 8, rp[2]); R(4, 4, 8, 2, rp[4]); R(4, 4, 2, 8, rp[3]); R(10, 5, 2, 7, rp[1]); R(5, 8, 6, 2, o); R(6, 9, 4, 1, "#1a1a20"); R(3, 11, 10, 2, rp[1]); if (tier >= 2) { R(7, 1, 2, 4, ac); } if (tier >= 4) R(9, 1, 2, 4, "#c82020"); if (tier === 5) R(7, 6, 2, 2, "#ff3050"); }
+    if (slot === "helm") { R(3, 4, 10, 9, o); R(4, 4, 8, 8, rp[2]); R(4, 3, 8, 1, o); R(5, 4, 6, 1, rp[4]); R(4, 5, 2, 7, rp[3]); R(10, 5, 2, 7, rp[1]); R(4, 9, 8, 3, o); R(5, 9, 6, 2, "#c8845a"); R(7, 5, 2, 6, rp[1]); if (tier >= 3) { R(4, 8, 2, 4, rp[2]); R(10, 8, 2, 4, rp[1]); } if (tier >= 4) { R(1, 5, 3, 3, rp[3]); R(0, 3, 2, 3, ac); R(12, 5, 3, 3, rp[2]); R(14, 3, 2, 3, ac); R(7, 0, 2, 4, "#ff3050"); R(8, 0, 1, 2, "#ffb0b8"); } if (tier === 5) { R(0, 7, 3, 2, ac); R(13, 7, 3, 2, ac); R(0, 1, 2, 2, "#fff0a0"); R(14, 1, 2, 2, "#fff0a0"); } else if (tier === 2) R(7, 2, 2, 2, ac); }
     else if (slot === "chest") { R(2, 2, 12, 12, o); R(3, 3, 10, 11, rp[2]); R(3, 3, 10, 2, rp[4]); R(3, 3, 2, 11, rp[3]); R(10, 4, 3, 10, rp[1]); R(0, 3, 3, 5, o); R(1, 4, 2, 3, rp[2]); R(13, 3, 3, 5, o); R(13, 4, 2, 3, rp[1]); R(7, 5, 2, 8, rp[0]); if (tier >= 3) { R(3, 5, 10, 1, ac); R(3, 12, 10, 1, ac); } if (tier === 5) R(7, 7, 2, 2, "#ff3050"); }
     else if (slot === "legs") { R(3, 2, 10, 3, o); R(4, 3, 8, 2, rp[3]); R(3, 5, 4, 10, o); R(4, 5, 2, 9, rp[2]); R(4, 5, 1, 9, rp[4]); R(9, 5, 4, 10, o); R(10, 5, 2, 9, rp[1]); R(10, 5, 1, 9, rp[3]); if (tier >= 3) R(3, 3, 10, 1, ac); if (tier >= 2) { R(4, 9, 2, 2, rp[4]); R(10, 9, 2, 2, rp[3]); } }
     else if (slot === "bracer") { R(1, 4, 6, 9, o); R(2, 5, 4, 7, rp[2]); R(2, 5, 1, 7, rp[4]); R(5, 6, 1, 6, rp[1]); R(9, 4, 6, 9, o); R(10, 5, 4, 7, rp[2]); R(10, 5, 1, 7, rp[4]); R(13, 6, 1, 6, rp[1]); if (tier >= 3) { R(2, 5, 4, 1, ac); R(10, 5, 4, 1, ac); R(2, 11, 4, 1, ac); R(10, 11, 4, 1, ac); } if (tier === 5) { R(3, 8, 2, 2, "#ff3050"); R(11, 8, 2, 2, "#ff3050"); } }
@@ -4132,12 +4135,39 @@ function bossArt(kind, zone, pose, flash) {
 
 function bossBox(it) { const bw = it.kind2 === "chief" ? 28 : 38, bh = it.kind2 === "chief" ? 46 : 58; return { x: it.fx - bw / 2, y: it.fy - bh, w: bw, h: bh }; }
 
+// the punch: a long warning (cocked fist, red danger zone, blinking mark), then a fast straight jab at chest height
+function bossPunchReach(it) { if (it.state !== "punch") return 0; const t = it.t; return 50 * (t < 4 ? t / 4 : t < 10 ? 1 : Math.max(0, (14 - t) / 4)); }
+function bossPunchBox(it) { const r = bossPunchReach(it); if (r < 18) return null; const x0 = it.fx + it.dir * 14; return { x: it.dir > 0 ? x0 : x0 - (r + 10), y: it.fy - 46, w: r + 10, h: 34 }; }
+function bossArmCols(it, img) {
+  const k = "__ac"; if (it[k]) return it[k]; let cols = [];
+  try { const d = img.getContext("2d").getImageData(8, 30, 14, 26).data; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) { const l = d[i] + d[i + 1] + d[i + 2]; if (l > 90) cols.push([l, d[i], d[i + 1], d[i + 2]]); } } catch (e) {}
+  cols.sort((a, b) => a[0] - b[0]); const m = cols.length ? cols[cols.length >> 1] : [0, 110, 100, 90], hex = (r, g, b) => "#" + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+  return (it[k] = [hex(m[1] * 0.55, m[2] * 0.55, m[3] * 0.55), hex(m[1], m[2], m[3]), hex(m[1] * 1.4 + 20, m[2] * 1.4 + 20, m[3] * 1.4 + 20)]);
+}
+function bossPunchFx(it, cx, cy, img) {
+  const sx = Math.round(it.fx - cx), fy = Math.round(it.fy - cy), d = it.dir, t = it.t, C = bossArmCols(it, img);
+  if (it.state === "pwarn") {
+    const n = (it.t >> 2) & 1, fx0 = sx + d * 14, zw = 66, k = Math.min(1, it.t / 10);
+    ctx.save(); ctx.fillStyle = "rgba(255,40,30," + (0.1 + 0.16 * n) * k + ")"; ctx.fillRect(d > 0 ? fx0 : fx0 - zw, fy - 46, zw, 34);
+    ctx.fillStyle = "rgba(255,90,70," + (0.55 * k) + ")"; const ex = d > 0 ? fx0 + zw - 2 : fx0 - zw; ctx.fillRect(ex, fy - 46, 2, 34); ctx.fillRect(d > 0 ? fx0 : fx0 - zw, fy - 46, zw, 1); ctx.fillRect(d > 0 ? fx0 : fx0 - zw, fy - 13, zw, 1);
+    ctx.globalAlpha = n ? 1 : 0.55; ctx.font = "bold 16px monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#0a0000"; ctx.fillText("!", sx + 1, fy - 84); ctx.fillStyle = "#ff4030"; ctx.fillText("!", sx, fy - 85);
+    ctx.globalAlpha = 0.5 + 0.4 * n; const gx = sx + d * 18, gy = fy - 40, g = ctx.createRadialGradient(gx, gy, 1, gx, gy, 12); g.addColorStop(0, "rgba(255,80,50,.9)"); g.addColorStop(1, "rgba(255,80,50,0)"); ctx.fillStyle = g; ctx.fillRect(gx - 12, gy - 12, 24, 24); ctx.restore(); return;
+  }
+  const r = bossPunchReach(it), shx = sx + d * 23, shy = fy - 52, fxp = shx + d * r * 0.95, fyp = fy - 34 - (r < 20 ? (20 - r) * 0.2 : 0), mx = (shx + fxp) / 2, my = (shy + fyp) / 2 - 3;
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  for (const [w, col] of [[9, "#0a0806"], [7, C[1]], [2, C[2]]]) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(shx, shy + (w === 2 ? -2 : 0)); ctx.quadraticCurveTo(mx, my + (w === 2 ? -2 : 0), fxp, fyp + (w === 2 ? -2 : 0)); ctx.stroke(); }
+  ctx.fillStyle = "#0a0806"; ctx.fillRect(fxp - 5 + (d > 0 ? 1 : -1), fyp - 6, 10, 12); ctx.fillStyle = C[1]; ctx.fillRect(fxp - 4 + (d > 0 ? 1 : -1), fyp - 5, 8, 10); ctx.fillStyle = C[2]; ctx.fillRect(fxp - 4 + (d > 0 ? 1 : -1), fyp - 5, 8, 2); ctx.fillStyle = C[0]; ctx.fillRect(fxp - 4 + (d > 0 ? 1 : -1), fyp + 3, 8, 2);
+  ctx.fillStyle = "#f0ead4"; for (let k = -1; k <= 1; k++) ctx.fillRect(fxp + d * 5 + (d > 0 ? 0 : -2), fyp + k * 3 - 1, 2, 2);   // claw tips
+  if (t >= 3 && t <= 9) { ctx.globalAlpha = 0.45; ctx.fillStyle = "#fff"; for (let k = 0; k < 3; k++) ctx.fillRect(d > 0 ? shx + 6 : fxp + 6, fyp - 4 + k * 4, Math.max(2, Math.abs(fxp - shx) - 8), 1); }
+  ctx.restore();
+}
 function drawBoss(it, cx, cy) {
   if (it.dead && it.dieT > 50) return;
-  const pose = it.state === "windup" || it.state === "telegraph" ? "windup" : it.state === "slam" || it.state === "swing" ? "slam" : it.state === "charge" ? "charge" : "idle", flash = it.hurtT > 12 || (it.dead && (it.dieT >> 2) & 1);
+  const pose = it.state === "pwarn" ? "pwarn" : it.state === "punch" ? "punch" : it.state === "windup" || it.state === "telegraph" ? "windup" : it.state === "slam" || it.state === "swing" ? "slam" : it.state === "charge" ? "charge" : "idle", flash = it.hurtT > 12 || (it.dead && (it.dieT >> 2) & 1);
   const img = bossArt(it.kind2, it.zone, pose, flash), x = Math.round(it.fx - cx) - 32, y = Math.round(it.fy - cy) - 76 + 2, bob = it.state === "walk" ? ((G.frame >> 4) & 1) : 0;
   ctx.save(); if (it.dir < 0) { ctx.translate(Math.round(it.fx - cx) * 2, 0); ctx.scale(-1, 1); }
   ctx.globalAlpha = it.dead ? Math.max(0, 1 - it.dieT / 50) : 1; ctx.drawImage(img, x, y + bob); ctx.restore(); ctx.globalAlpha = 1;
+  if (it.state === "pwarn" || it.state === "punch") bossPunchFx(it, cx, cy, img);
   for (const w of (it.waves || [])) { ctx.fillStyle = bossGlow(it.zone); ctx.fillRect(Math.round(w.x - cx) - 4, Math.round(it.fy - cy) - 8, 8, 8); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillRect(Math.round(w.x - cx) - 2, Math.round(it.fy - cy) - 6, 4, 3); }
   for (const o of (it.orbs || [])) { const gx = Math.round(o.x - cx), gy = Math.round(o.y - cy); ctx.fillStyle = bossGlow(it.zone); ctx.fillRect(gx - 3, gy - 3, 6, 6); ctx.fillStyle = "#ffffff"; ctx.fillRect(gx - 1, gy - 1, 2, 2); }
 }
@@ -4158,7 +4188,10 @@ function updateBoss(it, hb) {
   switch (it.state) {
     case "idle": it.dir = toHero; it.state = "walk"; it.t = 0; break;
     case "walk": { it.dir = toHero; if (dist > 34) it.fx += it.dir * sp; clampX(); touch();
-      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
+      if (dist < 70 && it.t > (phase2 ? 22 : 40) && Math.random() < 0.03) { it.state = "pwarn"; it.t = 0; it.dir = toHero; sfx("roar"); break; }
+      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; if (dist < 80 && r < 0.45) { it.state = "pwarn"; it.dir = toHero; sfx("roar"); break; } it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
+    case "pwarn": if (it.t < 12) it.dir = toHero; if (it.t >= (phase2 ? 22 : 32)) { it.state = "punch"; it.t = 0; it.hitDone = false; sfx("slam"); } break;
+    case "punch": { const pb = bossPunchBox(it); if (pb && !it.hitDone && !h.inv && G.mode === "play" && overlap(hb, pb)) { it.hitDone = true; hurtHero(it.dir); } touch(); if (it.t > 15) { it.state = "recover"; it.t = 0; } break; }
     case "telegraph": it.dir = toHero; if (it.t > 26) { it.state = "charge"; it.t = 0; it.cdir = toHero; sfx("roar"); } break;
     case "charge": it.fx += it.cdir * (chief ? 2.4 : 2.2); clampX(); touch(); if (it.t > 55 || it.fx <= it.ax0 + 25 || it.fx >= it.ax1 - 25) { it.state = "recover"; it.t = 0; } break;
     case "windup": if (it.t > 28) { it.state = "slam"; it.t = 0; sfx("slam"); if (chief) { const hit = { x: it.dir > 0 ? it.fx : it.fx - 52, y: it.fy - 44, w: 52, h: 44 }; if (!h.inv && overlap(hb, hit)) hurtHero(it.dir); } else { it.waves.push({ x: it.fx - 20, v: -1.9, t: 0 }, { x: it.fx + 20, v: 1.9, t: 0 }); if (phase2) it.waves.push({ x: it.fx - 20, v: -1.1, t: 0 }, { x: it.fx + 20, v: 1.1, t: 0 }); burst(it.fx, it.fy - 4, "#c8c0b0"); } } break;
@@ -4267,6 +4300,7 @@ function armPaths(pose, lean, cr, zone) {
     slam: [{ S: SL, E: P(SL, -10, 14), W: P(SL, -8, 40 * fl), w0: wl, w1: wl - 3 }, { S: SR, E: P(SR, 10, 15), W: P(SR, 8, 38 * fr), w0: wr + 1, w1: wr - 2 }],
     charge: [{ S: SL, E: P(SL, -11, 5), W: P(SL, -22, 13 * fl), w0: wl, w1: wl - 4 }, { S: SR, E: P(SR, -3, 17), W: P(SR, -12, 31 * fr), w0: wr + 1, w1: wr - 3 }]
   };
+  sets.pwarn = [sets.idle[0], { S: SR, E: P(SR, 9, 3), W: P(SR, -5, 12), w0: wr + 1, w1: wr - 2 }]; sets.punch = sets.pwarn;   // the punching arm is cocked back; the strike itself is drawn live
   return sets[pose] || sets.idle;
 }
 
@@ -4277,7 +4311,7 @@ function queueZoneBakes(zone) {
   for (const kind of ["top", "mid", "fill", "wall", "ledge"]) for (let x = 0; x < 8; x++) for (let y = 0; y < 2; y++) for (let o = 0; o < 4; o++) Q.push(() => wornTile(Art, zone, kind, x, y, o));
   Q.push(() => 0);
   const hasChief = world.rooms.some(r => r.zone === zone && r.town === "orc");
-  for (const pose of ["idle", "windup", "slam", "charge"]) for (const fl of [false, true]) { Q.push(() => bossArt("guardian", zone, pose, fl)); if (hasChief) Q.push(() => bossArt("chief", zone, pose, fl)); }
+  for (const pose of ["idle", "windup", "slam", "charge", "pwarn", "punch"]) for (const fl of [false, true]) { Q.push(() => bossArt("guardian", zone, pose, fl)); if (hasChief) Q.push(() => bossArt("chief", zone, pose, fl)); }
 }
 
 function pumpBakes() { const Q = G.bakeQ; if (!Q || !Q.length) return; const t0 = performance.now(); while (Q.length && performance.now() - t0 < 3) Q.shift()(); }
@@ -4549,6 +4583,9 @@ function upBody(atk) {   // body pose: [dy px, lean rad]
   if (atk <= 28) return [-1, 0.04];
   return [atk > 31 ? 1 : 0, 0];                                                  // settle
 }
+
+
+
 
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
