@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.61">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.61">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.62">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.62">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.61</title>
+<title>Black Tiger: The Depths v0.62</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.61";   // bump by 0.01 with every change
+const VERSION = "0.62";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -876,7 +876,7 @@ const roomAtPx = (px, py) => { const cx = Math.floor(px / (CW * TS)), cy = Math.
    6. GAME STATE, SAVE, LOAD
    ====================================================================== */
 let G;   // everything that changes while playing
-const SAVE_KEY = "btdepths.save.L24";   // bump only when the world generator changes: an old save would drop you into the wrong room
+const SAVE_KEY = "btdepths.save.L25";   // bump only when the world generator changes: an old save would drop you into the wrong room
 function newGame(seed, saved) {
   world = generateWorld(seed);
   G = {
