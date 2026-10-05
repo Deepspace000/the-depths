@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.30">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.30">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.31">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.31">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.30</title>
+<title>Black Tiger: The Depths v0.31</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -137,7 +137,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.30";   // bump by 0.01 with every change
+const VERSION = "0.31";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -177,7 +177,7 @@ const HP_MIN = { small: 1, normal: 2, mini: 15, guardian: 30 };
 const capZenny = (src, v) => (src === "chest" || src === "guardian") ? v : Math.min(v, CFG.smallDropMax);
 
 // Tile codes in the world grid
-const EMPTY = 0, SOLID = 1, LEDGE = 2, CHAIN = 3, LEDGECHAIN = 4, WATER = 5, BRIDGE = 6;
+const EMPTY = 0, SOLID = 1, LEDGE = 2, CHAIN = 3, LEDGECHAIN = 4, WATER = 5, BRIDGE = 6, STAIR = 7;
 // Atmosphere settings
 const LOOK = {
   caveDim: 0.985, caveHeroLight: 34, hallLit: 0.12,   // very dark cave rooms
@@ -462,7 +462,8 @@ let world;   // { seed, tiles, roomOf, rooms, items, spawns, start }
 
 function generateWorld(seed) {
   const R = rng(seed), ri = (a, b) => a + Math.floor(R() * (b - a + 1));
-  const R2 = rng((seed ^ 0x9e3779b9) >>> 0), r2 = (a, b) => a + Math.floor(R2() * (b - a + 1));   // a second stream, so older worlds keep their layout
+  const R2 = rng((seed ^ 0x9e3779b9) >>> 0), r2 = (a, b) => a + Math.floor(R2() * (b - a + 1));
+  const R3 = rng((seed ^ 0x5bd1e995) >>> 0), r3 = (a, b) => a + Math.floor(R3() * (b - a + 1));   // a second stream, so older worlds keep their layout
   const ci = (cx, cy) => cy * GW + cx;
   // ---- 4a. maze of cells: E = open to the right, S = open below ----
   const E = new Uint8Array(GW * GH), S = new Uint8Array(GW * GH), seen = new Uint8Array(GW * GH);
@@ -583,6 +584,45 @@ function generateWorld(seed) {
     }
   }
   { const r0 = rooms[0]; for (let y = r0.ty + 1; y < r0.ty + r0.th - 1; y++) for (let x = r0.tx + 1; x < r0.tx + r0.tw - 1; x++) set(x, y, EMPTY); }   // the entrance hall is a flat, empty room
+  // ---- 4c++. ruins: church interiors, and castle remains with stairs up to a crumbling balustrade and a battlemented rampart ----
+  const ruinDecor = [];
+  for (const r of rooms) {
+    if (r.id === 0 || r.cave || ZONES[r.zone].lab || r.style === "low" || r.style === "two" || r.zone > 5 || R3() > (r.w >= 2 ? 0.16 : 0.06)) continue;
+    const floor = r.ty + r.th - 1, tw = r.tw, tx = r.tx, castle = r.w >= 2 && R3() < 0.62;
+    if (!castle && floor - r.ty < 11) continue;
+    r.ruin = castle ? "castle" : "church";
+    if (!castle) {
+      const count = Math.max(2, Math.min(5, Math.floor(tw / 10))), top = Math.max(r.ty + 2, floor - 11), pal = r3(0, 3), gap = (tw - 6) / count, wins = [];
+      for (let i = 0; i < count; i++) { const wx = Math.round(tx + 3 + i * gap + (gap - 3) / 2); wins.push(wx); ruinDecor.push({ kind: "cwindow", x: wx * TS, y: top * TS, seed: r3(0, 999), pal: (pal + i) % 4, zone: r.zone }); }
+      r.sun = r.sun || [];
+      wins.forEach((wx, wi) => {
+        if (R3() > 0.6) return;
+        const col = ["230,70,60", "90,140,255", "240,190,70", "120,220,140"][(pal + wi) % 4], sl = (R3() < 0.5 ? -1 : 1) * (0.2 + R3() * 0.25), x0 = (wx + 1.5) * TS, y0 = (top + 5) * TS; let len = 0;
+        while (len < 160) { const tt = get(Math.floor((x0 + sl * len) / TS), Math.floor((y0 + len) / TS)); if (tt === SOLID || tt === LEDGE || tt === BRIDGE || tt === STAIR) break; len += 4; }
+        if (len >= 48) r.sun.push({ x: x0, y: y0, len, s: sl, w: 14, seed: r3(0, 999), col, win: true });
+      });
+      for (let i = 0; i <= count; i++) { const px = Math.round(tx + 3 + i * gap - 1); if (px < tx + 2 || px > tx + tw - 4) continue; const broken = R3() < 0.45, ph = broken ? r3(4, 8) : floor - r.ty - 2; ruinDecor.push({ kind: "pillar", x: px * TS, y: (floor - ph) * TS, h: ph, broken, seed: r3(0, 999), zone: r.zone }); }
+      for (let i = 0; i < count; i++) { const base = Math.round(tx + 4 + i * gap); for (let k = 0; k < 2; k++) { const bx = base + k * 4; if (bx > tx + tw - 6) continue; ruinDecor.push({ kind: "pew", x: bx * TS, y: (floor - 1) * TS, w: 3, broken: R3() < 0.5, seed: r3(0, 999) }); } }
+      ruinDecor.push({ kind: "altar", x: (R3() < 0.5 ? tx + 3 : tx + tw - 8) * TS, y: (floor - 2) * TS, seed: r3(0, 999), zone: r.zone });
+      if (floor - r.ty > 9) ruinDecor.push({ kind: "chandelier", x: (tx + Math.round(tw / 2)) * TS, y: (r.ty + 1) * TS, len: r3(2, 4), seed: r3(0, 999) });
+      for (let k = 0, nr = r3(3, 6); k < nr; k++) ruinDecor.push({ kind: "rubble", x: (tx + r3(2, tw - 4)) * TS, y: (floor - 1) * TS, seed: r3(0, 99) });
+    } else {
+      const n = r3(4, 5), bw = r3(8, 10), span = n + bw, x0min = tx + 4, x0max = tx + tw - 4 - span;
+      if (x0max < x0min) { r.ruin = null; continue; }
+      const x0 = r3(x0min, x0max), by = floor - n, bx0 = x0 + n;
+      for (let i = 0; i < n; i++) { const col = x0 + i; for (let y = floor - 5 - i; y <= floor - 2 - i; y++) set(col, y, EMPTY); set(col, floor - 1 - i, STAIR); for (let y = floor - i; y < floor; y++) set(col, y, SOLID); }
+      for (let x = bx0; x < bx0 + bw; x++) { for (let y = by - 4; y < by; y++) set(x, y, EMPTY); set(x, by, LEDGE); }
+      for (let k = 0, ng = r3(0, 2); k < ng; k++) { const gx = bx0 + 3 + r3(0, bw - 6); set(gx, by, EMPTY); if (R3() < 0.5) set(gx + 1, by, EMPTY); }   // the walkway has crumbled in places
+      const cxn = bx0 + bw - 1; set(cxn, by, LEDGECHAIN); for (let y = by + 1; y < floor; y++) set(cxn, y, CHAIN);                  // a chain hangs from the end of the rampart, so it can be reached from the floor
+      ruinDecor.push({ kind: "bwall", x: bx0 * TS, y: (by + 1) * TS, w: bw, h: floor - by - 1, arches: true, seed: r3(0, 999) });      // the arcade beneath the rampart
+      ruinDecor.push({ kind: "bwall", x: bx0 * TS, y: (by - 5) * TS, w: bw, h: 5, crenel: true, seed: r3(0, 999) });                  // the old curtain wall behind it
+      ruinDecor.push({ kind: "balustrade", x: bx0 * TS, y: (by - 1) * TS, w: 3, seed: r3(0, 999) });
+      ruinDecor.push({ kind: "battlement", x: (bx0 + 3) * TS, y: by * TS, w: bw - 3, seed: r3(0, 999) });
+      const fx = x0 - 6 >= tx + 2 ? x0 - 6 : x0 + span + 1; if (fx + 3 <= tx + tw - 2) ruinDecor.push({ kind: "fwall", x: fx * TS, y: (floor - 6) * TS, w: 3, h: 6, seed: r3(0, 999) });
+      ruinDecor.push({ kind: "pillar", x: (x0 - 2) * TS, y: (floor - 5) * TS, h: 5, broken: true, seed: r3(0, 999), zone: r.zone });
+      for (let k = 0, nr = r3(3, 5); k < nr; k++) ruinDecor.push({ kind: "rubble", x: (x0 + r3(-3, span + 2)) * TS, y: (floor - 1) * TS, seed: r3(0, 99) });
+    }
+  }
   // ---- 4d. treasure, shrines, traps and enemies ----
   const items = [], spawns = [], traps = [];
   const standSpots = r => { const out = []; for (let y = r.ty + 1; y < r.ty + r.th - 1; y++) for (let x = r.tx + 2; x < r.tx + r.tw - 2; x++) { const b = get(x, y + 1); if (get(x, y) === EMPTY && get(x, y - 1) === EMPTY && (b === SOLID || b === LEDGE)) out.push([x, y]); } return out; };
@@ -631,7 +671,7 @@ function generateWorld(seed) {
   }
   for (let i = items.length - 1; i >= 0; i--) if (items[i].id < 100 && items[i].id !== 52) items.splice(i, 1);   // nothing in the first room but its shrine
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
-  const decor = [];
+  const decor = [...ruinDecor];
   for (const r of rooms) {
     r.dark = r.id > 0 && R() < 0.22 + r.zone * 0.06; if (r.cave) r.dark = true;
     const vineChance = (r.dark ? 0.16 : 0.05) + (r.zone === 1 || r.zone === 3 ? 0.08 : 0);
@@ -705,7 +745,7 @@ function generateWorld(seed) {
     // wind and sunlight
     const wp = (r.id === 0 || r.cave || ZONES[r.zone].lab) ? 0 : ({ vault: 0.3, open: 0.22, two: 0.06, low: 0.02 }[r.style] || 0) * WZ[r.zone];
     if (R2() < wp) r.wind = { dir: R2() < 0.5 ? -1 : 1, str: 0.35 + R2() * 0.5, ph: R2() * 6 };
-    r.sun = [];
+    r.sun = r.sun || [];
     if (!ZONES[r.zone].lab && !r.cave && r.id > 0 && r.style !== "low" && R2() < SZ[r.zone] * (r.h > 1 ? 1.4 : 1)) for (let k = 0, nb = r2(1, 2); k < nb; k++) {
       const top = r.ty + 1, cand = cells.filter(([x, y]) => y === top && get(x, y) === EMPTY && get(x, y - 1) === SOLID && x > r.tx + 2 && x < r.tx + r.tw - 3); if (!cand.length) break;
       const [x] = cand[Math.floor(R2() * cand.length)], dir = R2() < 0.5 ? -1 : 1, sl = dir * (0.22 + R2() * 0.3), x0 = x * TS + 8, y0 = top * TS; let len = 0;
@@ -721,7 +761,6 @@ function generateWorld(seed) {
     if (r.cave) for (const m of r.mouths) { const bx = m.bx; decor.push({ kind: "mouth", x: (m.cs > 0 ? bx - 1 : bx - 3) * TS, y: (m.fy - 3) * TS, dir: m.cs > 0 ? 1 : -1, seed: r2(0, 999), zone: r.zone, rooms: [r.id, m.other] }); }
   }
   // ---- 4g. coloured smoke and red lanterns (a third random stream) ----
-  const R3 = rng((seed ^ 0x5bd1e995) >>> 0), r3 = (a, b) => a + Math.floor(R3() * (b - a + 1));
   const SC = [[170, 90, 220], [90, 200, 110], [225, 70, 60], [80, 140, 235], [235, 170, 60]];
   for (const r of rooms) {
     if (r.id === 0) continue;
@@ -747,7 +786,7 @@ function generateWorld(seed) {
 const tileAt = (x, y) => (x < 0 || y < 0 || x >= WT || y >= HT) ? SOLID : world.tiles[y * WT + x];
 const solid = (x, y) => tileAt(x, y) === SOLID;
 const isChain = (x, y) => { const t = tileAt(x, y); return t === CHAIN || t === LEDGECHAIN; };
-const oneway = (x, y) => { const t = tileAt(x, y); return t === LEDGE || t === LEDGECHAIN || t === BRIDGE || (t === CHAIN && !isChain(x, y - 1)); };
+const oneway = (x, y) => { const t = tileAt(x, y); return t === LEDGE || t === LEDGECHAIN || t === BRIDGE || t === STAIR || (t === CHAIN && !isChain(x, y - 1)); };
 const isWater = (x, y) => tileAt(x, y) === WATER;
 const roomAtPx = (px, py) => { const cx = Math.floor(px / (CW * TS)), cy = Math.floor(py / (CH * TS)); if (cx < 0 || cy < 0 || cx >= GW || cy >= GH) return null; return world.rooms[world.roomOf[cy * GW + cx]]; };
 
@@ -914,7 +953,11 @@ function updateHero() {
   h.vy = Math.min(h.vy + CFG.gravity, CFG.maxFall);
   if (h.drop) h.drop--;
   const wpush = h.climb ? 0 : (G.wind || 0) * (h.ground ? (h.vx !== 0 ? 0.15 : 0) : 0.4);   // wind: a gentle push, mostly in the air
-  moveX(h, h.vx + wpush); moveY(h, h.vy);
+  if (h.stairT > 0) { h.stairT--; h.y -= 2; h.vy = 0; h.ground = true; moveX(h, h.vx + wpush); }
+  else {
+    if (h.ground && dirIn && !h.crouch && !h.atk) { const cf = Math.floor((h.x + 16 + dirIn * 13) / TS), fr = Math.round((h.y + 32) / TS); if (tileAt(cf, fr - 1) === STAIR && !solid(cf, fr - 2) && !solid(cf, fr - 3)) h.stairT = 8; }
+    moveX(h, h.vx + wpush); moveY(h, h.vy);
+  }
   if (h.ground && !onFloor(h)) h.ground = false;
   if (h.vx !== 0 && h.ground) h.anim++; else if (h.ground) h.anim = 0;
 }
@@ -1263,7 +1306,8 @@ const scr = $("screen"), ctx = scr.getContext("2d");
 // top = rock surface you walk on, mid = the row under it, fill = deep rock, under = rock tips hanging below a ledge or ceiling.
 function tileKind(x, y) {
   const t = tileAt(x, y);
-  if (t === SOLID) return !solid(x, y - 1) ? "top" : !solid(x, y - 2) ? "mid" : "fill";
+  if (t === STAIR) return "stair";
+  if (t === SOLID) { const sd = (a, b) => solid(a, b) || tileAt(a, b) === STAIR; return !sd(x, y - 1) ? "top" : !sd(x, y - 2) ? "mid" : "fill"; }
   if (t === LEDGE) return "ledge";
   if (t === BRIDGE) return "bridge";
   if (t === CHAIN) return "chain";
@@ -1292,7 +1336,7 @@ function draw() {
   const cx = Math.round(G.cam.x), cy = Math.round(G.cam.y), x0 = Math.floor(cx / TS), y0 = Math.floor(cy / TS);
   for (let y = y0; y <= y0 + 14; y++) for (let x = x0; x <= x0 + (VW >> 4); x++) {
     const zc = Math.floor(y / CH), zone = zoneOfCellY(Math.max(0, Math.min(GH - 1, zc)));
-    ctx.drawImage(Art.tile(zone, tileKind(x, y), ((x % 24) + 24) % 24, y, tileOpen(x, y)), x * TS - cx, y * TS - cy);
+    { const tk = tileKind(x, y); ctx.drawImage(tk === "stair" ? stairTile(zone, x, y) : Art.tile(zone, tk, ((x % 24) + 24) % 24, y, tileOpen(x, y)), x * TS - cx, y * TS - cy); }
   }
   const zone = G.room.zone, put = (f, x, y) => ctx.drawImage(f.img, Math.round(x) - f.ox - cx, Math.round(y) - f.oy - cy);
   const lights = [];
@@ -1314,6 +1358,7 @@ function draw() {
   drawPebbles(cx, cy); drawFlies(cx, cy, lights); drawGauges(cx, cy);
   const h = G.hero;
   if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); ctx.drawImage(f.img, Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); }
+  drawFore(cx, cy);
   for (const f of G.fires) if (!f.delay) put(Art.obj(f.blue ? "bluefire" : "fire", f.t <= 10 ? "small" : (f.t >> 2) & 1 ? "f1" : "f0", 0, zone), f.x, f.y);
   if (G.confuse > 0 && (G.frame & 16)) { ctx.fillStyle = "#80c0ff"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center"; ctx.fillText("CONFUSED", VW / 2, 52); }
   drawWind(cx, cy); drawSmoke(cx, cy, lights); drawWater(cx, cy);
@@ -1520,8 +1565,9 @@ function drawMouth(d, cx, cy, zone) {
 function drawDecor(cx, cy, zone, lights) {
   const r = G.room, dark = r.dark || r.cave;
   for (const d of r.decor) {
+    if (d.kind === "fwall" || d.kind === "battlement") continue;
     if (d.bb) { if (d.bb[2] < cx - 8 || d.bb[0] > cx + VW + 8 || d.bb[3] < cy - 8 || d.bb[1] > cy + 232) continue; }
-    else if (d.x < cx - 72 || d.x > cx + VW + 72 || d.y < cy - 96 || d.y > cy + 240) continue;
+    else if (d.x < cx - 240 || d.x > cx + VW + 240 || d.y < cy - 120 || d.y > cy + 240) continue;
     switch (d.kind) {
       case "vine": drawVine(ctx, d.x - cx, d.y - cy, d.len, d.seed, G.frame, zone); break;
       case "cvine": drawCrawlVine(d, cx, cy, zone); break;
@@ -1530,6 +1576,7 @@ function drawDecor(cx, cy, zone, lights) {
       case "incense": drawIncense(d, cx, cy); lights.push([d.x + 8, d.y + 2, 24, 0.5, "255,90,60"]); break;
       case "lantern": drawLantern(d, cx, cy, lights); break;
       case "mouth": drawMouth(d, cx, cy, zone); break;
+      case "cwindow": case "pillar": case "pew": case "altar": case "chandelier": case "rubble": case "bwall": case "balustrade": drawRuin(d, cx, cy, lights); break;
       default: { drawPlant(d, cx, cy, zone); const p = plantArt(d.kind, d.seed, d.zone != null ? d.zone : zone); if (p.glow && dark) lights.push([d.x + 8, d.y + 6, 26, 0.55, p.glow]); }
     }
   }
@@ -1612,14 +1659,15 @@ function drawWind(cx, cy) {
 // ---- shafts of sunlight with drifting dust ----
 const SUN_COL = ["255,236,170", "250,240,170", "255,220,150", "190,240,230", "255,220,160", "210,190,255", "255,200,140", "200,230,255"];
 function drawSun(cx, cy, lights) {
-  const r = G.room; if (!r.sun || !r.sun.length) return; const col = SUN_COL[r.zone];
+  const r = G.room; if (!r.sun || !r.sun.length) return;
   for (const b of r.sun) {
+    const col = b.col || SUN_COL[r.zone];
     const x0 = b.x - cx, y0 = b.y - cy, len = b.len, w1 = Math.max(12, b.w), w2 = w1 + len * 0.22, sh = 0.9 + 0.1 * Math.sin(G.frame / 70 + b.seed);
     if (y0 > VH + 8 || y0 + len < -8) continue;
     // a clear window in the ceiling: bright core, 2px pale rim, leafy fringe
-    const wx = Math.round(x0 - w1 / 2);
+    const wx = Math.round(x0 - w1 / 2); if (!b.win) {
     ctx.fillStyle = "#6a7c94"; ctx.fillRect(wx - 2, Math.round(y0 - 8), w1 + 4, 8); ctx.fillStyle = "#cfe6ff"; ctx.fillRect(wx, Math.round(y0 - 7), w1, 7); ctx.fillStyle = "#ffffff"; ctx.fillRect(wx + 2, Math.round(y0 - 6), w1 - 4, 5); ctx.fillStyle = "#9cc4f0"; ctx.fillRect(wx, Math.round(y0 - 2), w1, 2);
-    ctx.fillStyle = plantPal(r.zone).d; for (let i = 0; i < w1; i += 3) { ctx.fillRect(wx + i, Math.round(y0 - 9 - (i % 2)), 2, 3); } ctx.fillStyle = plantPal(r.zone).l; for (let i = 1; i < w1; i += 4) ctx.fillRect(wx + i, Math.round(y0 - 9), 1, 1);
+    ctx.fillStyle = plantPal(r.zone).d; for (let i = 0; i < w1; i += 3) { ctx.fillRect(wx + i, Math.round(y0 - 9 - (i % 2)), 2, 3); } ctx.fillStyle = plantPal(r.zone).l; for (let i = 1; i < w1; i += 4) ctx.fillRect(wx + i, Math.round(y0 - 9), 1, 1); }
     ctx.globalCompositeOperation = "lighter";
     for (let yy = 0; yy < len; yy += 2) {   // three clearly separate, hard-edged bands
       const u = yy / len, cxl = x0 + b.s * yy, half = (w1 + (w2 - w1) * u) / 2, fade = (1 - u * 0.5) * sh;
@@ -1825,7 +1873,7 @@ function gritCanvas(c, seed, edgeP, speckP, dark) {
   g.putImageData(id, 0, 0); return c;
 }
 
-function baked(key, w, h, fn, seed) { const BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key]; const c = mk(w, h), g = c.getContext("2d"); fn((a, b, ww, hh, col) => { g.fillStyle = col; g.fillRect(a, b, ww, hh); }, g); gritCanvas(c, seed, 0.18, 0.1, 0.92); BK[key] = c; return c; }
+function baked(key, w, h, fn, seed) { const BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key]; const c = mk(w, h), g = c.getContext("2d"); fn((a, b, ww, hh, col) => { if (col === "rgba(0,0,0,0)") { g.clearRect(a, b, ww, hh); return; } g.fillStyle = col; g.fillRect(a, b, ww, hh); }, g); gritCanvas(c, seed, 0.18, 0.1, 0.92); BK[key] = c; return c; }
 
 
 
@@ -2029,6 +2077,165 @@ function flyArt(kind, frame) {
 
 
 
+
+
+function stairTile(zone, x, y) {
+  const Z = ZONES[zone];
+  return baked("stair" + zone + (x & 3), 16, 16, (R) => {
+    const o = shade(Z.solid, 0.3), d = shade(Z.solid, 0.55), m = shade(Z.solid, 0.78), l = shade(Z.solid, 1.12), h = shade(Z.solid, 1.35);
+    R(0, 0, 16, 16, o); R(0, 0, 16, 5, l); R(0, 0, 16, 1, h); R(0, 5, 16, 1, d); R(0, 6, 16, 10, m);
+    R(0, 10, 16, 1, d); R(7 + (x & 3), 6, 1, 4, d); R(3 + ((x >> 1) & 3), 11, 1, 5, d); R(12, 11, 1, 5, d);
+    R(1, 1, 5, 1, "rgba(255,255,255,.2)"); R(14, 6, 2, 10, d); R(0, 15, 16, 1, o);
+    if (x & 1) { R(12, 0, 4, 2, o); R(13, 2, 3, 1, o); } else { R(0, 0, 3, 1, o); }   // a chipped corner
+    R(5, 3, 1, 1, d); R(9, 2, 2, 1, d);
+  }, zone * 9 + (x & 3));
+}
+
+function windowArt(seed, pal) {
+  return baked("cwin" + (seed % 6) + pal, 48, 96, (R) => {
+    const st = "#8a8478", st2 = "#5a564e", st3 = "#38342e", ink = "#14100e", G = glassPal(pal), S = rng(seed * 31 + pal);
+    const half = y => y < 24 ? Math.round(20 * Math.sin((y / 24) * Math.PI / 2 * 0.92 + 0.12)) + 3 : 23;   // pointed arch
+    for (let y = 0; y < 96; y++) { const hw = half(y); R(24 - hw - 4, y, hw * 2 + 8, 1, st3); R(24 - hw - 3, y, 3, 1, y % 8 < 4 ? st : st2); R(24 + hw, y, 3, 1, y % 8 < 4 ? st2 : st3); R(24 - hw, y, hw * 2, 1, "#10101a"); }
+    R(1, 92, 46, 4, st3); R(0, 94, 48, 2, st2);   // sill
+    // leaded panes in a grid, mullions and a quatrefoil, many panes broken out
+    for (let y = 6; y < 92; y += 9) for (let x = 3; x < 45; x += 9) {
+      const cx = x + 4, cy = y + 4, hw = half(y + 4); if (Math.abs(cx - 24) > hw - 1) continue;
+      const roll = S(); if (roll < 0.34) continue;                      // broken out: the dark church shows through
+      const col = roll < 0.68 ? G[0] : roll < 0.9 ? G[1] : G[2];
+      R(x, y, 8, 8, col); R(x, y, 8, 1, "rgba(255,255,255,.28)"); R(x, y, 1, 8, "rgba(255,255,255,.2)"); R(x + 7, y, 1, 8, "rgba(0,0,0,.35)");
+      if (S() < 0.3) { R(x + 1 + Math.floor(S() * 5), y + 1, 1, 6, "rgba(0,0,0,.6)"); }   // a crack
+    }
+    for (let x = 3; x < 45; x += 9) R(x - 1, 6, 1, 86, ink); for (let y = 6; y < 92; y += 9) R(3, y - 1, 42, 1, ink);
+    R(23, 4, 2, 88, st2); R(10, 28, 28, 2, st2); R(22, 7, 4, 4, st); R(21, 10, 6, 1, st2);
+    // jagged missing stone at the arch top and along one side
+    R(21, 0, 6, 2, "rgba(0,0,0,0)"); for (let k = 0; k < 6; k++) R(2 + k * 7 + ((seed >> k) & 3), 40 + ((seed * (k + 3)) % 40), 2, 3, st3);
+  }, seed + pal);
+}
+
+function pillarArt(h, broken, seed) {
+  return baked("pil" + h + (broken ? "b" : "s") + (seed % 5), 20, h * 16, (R) => {
+    const H = h * 16, st = "#9a9488", lit = "#c4bcae", dk = "#58544c", o = "#1a1814";
+    const top = broken ? 6 + (seed % 10) : 0;
+    R(2, 4 + top, 16, H - top - 4, o); R(4, 4 + top, 12, H - top - 8, st); R(4, 4 + top, 3, H - top - 8, lit); R(13, 4 + top, 3, H - top - 8, dk);
+    for (let y = 8 + top; y < H - 8; y += 3) { R(8, y, 1, 2, dk); R(11, y, 1, 2, dk); }                     // flutes
+    R(0, H - 6, 20, 6, o); R(1, H - 6, 18, 5, st); R(1, H - 6, 18, 1, lit); R(2, H - 14, 16, 1, dk);        // base
+    if (!broken) { R(0, 0, 20, 6, o); R(1, 1, 18, 4, st); R(1, 1, 18, 1, lit); R(3, 5, 14, 2, dk); }
+    else { for (let k = 0; k < 8; k++) R(2 + k * 2, 3 + top + ((k * 5 + seed) % 5), 3, 3, k % 2 ? o : st); R(4, 3 + top, 12, 2, o); }   // ragged broken top
+    for (let k = 0; k < 6; k++) R(3 + ((seed * (k + 2)) % 13), 12 + top + ((seed * (k + 5)) % (H - top - 24)), 2, 1, o);   // cracks
+  }, seed * 7 + h);
+}
+
+function pewArt(broken, seed) {
+  return baked("pew" + (broken ? 1 : 0) + (seed % 4), 52, 22, (R) => {
+    const w = "#5a3a1c", wl = "#8a5c2c", wd = "#2e1c0c", o = "#150c04";
+    R(2, 6, 3, 15, o); R(46, 6, 3, 15, o); R(3, 6, 1, 15, wl); R(47, 6, 1, 15, wl);                         // end panels
+    R(1, 4, 50, 3, o); R(2, 4, 48, 1, wl); R(2, 5, 48, 2, w);                                               // backrest rail
+    R(5, 10, 41, 4, o); R(6, 10, 39, 1, wl); R(6, 11, 39, 3, w); R(5, 14, 41, 1, wd);                       // seat
+    for (let x = 8; x < 44; x += 6) R(x, 7, 1, 3, wd);
+    if (broken) { R(18, 10, 11, 4, "rgba(0,0,0,0)"); R(17, 8, 14, 7, "#0b0b12"); R(16, 14, 5, 6, o); R(15, 15, 4, 5, wd); R(28, 5, 4, 3, "#0b0b12"); R(30, 15, 8, 3, wd); }   // snapped seat, fallen plank
+  }, seed);
+}
+
+function altarArt(seed, zone) {
+  return baked("altar" + (seed % 3) + zone, 48, 40, (R) => {
+    const st = "#a09a8c", lit = "#cac2b0", dk = "#5c5850", o = "#16140f";
+    R(3, 28, 42, 12, o); R(4, 28, 40, 2, lit); R(4, 30, 40, 9, st); R(4, 30, 4, 9, lit); R(38, 30, 6, 9, dk);
+    R(8, 22, 32, 8, o); R(9, 22, 30, 1, lit); R(9, 23, 30, 6, st); R(34, 23, 5, 6, dk);
+    R(6, 24, 4, 8, "#7a2018"); R(6, 24, 4, 1, "#a83428"); R(38, 25, 5, 12, "#7a2018"); R(37, 31, 8, 1, "#501410");        // faded cloth, torn
+    R(22, 6, 4, 18, o); R(23, 6, 2, 17, "#c8a850"); R(17, 11, 14, 3, o); R(18, 11, 12, 2, "#c8a850"); R(24, 6, 1, 17, "#f0dc88");  // a cross
+    R(10, 17, 4, 6, o); R(11, 18, 2, 5, "#d8cfa8"); R(34, 17, 4, 6, o); R(35, 18, 2, 5, "#d8cfa8");                    // candles
+    for (let k = 0; k < 6; k++) R(6 + ((seed * (k + 3)) % 36), 31 + (k % 6), 2, 1, o);
+  }, seed + zone);
+}
+
+function chandelierArt(seed) {
+  return baked("chand" + (seed % 3), 40, 28, (R) => {
+    const m = "#6a5a30", l = "#c8a850", o = "#16120a";
+    for (let x = 4; x < 36; x++) { const y = 10 + Math.round(Math.sin((x - 4) / 32 * Math.PI) * 6); if (!(x > 22 && x < 27)) { R(x, y, 1, 3, o); R(x, y, 1, 1, l); R(x, y + 1, 1, 1, m); } }
+    R(19, 2, 2, 12, m); R(20, 2, 1, 12, l);
+    for (const x of [6, 14, 26, 33]) { R(x, 4, 3, 7, o); R(x + 1, 5, 1, 5, "#d8d0a8"); R(x, 15, 3, 3, o); }
+    R(2, 18, 6, 1, o); R(31, 19, 6, 1, o); R(10, 22, 1, 4, m); R(30, 24, 1, 3, m);   // snapped arms hanging loose
+  }, seed);
+}
+
+function wallArt(w, h, seed, flags) {
+  const key = "bwall" + w + "x" + h + "s" + (seed % 7) + (flags.arches ? "a" : "") + (flags.crenel ? "c" : "") + (flags.fg ? "f" : "");
+  return baked(key, w * 16, h * 16, (R) => {
+    const W = w * 16, H = h * 16, S = rng(seed * 13 + w * 5 + h), fg = flags.fg, base = fg ? "#6e6a74" : "#4a4852", lit = fg ? "#9a96a4" : "#6a6874", dk = fg ? "#3a3844" : "#2a2832", o = "#0e0d14";
+    const top = flags.crenel ? 8 : 0;
+    // ragged top edge: the wall's height wanders
+    const edge = []; for (let x = 0; x < W; x++) edge.push(top + Math.round(3 * Math.sin(x / 9 + seed) + (S() < 0.12 ? 3 : 0)));
+    for (let x = 0; x < W; x++) { R(x, edge[x], 1, H - edge[x], base); R(x, edge[x], 1, 1, lit); }
+    if (flags.crenel) { for (let x = 2; x < W - 8; x += 20) { if (S() < 0.22) continue; const mh = 6 + Math.floor(S() * 3); R(x, edge[x] - mh, 12, mh, base); R(x, edge[x] - mh, 12, 1, lit); R(x, edge[x] - mh, 1, mh, lit); R(x + 11, edge[x] - mh, 1, mh, dk); } }
+    // courses of dressed stone with staggered joints
+    for (let y = 8; y < H; y += 8) { for (let x = 0; x < W; x++) if (y > edge[x]) R(x, y, 1, 1, dk); const off = (y / 8 & 1) * 8 + Math.floor(S() * 3); for (let x = off; x < W; x += 16 + Math.floor(S() * 6)) if (y + 8 > edge[Math.min(W - 1, x)]) R(x, y - 8, 1, 8, dk); }
+    for (let k = 0; k < w * h; k++) { const x = Math.floor(S() * W), y = 10 + Math.floor(S() * (H - 12)); if (y > edge[x]) { R(x, y, 3, 2, "rgba(0,0,0,.4)"); R(x, y, 2, 1, lit); } }
+    // arrow slits
+    for (let x = 22; x < W - 22; x += 44) { const y = Math.max(edge[x] + 8, 12); if (y + 14 < H) { R(x - 1, y - 1, 5, 16, o); R(x, y, 3, 14, fg ? "rgba(0,0,0,0)" : "#07060a"); } }
+    if (flags.arches) { for (let x = 6; x + 22 < W; x += 30) { const ah = Math.min(H - 6, 46); R(x - 2, H - ah - 2, 26, ah + 2, o); R(x, H - ah, 22, ah, "#050409"); for (let k = 0; k < 11; k++) { const cut = Math.round(11 - Math.sqrt(Math.max(0, 121 - (11 - k) * (11 - k)))); R(x, H - ah + k, cut, 1, base); R(x + 22 - cut, H - ah + k, cut, 1, base); } } }
+    if (fg) { R(0, 0, W, 1, "rgba(0,0,0,0)"); }
+    // the edges crumble: ragged sides and fallen chunks
+    for (let y = 0; y < H; y += 4) { const a = Math.floor(S() * 5); R(0, y, a, 3, "rgba(0,0,0,0)"); const b2 = Math.floor(S() * 5); R(W - b2, y, b2, 3, "rgba(0,0,0,0)"); }
+  }, seed + w * 7);
+}
+
+function battlementArt(w, seed) {
+  return baked("battl" + w + (seed % 5), w * 16, 22, (R) => {
+    const W = w * 16, S = rng(seed * 3 + w), base = "#7e7a86", lit = "#a8a4b2", dk = "#46444e", o = "#0e0d14";
+    R(0, 12, W, 10, o); R(0, 13, W, 8, base); R(0, 13, W, 1, lit); for (let x = 7; x < W; x += 16) R(x, 14, 1, 7, dk); R(0, 17, W, 1, dk);
+    for (let x = 1; x + 11 <= W; x += 16) {   // merlons with gaps between them, a few knocked down
+      const r0 = S(); if (r0 < 0.18) { R(x + 2, 9, 6, 4, base); R(x + 2, 9, 6, 1, lit); continue; }
+      const mh = r0 < 0.4 ? 7 : 12; R(x - 1, 13 - mh - 1, 14, mh + 2, o); R(x, 13 - mh, 12, mh, base); R(x, 13 - mh, 12, 1, lit); R(x, 13 - mh, 1, mh, lit); R(x + 11, 13 - mh, 1, mh, dk);
+      R(x + 4, 13 - mh + 3, 1, 2, dk); if (r0 > 0.8) { R(x + 8, 13 - mh, 4, 3, "rgba(0,0,0,0)"); R(x + 9, 13 - mh + 3, 3, 1, o); }
+    }
+  }, seed + w);
+}
+
+function balustradeArt(w, seed) {
+  return baked("balus" + w + (seed % 5), w * 16, 18, (R) => {
+    const W = w * 16, S = rng(seed * 5 + w), st = "#a8a296", lit = "#d2cabc", dk = "#5c5850", o = "#16140f";
+    R(0, 15, W, 3, o); R(0, 15, W, 1, lit); R(0, 16, W, 2, st);
+    for (let x = 3; x < W - 4; x += 8) { if (S() < 0.22) { R(x, 12, 6, 3, st); R(x + 1, 12, 2, 1, lit); continue; }   // a baluster lost, only the stump left
+      R(x, 4, 6, 12, o); R(x + 1, 5, 4, 10, st); R(x + 1, 5, 1, 10, lit); R(x + 4, 5, 1, 10, dk); R(x - 1, 14, 8, 2, st); R(x - 1, 4, 8, 2, st); R(x + 1, 8, 4, 3, lit); R(x + 2, 9, 2, 1, dk); }
+    R(0, 0, W, 4, o); R(0, 1, W, 3, st); R(0, 1, W, 1, lit); for (let k = 0; k < 4; k++) R(Math.floor(S() * W), 0, 6 + Math.floor(S() * 8), 4, "rgba(0,0,0,0)");   // the rail has broken away in places
+    R(0, 0, 2, 18, "rgba(0,0,0,0)");
+  }, seed + w);
+}
+
+function rubbleArt(seed) {
+  return baked("rub" + (seed % 8), 24, 12, (R) => {
+    const S = rng(seed * 11 + 3), st = "#7a766e", lit = "#aaa498", dk = "#3a3832", o = "#14120e";
+    for (let k = 0; k < 6; k++) { const w = 3 + Math.floor(S() * 5), h = 2 + Math.floor(S() * 4), x = Math.floor(S() * (24 - w)), y = 12 - h - Math.floor(S() * 4); R(x, y, w, h, o); R(x + 1, y + 1, w - 2, Math.max(1, h - 2), st); R(x + 1, y + 1, Math.max(1, w - 2), 1, lit); R(x + w - 1, y + 1, 1, h - 1, dk); }
+  }, seed);
+}
+
+function drawRuin(d, cx, cy, lights) {
+  const x = Math.round(d.x - cx), y = Math.round(d.y - cy), zone = d.zone != null ? d.zone : G.room.zone, t = G.frame + (d.seed | 0);
+  switch (d.kind) {
+    case "cwindow": { ctx.drawImage(windowArt(d.seed, d.pal), x, y); const G2 = glassPal(d.pal); lights.push([d.x + 24, d.y + 30, 56, 0.4, G2[0].slice(1).match(/../g).map(h => parseInt(h, 16)).join(",")]); break; }
+    case "pillar": ctx.drawImage(pillarArt(d.h, d.broken, d.seed), x - 2, y); break;
+    case "pew": ctx.drawImage(pewArt(d.broken, d.seed), x - 2, y - 4); break;
+    case "altar": { ctx.drawImage(altarArt(d.seed, zone), x - 8, y - 6); for (const [fx, fy] of [[12, 15], [36, 15]]) { const f = (t >> 2) % 3, fl = [0, 1, -1][f]; ctx.fillStyle = "#e86a14"; ctx.fillRect(x - 8 + fx + fl, y - 6 + fy - 3, 2, 3); ctx.fillStyle = "#ffd868"; ctx.fillRect(x - 8 + fx, y - 6 + fy - 2, 1, 2); lights.push([d.x - 8 + fx, d.y - 6 + fy, 36, 0.8, "255,150,60"]); } break; }
+    case "chandelier": { const sway = Math.round(Math.sin(t / 70) * 1.2), top = y, bot = y + d.len * 16; ctx.fillStyle = "#16120a"; ctx.fillRect(x + 20, top, 1, bot - top); ctx.fillStyle = "#6a5a30"; ctx.fillRect(x + 19, top, 1, bot - top); ctx.drawImage(chandelierArt(d.seed), x + sway, bot - 4); const f = (t >> 2) % 3; for (const fx of [7, 15, 27, 34]) { if ((fx + d.seed) % 3 === 0) continue; ctx.fillStyle = "#e86a14"; ctx.fillRect(x + sway + fx + [0, 1, -1][f], bot - 4 + 2, 2, 3); ctx.fillStyle = "#ffd868"; ctx.fillRect(x + sway + fx, bot - 4 + 3, 1, 2); lights.push([d.x + fx, d.y + d.len * 16 - 2, 30, 0.7, "255,150,60"]); } break; }
+    case "rubble": ctx.drawImage(rubbleArt(d.seed), x - 4, y + 4); break;
+    case "bwall": ctx.drawImage(wallArt(d.w, d.h, d.seed, d), x, y); break;
+    case "balustrade": ctx.drawImage(balustradeArt(d.w, d.seed), x, y - 2); break;
+  }
+}
+
+function drawFore(cx, cy) {
+  const r = G.room; if (!r.decor) return;
+  for (const d of r.decor) {
+    if (d.kind !== "fwall" && d.kind !== "battlement") continue;
+    const x = Math.round(d.x - cx), y = Math.round(d.y - cy); if (x < -200 || x > VW + 200 || y < -120 || y > VH + 40) continue;
+    ctx.globalAlpha = 0.95;
+    if (d.kind === "fwall") ctx.drawImage(wallArt(d.w, d.h, d.seed, { fg: true, crenel: true }), x, y); else ctx.drawImage(battlementArt(d.w, d.seed), x, y - 10);
+    ctx.globalAlpha = 1;
+  }
+}
+
+
+function glassPal(i) { return [["#c03030", "#e8a030", "#702030"], ["#3a64c8", "#78a8f0", "#1c2c70"], ["#d8a830", "#f0e070", "#7a5818"], ["#2e9a5a", "#78d89a", "#145030"]][((i % 4) + 4) % 4]; }
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
