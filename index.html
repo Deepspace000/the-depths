@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.54">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.54">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.55">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.55">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.54</title>
+<title>Black Tiger: The Depths v0.55</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.54";   // bump by 0.01 with every change
+const VERSION = "0.55";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1375,6 +1375,9 @@ function updateCamera() { const t = camTarget(); G.cam.x += (t.x - G.cam.x) * 0.
    ====================================================================== */
 function update() {
   G.frame++;
+  if (G.room && !(G.bakedZ && G.bakedZ[G.room.zone])) queueZoneBakes(G.room.zone);
+  if (G.room && G.__pbRoom !== G.room.id) { G.__pbRoom = G.room.id; queueNeighbourBakes(G.room); }
+  pumpBakes();
   if (pressed.debug) G.debug = !G.debug;
   if (pressed.map) G.mode = G.mode === "map" ? "play" : (G.mode === "play" ? "map" : G.mode);
   if (G.mode === "map") { clearPressed(); return; }
@@ -3598,14 +3601,15 @@ function buildCells(rooms, items, spawns, get, set, out, standSpots) {
 }
 
 function placeHiddenKeys(rooms, items, get, set, chainCell, standSpots, out) {
-  const bad = (sx, sy) => out.some(d => ["housefront", "cellfront", "chapelfront"].includes(d.kind) && sx * TS >= d.x - 16 && sx * TS < d.x + 160 && sy * TS >= d.y - 32 && sy * TS < d.y + 64);
+  const blockers = out.filter(d => ["housefront", "cellfront", "chapelfront"].includes(d.kind)), grid = itemGrid(items);
+  const bad = (sx, sy) => blockers.some(d => sx * TS >= d.x - 16 && sx * TS < d.x + 160 && sy * TS >= d.y - 32 && sy * TS < d.y + 64);
   for (let z = 0; z < 8; z++) {
     const S = rng(z * 541 + 7), cands = [];
     for (const r of rooms) {
       if (r.id === 0 || r.zone !== z || r.ruin) continue;
       const fl = r.ty + r.th - 1;
       for (const [sx, sy] of standSpots(r)) {
-        if (bad(sx, sy) || items.some(i => Math.abs(i.x - sx * TS) < 28 && Math.abs(i.y - sy * TS) < 28)) continue;
+        if (bad(sx, sy) || grid.near(sx * TS, sy * TS, 28, 28)) continue;
         const high = fl - sy >= 4 && get(sx, sy + 1) === LEDGE, wall = Math.min(sx - r.tx, r.tx + r.tw - 1 - sx) <= 3;
         let score = (r.cave ? 3 : 0) + (r.flood ? 2 : 0) + (high ? 2.5 : 0) + (wall ? 1 : 0) + S() * 1.5;
         if (score < 1.5) continue;
@@ -3626,7 +3630,7 @@ function placeHiddenKeys(rooms, items, get, set, chainCell, standSpots, out) {
         }
         if (!done) continue;
       }
-      items.push({ id: c.r.id * 100 + 42 + placed, kind: "key", art: "key", x: c.sx * TS, y: c.sy * TS }); used.add(c.r.id); placed++;
+      { const kk = { id: c.r.id * 100 + 42 + placed, kind: "key", art: "key", x: c.sx * TS, y: c.sy * TS }; items.push(kk); grid.add(kk); } used.add(c.r.id); placed++;
     }
   }
 }
@@ -3636,12 +3640,12 @@ function placeHiddenKeys(rooms, items, get, set, chainCell, standSpots, out) {
 function hz(n, s) { const v = Math.sin(n * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); }
 
 function wornTile(art, zone, kind, x, y, open) {
-  const xm = ((x % 24) + 24) % 24, key = "W" + art.mode + zone + kind + xm + "_" + (y & 3) + "_" + open;
+  const xm = ((x % 8) + 8) % 8, key = "W" + art.mode + zone + kind + xm + "_" + (y & 1) + "_" + open;
   if (art.cache.has(key)) return art.cache.get(key);
-  const base = art.tile0(zone, kind, x, y, open);
+  const base = art.tile0(zone, kind, xm, y & 1, open);
   if (!(kind === "top" || kind === "mid" || kind === "fill" || kind === "wall" || kind === "ledge" || kind === "ledgeChain")) { art.cache.set(key, base); return base; }
   const c = mk(16, 16), g = c.getContext("2d"); g.drawImage(base, 0, 0);
-  const src = g.getImageData(0, 0, 16, 16), out = g.createImageData(16, 16), s = src.data, d = out.data, S = rng(zone * 977 + xm * 31 + (y & 3) * 7 + kind.length * 13 + open * 101);
+  const src = g.getImageData(0, 0, 16, 16), out = g.createImageData(16, 16), s = src.data, d = out.data, S = rng(zone * 977 + xm * 31 + (y & 1) * 7 + kind.length * 13 + open * 101);
   const ph1 = S() * 6.28, ph2 = S() * 6.28;
   // 1. wobble: straight mortar lines and brick edges drift by a pixel in the middle of the tile
   for (let py = 0; py < 16; py++) for (let px = 0; px < 16; px++) {
@@ -3739,7 +3743,8 @@ function updateBigShroom(it, hb) {
 }
 
 function buildFungus(rooms, items, get, out) {
-  const bad = (x, y) => out.some(d => ["housefront", "cellfront", "chapelfront", "bigstatue", "fountain"].includes(d.kind) && x * TS >= d.x - 16 && x * TS < d.x + 150 && y * TS >= d.y - 48 && y * TS < d.y + 90);
+  const blockers = out.filter(d => ["housefront", "cellfront", "chapelfront", "bigstatue", "fountain"].includes(d.kind));
+  const bad = (x, y) => blockers.some(d => x * TS >= d.x - 16 && x * TS < d.x + 150 && y * TS >= d.y - 48 && y * TS < d.y + 90);
   for (const r of rooms) {
     if (r.id === 0 || r.ruin) continue;
     const S = rng(r.id * 211 + 17), fl = r.ty + r.th - 1, zone = r.zone, damp = zone === 1 || zone === 3 || r.cave || r.flood ? 1 : 0;
@@ -4213,7 +4218,8 @@ function taperTorso(R, cx0, y0, h, hwTop, hwBot, st, lt, dk, o, shear) {
 
 function curveArm(R, a, st, lt, dk, o, gl, claws) {
   const pts = []; for (let i = 0; i <= 30; i++) { const t = i / 30, x = (1 - t) * (1 - t) * a.S.x + 2 * (1 - t) * t * a.E.x + t * t * a.W.x, y = (1 - t) * (1 - t) * a.S.y + 2 * (1 - t) * t * a.E.y + t * t * a.W.y; pts.push([x, y, (a.w0 + (a.w1 - a.w0) * t) / 2 + (Math.abs(t - 0.45) < 0.12 ? 1 : 0)]); }
-  for (const pass of [0, 1]) for (const [x, y, r] of pts) { const rr = pass ? r : r + 1.1; for (let dy = -Math.ceil(rr); dy <= Math.ceil(rr); dy++) for (let dx = -Math.ceil(rr); dx <= Math.ceil(rr); dx++) { const d = Math.sqrt(dx * dx + dy * dy); if (d > rr) continue; const px = Math.round(x + dx), py = Math.round(y + dy); R(px, py, 1, 1, pass ? (dx + dy < -r * 0.5 ? lt : dx + dy > r * 0.6 ? dk : st) : o); } }
+  const grid = new Map(); for (const pass of [0, 1]) for (const [x, y, r] of pts) { const rr = pass ? r : r + 1.1; for (let dy = -Math.ceil(rr); dy <= Math.ceil(rr); dy++) for (let dx = -Math.ceil(rr); dx <= Math.ceil(rr); dx++) { const d = Math.sqrt(dx * dx + dy * dy); if (d > rr) continue; const px = Math.round(x + dx), py = Math.round(y + dy); grid.set(py * 256 + px + 64, pass ? (dx + dy < -r * 0.5 ? lt : dx + dy > r * 0.6 ? dk : st) : o); } }
+  for (const [k, col] of grid) { const py = Math.floor((k - 64 + 128) / 256) - 0, px = k - 64 - py * 256; R(px, py, 1, 1, col); }
   if (gl) for (let i = 4; i < 28; i += 1) R(Math.round(pts[i][0]), Math.round(pts[i][1]), 1, 1, gl);
   if (claws === false) { const [hx2, hy2] = pts[30]; R(Math.round(hx2) - 3, Math.round(hy2) - 3, 6, 6, o); R(Math.round(hx2) - 2, Math.round(hy2) - 2, 4, 4, st); R(Math.round(hx2) - 2, Math.round(hy2) - 2, 2, 1, lt); return; }
   const [wx, wy] = pts[30], [px, py] = pts[26], L = Math.hypot(wx - px, wy - py) || 1, dx = (wx - px) / L, dy = (wy - py) / L;
@@ -4232,6 +4238,68 @@ function armPaths(pose, lean, cr, zone) {
   };
   return sets[pose] || sets.idle;
 }
+
+
+
+function queueZoneBakes(zone) {
+  G.bakedZ = G.bakedZ || {}; if (G.bakedZ[zone]) return; G.bakedZ[zone] = true; const Q = (G.bakeQ = G.bakeQ || []);
+  for (const kind of ["top", "mid", "fill", "wall", "ledge"]) for (let x = 0; x < 8; x++) for (let y = 0; y < 2; y++) for (let o = 0; o < 4; o++) Q.push(() => wornTile(Art, zone, kind, x, y, o));
+  Q.push(() => 0);
+  const hasChief = world.rooms.some(r => r.zone === zone && r.town === "orc");
+  for (const pose of ["idle", "windup", "slam", "charge"]) for (const fl of [false, true]) { Q.push(() => bossArt("guardian", zone, pose, fl)); if (hasChief) Q.push(() => bossArt("chief", zone, pose, fl)); }
+}
+
+function pumpBakes() { const Q = G.bakeQ; if (!Q || !Q.length) return; const t0 = performance.now(); while (Q.length && performance.now() - t0 < 3) Q.shift()(); }
+
+
+
+function roomArtTasks(r) {
+  const T = [], z = r.zone;
+  for (const d of (r.decor || [])) {
+    const dz = d.zone != null ? d.zone : z;
+    switch (d.kind) {
+      case "statue": T.push(() => statueArt(d.type, d.seed, dz)); break;
+      case "bigstatue": T.push(() => bigStatueArt(d.type, d.seed, dz)); break;
+      case "tree": T.push(() => treeArt(d.type, d.seed, dz)); break;
+      case "ftree": T.push(() => tintTree(d.type, d.seed, dz, "f")); break;
+      case "btree": T.push(() => tintTree(d.type, d.seed, dz, "b")); break;
+      case "fountain": T.push(() => fountainArt(d.seed, dz)); break;
+      case "wallfx": T.push(() => wallFxArt(d.type, d.seed, dz)); break;
+      case "smallshroom": T.push(() => smallShroomArt(d.type, d.seed, dz)); break;
+      case "weed": T.push(() => weedArt(d.h, d.seed)); break;
+      case "houseback": T.push(() => houseBack(d.seed, dz)); break;
+      case "housefront": T.push(() => houseFront(d.seed, d.side, false, dz), () => houseFront(d.seed, d.side, true, dz)); break;
+      case "chapelback": T.push(() => chapelBack(d.seed, d.side, d.pal)); break;
+      case "chapelfront": T.push(() => chapelFront(d.seed, d.side, d.pal, dz)); break;
+      case "cellback": T.push(() => cellBack(d.seed, d.side)); break;
+      case "cellfront": T.push(() => cellFront(d.seed, d.side, false, dz), () => cellFront(d.seed, d.side, true, dz)); break;
+      case "orchut": T.push(() => orcHutArt(d.seed)); break;
+      case "orcbanner": T.push(() => orcBannerArt(d.seed)); break;
+      case "orcdrum": T.push(() => orcDrumArt(d.seed)); break;
+      case "palisade": T.push(() => palisadeArt(d.seed)); break;
+      case "totem": T.push(() => totemArt(d.seed)); break;
+      case "lamppost": T.push(() => lampPostArt(d.seed)); break;
+      case "stall": T.push(() => stallArt(d.seed, dz)); break;
+      case "cottage": T.push(() => houseBack(d.seed, dz), () => houseFront(d.seed, d.side, false, dz)); break;
+    }
+  }
+  for (const it of world.items) if (it.kind === "bigshroom" && it.x >= r.tx * TS && it.x < (r.tx + r.tw) * TS && it.y >= r.ty * TS && it.y < (r.ty + r.th) * TS) T.push(() => bigShroomArt(it.type, it.seed, false), () => bigShroomArt(it.type, it.seed, true));
+  return T;
+}
+
+function queueNeighbourBakes(r) {
+  const Q = (G.bakeQ = G.bakeQ || []), seen = (G.bakedR = G.bakedR || {}), rooms = [r];
+  for (const [cx, cy, t] of mapLinks()) { const a = world.roomOf[cy * GW + cx], b = t === "h" ? world.roomOf[cy * GW + cx + 1] : world.roomOf[(cy + 1) * GW + cx]; if (a === r.id && b != null && b >= 0) rooms.push(world.rooms[b]); else if (b === r.id && a != null && a >= 0) rooms.push(world.rooms[a]); }
+  for (const q of rooms) { if (seen[q.id]) continue; seen[q.id] = true; for (const f of roomArtTasks(q)) Q.unshift(f); }
+}
+
+
+
+function itemGrid(items) {
+  const M = new Map(), key = (x, y) => (x >> 5) + "," + (y >> 5), g = { add(i) { const k = key(i.x | 0, i.y | 0); (M.get(k) || (M.set(k, []), M.get(k))).push(i); }, near(x, y, rx, ry) { for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = M.get(((x >> 5) + a) + "," + ((y >> 5) + b)); if (l) for (const i of l) if (Math.abs(i.x - x) < rx && Math.abs(i.y - y) < ry) return true; } return false; } };
+  for (const i of items) if (i.x != null) g.add(i); return g;
+}
+
 
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
