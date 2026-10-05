@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.63">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.63">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.64">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.64">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.63</title>
+<title>Black Tiger: The Depths v0.64</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.63";   // bump by 0.01 with every change
+const VERSION = "0.64";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -859,7 +859,7 @@ function generateWorld(seed) {
     const px = d.pts ? d.pts[0][0] : d.x, py = d.pts ? d.pts[0][1] : d.y, rr = rooms[roomOf[Math.floor(py / (CH * TS)) * GW + Math.floor(px / (CW * TS))]]; if (rr && !(rr.id === 0 && d.kind !== "torch")) rr.decor.push(d);   // the first room keeps only its torches
   }
   const st = rooms[0];
-  return { seed, tiles: T, roomOf, rooms, items, spawns, traps, decor, start: { x: (st.tx + st.tw / 2) * TS - 16, y: (st.ty + st.th - 1) * TS - 32 } };
+  return { seed, tiles: T, roomOf, rooms, items, spawns, traps, decor, start: (() => { const sh = items.find(i => i.kind === "shrine" && i.id === 52), fy = (st.ty + st.th - 1) * TS - 32; if (!sh) return { x: (st.tx + st.tw / 2) * TS - 16, y: fy }; let x = sh.x + 30; if (get(Math.floor((x + 16) / TS) + 1, st.ty + st.th - 2) !== EMPTY || x > (st.tx + st.tw - 3) * TS) x = sh.x - 30; return { x, y: fy }; })() };
 }
 
 /* ======================================================================
