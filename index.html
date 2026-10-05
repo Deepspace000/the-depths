@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.32">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.32">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.33">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.33">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.32</title>
+<title>Black Tiger: The Depths v0.33</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -62,6 +62,10 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 #crt.on #crtfx{display:block}
 #crt.on #screen{filter:contrast(1.1) saturate(1.15) brightness(1.08) blur(.45px)}
 @keyframes crtflick{0%,100%{opacity:1}48%{opacity:.96}52%{opacity:1}}
+#touch .mid{flex-direction:column;gap:6px}
+html,body{overflow-x:hidden}
+@media (max-width:520px){#touch{gap:6px;padding:0 6px}#touch .pad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,40px);gap:3px}#touch button.big{width:56px;height:56px;font-size:13px}#touch .act-row{gap:6px}#touch .act{gap:8px}#touch .mapbtn{padding:4px 12px;font-size:13px}}
+@media (max-width:344px){#touch .pad{grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,36px)}#touch button.big{width:50px;height:50px;font-size:12px}#touch .mapbtn{padding:4px 8px;font-size:12px}}
 [hidden]{display:none !important}
 </style>
 </head>
@@ -138,7 +142,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.32";   // bump by 0.01 with every change
+const VERSION = "0.33";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
