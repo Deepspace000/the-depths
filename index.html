@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.77">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.77">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.78">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.78">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.77</title>
+<title>Black Tiger: The Depths v0.78</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -159,7 +159,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.77";   // bump by 0.01 with every change
+const VERSION = "0.78";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3945,7 +3945,7 @@ function drawTown(d, cx, cy, lights) {
 function drawVillager(it, cx, cy, zone) {
   const f = ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3], im = Art.obj("frozen", f, 0, zone);
   ctx.drawImage(im.img, Math.round(it.x) - im.ox - cx, Math.round(it.y) - im.oy - cy);
-  if (it.say && it.sayT > 0) { const tx = Math.round(it.x - cx) + 16, ty = Math.round(it.y - cy) - 4, w = Math.min(VW - 8, it.say.length * 4 + 8); ctx.fillStyle = "rgba(10,8,6,.85)"; ctx.fillRect(Math.max(2, Math.min(VW - w - 2, tx - w / 2)), ty - 11, w, 11); ctx.fillStyle = "#ffe680"; ctx.font = "7px monospace"; ctx.textAlign = "center"; ctx.fillText(it.say, Math.max(2, Math.min(VW - w - 2, tx - w / 2)) + w / 2, ty - 3); }
+  if (it.say && it.sayT > 0) { ctx.font = "7px monospace"; ctx.textAlign = "center"; const maxW = Math.min(VW - 12, 120), words = it.say.split(" "), lines = []; let cur = ""; for (const w of words) { const test = cur ? cur + " " + w : w; if (cur && ctx.measureText(test).width > maxW) { lines.push(cur); cur = w; } else cur = test; } if (cur) lines.push(cur); const w = Math.min(VW - 6, Math.max(...lines.map(l => ctx.measureText(l).width)) + 8), h = lines.length * 9 + 4, tx = Math.round(it.x - cx) + 16, ty = Math.round(it.y - cy) - 4, bx = Math.max(2, Math.min(VW - w - 2, tx - w / 2)); ctx.fillStyle = "rgba(10,8,6,.85)"; ctx.fillRect(bx, ty - h, w, h); ctx.fillStyle = "#ffe680"; lines.forEach((l, i) => ctx.fillText(l, bx + w / 2, ty - h + 9 + i * 9 - 1)); }
 }
 
 function updateVillager(it, hb) {
@@ -4409,7 +4409,7 @@ function gateCheck() {
   if (!G.hero || G.mode !== "play") return; const h = G.hero; let allowed = 0; while (allowed <= 6 && bigKeyHeld(allowed)) allowed++;
   const zNow = Math.floor((h.y + 16) / (CH * TS * 3)); if (zNow <= allowed) return;
   const lim = (allowed + 1) * 3 * CH * TS; h.y = Math.min(h.y, lim - 52); h.vy = 0; h.climb = false; h.ground = true; h.x = h.x;
-  if (!G.gateMsgT || G.frame - G.gateMsgT > 150) { G.gateMsgT = G.frame; G.banner = "A red lock bars the way down. Find this level's big red key."; G.bannerT = 200; popup(h.x + 16, h.y - 6, "Locked"); }
+  if (!G.gateMsgT || G.frame - G.gateMsgT > 150) { G.gateMsgT = G.frame; G.banner = "You need the red key before going to the next level."; G.bannerT = 200; popup(h.x + 16, h.y - 6, "Locked"); }
 }
 
 
@@ -4460,6 +4460,15 @@ function drawUpSwing(h, cx, cy) {
   ctx.restore();
 }
 
+
+function drawBanner() {
+  const a = Math.min(1, G.bannerT / 30); ctx.save(); ctx.globalAlpha = a; ctx.font = VW < 256 ? "bold 8px monospace" : "bold 9px monospace"; ctx.textAlign = "center";
+  const maxW = VW - 18, words = String(G.banner || "").split(" "), lines = []; let cur = "";
+  for (const w of words) { const test = cur ? cur + " " + w : w; if (cur && ctx.measureText(test).width > maxW) { lines.push(cur); cur = w; } else cur = test; } if (cur) lines.push(cur);
+  const lh = 11, h = lines.length * lh + 9, y0 = 92;
+  ctx.fillStyle = "rgba(0,0,0,.72)"; ctx.fillRect(0, y0, VW, h); ctx.fillStyle = "#ffe680"; lines.forEach((l, i) => ctx.fillText(l, VW / 2, y0 + 12 + i * lh)); ctx.restore();
+}
+
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
 // ---- atmosphere drawing (all original art) ----
@@ -4506,7 +4515,7 @@ function drawHUD() {
     const x = hcx + i, y = hcy + j; if (x < 0 || y < 0 || x >= GW || y >= GH || !G.visited.has(y * GW + x)) continue;
     ctx.fillStyle = (i === 0 && j === 0 && (G.frame & 16)) ? "#fff" : ZONES[zoneOfCellY(y)].ledge; ctx.fillRect(mx + (i + 2) * 8, my + (j + 1) * 6, 7, 5);
   }
-  if (G.bannerT) { const a = Math.min(1, G.bannerT / 30); ctx.globalAlpha = a; ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(0, 92, VW, 24); ctx.fillStyle = "#ffe680"; ctx.textAlign = "center"; ctx.font = VW < 256 ? "bold 9px monospace" : "bold 11px monospace"; ctx.fillText(G.banner, VW / 2, 108); ctx.globalAlpha = 1; }
+  if (G.bannerT) drawBanner();
   if (G.mode === "dead" && G.dead < 70) { ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(0, 96, VW, 28); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 10px monospace"; ctx.fillText("Back to the last shrine…", VW / 2, 114); }
 }
 function drawDebug() {
