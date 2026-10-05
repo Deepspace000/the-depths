@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.91">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.91">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.92">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.92">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.91</title>
+<title>Black Tiger: The Depths v0.92</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.91";   // bump by 0.01 with every change
+const VERSION = "0.92";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4194,8 +4194,8 @@ function updateBoss(it, hb) {
   switch (it.state) {
     case "idle": it.dir = toHero; it.state = "walk"; it.t = 0; break;
     case "walk": { it.dir = toHero; if (dist > 34) it.fx += it.dir * sp; clampX(); touch();
-      if (!chief && dist < 70 && it.t > (phase2 ? 22 : 40) && Math.random() < 0.03) { it.state = "pwarn"; it.t = 0; it.dir = toHero; sfx("roar"); break; }
-      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; if (!chief && dist < 80 && r < 0.45) { it.state = "pwarn"; it.dir = toHero; sfx("roar"); break; } it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
+      if (!chief && dist < 80 && it.t > (phase2 ? 14 : 30) && Math.random() < 0.05) { it.state = "pwarn"; it.t = 0; it.dir = toHero; sfx("roar"); break; }
+      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; if (!chief && dist < 100 && r < 0.6) { it.state = "pwarn"; it.dir = toHero; sfx("roar"); break; } it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
     case "pwarn": if (it.t < 12) it.dir = toHero; if (it.t >= (phase2 ? 22 : 32)) { it.state = "punch"; it.t = 0; it.hitDone = false; sfx("slam"); } break;
     case "punch": { const pb = bossPunchBox(it); if (pb && !it.hitDone && !h.inv && G.mode === "play" && overlap(hb, pb)) { it.hitDone = true; hurtHero(it.dir); } touch(); if (it.t > 15) { it.state = "recover"; it.t = 0; } break; }
     case "telegraph": it.dir = toHero; if (it.t > 26) { it.state = "charge"; it.t = 0; it.cdir = toHero; sfx("roar"); } break;
