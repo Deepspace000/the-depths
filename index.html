@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.69">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.69">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.71">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.71">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.69</title>
+<title>Black Tiger: The Depths v0.71</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -65,7 +65,7 @@ kbd{font:12px var(--body);border:1px solid var(--line);border-bottom-width:2px;b
 #title{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:radial-gradient(ellipse at 50% 20%,#1a1228,#07050c 70%);font-family:ui-monospace,Menlo,Consolas,monospace;color:#e8dcc0;overflow:hidden;line-height:1.15}
 #title[hidden]{display:none}
 #titleArt{width:44%;height:auto;image-rendering:pixelated;margin-top:calc(var(--u,4px)*1.5);border-radius:calc(var(--u,4px)*1)}
-.tlogo{text-align:center;margin-top:calc(var(--u,4px)*1.5)}
+.tlogo{text-align:center;margin-top:calc(var(--u,4px)*1);width:92%}#titleLogo{width:100%;height:auto;filter:drop-shadow(0 calc(var(--u,4px)*.6) calc(var(--u,4px)*.8) rgba(0,0,0,.7))}
 .t1{font-size:calc(var(--u,4px)*9);font-weight:900;letter-spacing:calc(var(--u,4px)*.7);background:linear-gradient(#fff0b0,#e0a030 50%,#8a4a10);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 calc(var(--u,4px)*.5) 0 #3a0c06) drop-shadow(0 0 calc(var(--u,4px)*1.2) rgba(255,140,40,.35))}
 .t2{font-size:calc(var(--u,4px)*4.4);letter-spacing:calc(var(--u,4px)*2.2);color:#9ed0ff;text-shadow:0 0 calc(var(--u,4px)*1.2) #3a6aff}
 #titleMenu{display:flex;flex-direction:column;gap:calc(var(--u,4px)*.7);margin-top:calc(var(--u,4px)*2);width:74%;max-height:calc(var(--u,4px)*43);overflow:auto;scrollbar-width:thin}
@@ -104,7 +104,7 @@ html,body{overflow-x:hidden}
 <input type="file" id="fileIn" multiple hidden>
 
 <div id="stage" hidden>
-  <div id="crt" class="on"><canvas id="screen" width="256" height="224" tabindex="0" aria-label="Game screen"></canvas><div id="title" hidden><canvas id="titleArt" width="160" height="96"></canvas><div class="tlogo"><div class="t1">BLACK TIGER</div><div class="t2">THE DEPTHS</div></div><div id="titleMenu"></div><div id="titleSub"></div><div class="tfoot" id="titleFoot"></div></div><div id="crtfx"></div></div>
+  <div id="crt" class="on"><canvas id="screen" width="256" height="224" tabindex="0" aria-label="Game screen"></canvas><div id="title" hidden><canvas id="titleArt" width="160" height="96"></canvas><div class="tlogo"><canvas id="titleLogo" width="640" height="180"></canvas></div><div id="titleMenu"></div><div id="titleSub"></div><div class="tfoot" id="titleFoot"></div></div><div id="crtfx"></div></div>
   <div id="touch" aria-label="Touch controls">
     <div class="pad">
       <span></span><button data-k="up" aria-label="Up">▲</button><span></span>
@@ -159,7 +159,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.69";   // bump by 0.01 with every change
+const VERSION = "0.71";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4630,7 +4630,7 @@ function titleLaunch(fn, slot) {
   fit(true); titleHide(); scr.focus(); if (!running) { running = true; last = performance.now(); acc = 0; requestAnimationFrame(loop); }
 }
 function titleHide() { window.__titleOpen = false; $("title").hidden = true; TITLE.fromGame = false; try { clearPressed(); } catch (e) {} if (typeof G !== "undefined" && G) for (const k in keys) keys[k] = false; try { scr.focus(); } catch (e) {} }
-function titleShow(fromGame) { TITLE.fromGame = !!fromGame; TITLE.view = "main"; TITLE.sel = 0; TITLE.quit = false; window.__titleOpen = true; if (fromGame) { try { save(); } catch (e) {} } $("title").hidden = false; titleSize(); titleRender(); titleArtStart(); }
+function titleShow(fromGame) { TITLE.fromGame = !!fromGame; TITLE.view = "main"; TITLE.sel = 0; TITLE.quit = false; window.__titleOpen = true; if (fromGame) { try { save(); } catch (e) {} } $("title").hidden = false; titleSize(); titleLogoDraw(); titleRender(); titleArtStart(); }
 function titleBegin() {
   const q = new URLSearchParams(location.search); if (q.has("seed") || q.has("x") || q.has("notitle")) return false;
   migrateSaves(); $("load").hidden = true; $("stage").hidden = false; $("status").textContent = Art.mode === "rom" ? "Using graphics from your Black Tiger files." : "Using placeholder art."; fit(true); applySettings(); titleShow(false); return true;
@@ -4666,6 +4666,51 @@ addEventListener("keydown", titleKeys, true);
 addEventListener("pointerdown", () => auStart(), { passive: true }); addEventListener("keydown", () => auStart(), { passive: true });
 (function () { let held = {}; function poll() { if (window.__titleOpen) { const gp = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(g => g && g.connected); if (gp) { const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ay = gp.axes[1] || 0, ax = gp.axes[0] || 0, st = { up: b(12) || ay < -0.5, down: b(13) || ay > 0.5, left: b(14) || ax < -0.5, right: b(15) || ax > 0.5, ok: b(0) || b(9), back: b(1) }; for (const k in st) { if (st[k] && !held[k]) titleKeys({ key: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", ok: "Enter", back: "Escape" }[k], target: {}, preventDefault() {}, stopPropagation() {} }); held[k] = st[k]; } } } requestAnimationFrame(poll); } requestAnimationFrame(poll); })();
 document.addEventListener("DOMContentLoaded", () => { const mb = $("menuBtn"); if (mb) mb.addEventListener("click", () => { if (typeof G !== "undefined" && G) titleShow(true); }); const cb = $("crtBtn"); if (cb) cb.addEventListener("click", e => { e.stopImmediatePropagation(); const s = titleSettings(); s.crtType = (s.crtType || "arcade") === "off" ? "arcade" : "off"; titleSave(s); applyCRT(); }, true); applySettings(); });
+// ---- the logo: angular brush-stroke lettering, a red sun, and a tiger seal ----
+const BRUSH = {
+  B: [[[0, 0], [0, 6]], [[0, 0], [3, 0], [4, 1], [3, 3], [0, 3]], [[0, 3], [3, 3], [4, 4.5], [3, 6], [0, 6]]], L: [[[0, 0], [0, 6], [4, 6]]], A: [[[0, 6], [2, 0], [4, 6]], [[1, 4], [3, 4]]],
+  C: [[[4, 0.5], [1, 0], [0, 1], [0, 5], [1, 6], [4, 5.5]]], K: [[[0, 0], [0, 6]], [[4, 0], [0, 3.5]], [[1.5, 2.6], [4, 6]]], T: [[[0, 0], [4, 0]], [[2, 0], [2, 6]]],
+  I: [[[2, 0], [2, 6]], [[1, 0], [3, 0]], [[1, 6], [3, 6]]], G: [[[4, 1], [3, 0], [1, 0], [0, 1], [0, 5], [1, 6], [3, 6], [4, 5], [4, 3], [2, 3]]], E: [[[4, 0], [0, 0], [0, 6], [4, 6]], [[0, 3], [3, 3]]],
+  R: [[[0, 0], [0, 6]], [[0, 0], [3, 0], [4, 1], [3, 3], [0, 3]], [[1.8, 3], [4, 6]]], H: [[[0, 0], [0, 6]], [[4, 0], [4, 6]], [[0, 3], [4, 3]]], D: [[[0, 0], [0, 6]], [[0, 0], [3, 0], [4, 2], [4, 4], [3, 6], [0, 6]]],
+  P: [[[0, 0], [0, 6]], [[0, 0], [3, 0], [4, 1], [3, 3], [0, 3]]], S: [[[4, 0.5], [1, 0], [0, 1.5], [1, 3], [3, 3.2], [4, 4.5], [3, 6], [0, 5.5]]]
+};
+function brushWord(g, word, x0, y0, size, gap, pal, seed) {
+  let s = seed | 0; const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  let x = x0; const W = size * 0.66;
+  for (const ch of word) {
+    if (ch === " ") { x += W * 0.9; continue; } const L = BRUSH[ch]; if (!L) continue;
+    for (const pass of [0, 1, 2]) for (const st of L) {
+      for (let i = 0; i < st.length - 1; i++) {
+        const [ax, ay] = st[i], [bx, by] = st[i + 1], n = Math.max(6, Math.round(Math.hypot(bx - ax, by - ay) * 5));
+        for (let k = 0; k <= n; k++) {
+          const t = k / n, px = x + (ax + (bx - ax) * t) * W / 4, py = y0 + (ay + (by - ay) * t) * size / 6, along = (i + t) / (st.length - 1), wdt = size * (0.15 - along * 0.05) + (i === 0 && t < 0.25 ? size * 0.06 * (1 - t * 4) : 0);
+          if (pass === 0) { g.fillStyle = pal.edge; g.beginPath(); g.arc(px, py, wdt * 0.5 + size * 0.045, 0, 6.3); g.fill(); }
+          else if (pass === 1) { g.fillStyle = pal.fill; g.beginPath(); g.arc(px, py, wdt * 0.5, 0, 6.3); g.fill(); }
+          else if (rnd() > 0.55) { g.fillStyle = pal.hi; g.fillRect(px - wdt * 0.3, py - wdt * 0.32, Math.max(1, wdt * 0.2), Math.max(1, wdt * 0.12)); }
+        }
+      }
+    }
+    x += W + gap;
+  }
+  return x;
+}
+function titleLogoDraw() {
+  const cv = $("titleLogo"); if (!cv || cv._done) return; cv._done = true; const g = cv.getContext("2d"), W = cv.width, H = cv.height; g.clearRect(0, 0, W, H);
+  // a red sun behind the lettering, with a rough brush edge
+  const sun = g.createRadialGradient(W * 0.5, H * 0.52, 8, W * 0.5, H * 0.52, H * 0.62); sun.addColorStop(0, "rgba(190,20,20,.55)"); sun.addColorStop(0.7, "rgba(150,10,10,.35)"); sun.addColorStop(1, "rgba(120,0,0,0)"); g.fillStyle = sun; g.beginPath(); g.ellipse(W * 0.5, H * 0.52, H * 0.78, H * 0.58, 0, 0, 6.3); g.fill();
+  const gold = g.createLinearGradient(0, 0, 0, H * 0.5); gold.addColorStop(0, "#fff2b8"); gold.addColorStop(0.55, "#e8a834"); gold.addColorStop(1, "#a85a12");
+  const sz = Math.min(H * 0.5, 0.84 * W / 8.73), gap = sz * 0.17, wordW = (w) => [...w].reduce((a, c) => a + (c === " " ? sz * 0.6 : sz * 0.66 + gap), 0) - gap;
+  const x1 = (W - wordW("BLACK TIGER")) / 2; brushWord(g, "BLACK TIGER", x1, H * 0.12, sz, gap, { edge: "#2a0606", fill: gold, hi: "rgba(255,250,210,.9)" }, 7);
+  const sz2 = H * 0.2, gap2 = sz2 * 0.55, w2 = [...("THE DEPTHS")].reduce((a, c) => a + (c === " " ? sz2 * 1.1 : sz2 * 0.66 + gap2), 0) - gap2;
+  brushWord(g, "THE DEPTHS", (W - w2) / 2, H * 0.68, sz2, gap2, { edge: "#06101e", fill: "#bfe4ff", hi: "#ffffff" }, 11);
+  // ink splashes
+  g.fillStyle = "rgba(20,0,0,.8)"; for (let i = 0; i < 26; i++) { const px = W * (0.05 + Math.random() * 0.9), py = H * (0.04 + Math.random() * 0.62); g.beginPath(); g.arc(px, py, 0.8 + Math.random() * 2.2, 0, 6.3); g.fill(); }
+  // the seal: a red square with the tiger kanji
+  const sx = W - 62, sy = H * 0.6, ss = 44; g.save(); g.translate(sx + ss / 2, sy + ss / 2); g.rotate(-0.07); g.fillStyle = "#b01818"; g.fillRect(-ss / 2, -ss / 2, ss, ss); g.strokeStyle = "#f0d8c0"; g.lineWidth = 2; g.strokeRect(-ss / 2 + 3, -ss / 2 + 3, ss - 6, ss - 6);
+  g.fillStyle = "#f6e6d0"; g.font = "bold " + Math.round(ss * 0.74) + "px 'Yu Mincho','Hiragino Mincho ProN','Noto Serif CJK JP','Noto Serif JP','MS Mincho','SimSun','Noto Sans CJK JP',serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("\u864E", 0, 2); g.restore();
+  // a vertical line of kanji on the left: kuro tora, "black tiger"
+  g.save(); g.fillStyle = "#e8d0b0"; g.shadowColor = "#000"; g.shadowBlur = 3; g.font = "bold 24px 'Yu Mincho','Hiragino Mincho ProN','Noto Serif CJK JP','Noto Serif JP','MS Mincho','SimSun','Noto Sans CJK JP',serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("\u9ED2", 38, H * 0.7); g.fillText("\u864E", 38, H * 0.7 + 26); g.restore();
+}
 
 function titleSize() { const w = $("screen").getBoundingClientRect().width || 400; $("title").style.setProperty("--u", (w / 100) + "px"); const f = $("titleFoot"); if (f && typeof VERSION !== "undefined") f.textContent = "v" + VERSION + "  ·  private fan project"; }
 addEventListener("resize", () => { if (window.__titleOpen) titleSize(); });
