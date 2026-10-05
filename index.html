@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.43">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.43">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.44">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.44">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.43</title>
+<title>Black Tiger: The Depths v0.44</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.43";   // bump by 0.01 with every change
+const VERSION = "0.44";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3962,20 +3962,21 @@ function buildTowns(rooms, items, spawns, traps, get, set, out, E, S, roomOf, ci
   const placeOn = (r, w, S2) => { const c = runs(r, w).filter(x => isFree(r, x, w) && !out.some(d => ["housefront", "chapelfront", "cellfront", "fountain", "bigstatue"].includes(d.kind) && d.x >= (x - 7) * TS && d.x < (x + w + 1) * TS && d.y >= (r.ty) * TS && d.y < (r.ty + r.th) * TS)); if (!c.length) return -1; const x = c[Math.floor(S2() * c.length)]; mark(r, x, w); return x; };
   const zRooms = z => rooms.filter(r => r.zone === z && r.id > 0 && !r.cave && !r.ruin && !r.flood);
   // orc towns on level 3
-  const oz = zRooms(2), seeds = []; for (let k = oz.length - 1; k > 0; k--) { const j = Math.floor(R0() * (k + 1)); [oz[k], oz[j]] = [oz[j], oz[k]]; }
-  for (const s of oz) { if (seeds.length >= 3) break; if (seeds.every(q => Math.abs(q.x - s.x) + Math.abs(q.y - s.y) > 8)) { const cl = townCluster(rooms, E, S, roomOf, ci, 2, 5, s, taken); if (cl.length >= 4) { seeds.push(s); cl.forEach(r => taken.add(r.id)); cl.forEach(r => r.town = "orc"); s.__cl = cl; } } }
+  const seeds = [];
+  for (const [oc, want] of [[2, 3], [6, 1]]) { const oz = zRooms(oc), mine = []; for (let k = oz.length - 1; k > 0; k--) { const j = Math.floor(R0() * (k + 1)); [oz[k], oz[j]] = [oz[j], oz[k]]; }
+    for (const s of oz) { if (mine.length >= want) break; if (mine.every(q => Math.abs(q.x - s.x) + Math.abs(q.y - s.y) > 8)) { const cl = townCluster(rooms, E, S, roomOf, ci, oc, 5, s, taken); if (cl.length >= 4) { mine.push(s); seeds.push(s); cl.forEach(r => taken.add(r.id)); cl.forEach(r => r.town = "orc"); s.__cl = cl; } } } }
   for (const s of seeds) for (const r of s.__cl) {
     const S2 = rng(r.id * 29 + 5), fl = r.ty + r.th - 1;
     clearRoom(r);
-    const hp = ENEMY_TYPES.orc.hp + 1, spots = []; for (let x = r.tx + 3; x < r.tx + r.tw - 4; x++) if (get(x, fl - 1) === EMPTY && get(x + 1, fl - 1) === EMPTY && get(x, fl - 2) === EMPTY && get(x + 1, fl - 2) === EMPTY && get(x, fl) === SOLID && get(x + 1, fl) === SOLID) spots.push(x);
-    for (let k = 0, n = 2 + Math.floor(S2() * 2); k < n && spots.length; k++) { const x = spots.splice(Math.floor(S2() * spots.length), 1)[0]; spawns.push({ room: r.id, type: "orc", x: x * TS, y: (fl - 2) * TS, hp }); }
+    const oz2 = r.zone, hp = ENEMY_TYPES.orc.hp + 1 + Math.floor(oz2 / 2), spots = []; for (let x = r.tx + 3; x < r.tx + r.tw - 4; x++) if (get(x, fl - 1) === EMPTY && get(x + 1, fl - 1) === EMPTY && get(x, fl - 2) === EMPTY && get(x + 1, fl - 2) === EMPTY && get(x, fl) === SOLID && get(x + 1, fl) === SOLID) spots.push(x);
+    for (let k = 0, n = 2 + Math.floor(S2() * 2) + (oz2 >= 6 ? 1 : 0); k < n && spots.length; k++) { const x = spots.splice(Math.floor(S2() * spots.length), 1)[0]; spawns.push({ room: r.id, type: "orc", x: x * TS, y: (fl - 2) * TS, hp }); }
     let x;
-    if ((x = placeOn(r, 4, S2)) >= 0) out.push({ kind: "orchut", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2, ww: 64 });
-    if ((x = placeOn(r, 2, S2)) >= 0) out.push({ kind: "palisade", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
-    if ((x = placeOn(r, 1, S2)) >= 0) out.push({ kind: "totem", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
-    if ((x = placeOn(r, 2, S2)) >= 0 && S2() < 0.7) out.push({ kind: "orcdrum", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
-    if ((x = placeOn(r, 2, S2)) >= 0 && S2() < 0.6) out.push({ kind: "campfire", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: 2, heal: 0 });
-    for (let k = 0; k < 2; k++) out.push({ kind: "orcbanner", x: (r.tx + 3 + Math.floor(S2() * (r.tw - 8))) * TS, y: (r.ty + 1) * TS, seed: Math.floor(S2() * 999), zone: 2 });
+    if ((x = placeOn(r, 4, S2)) >= 0) out.push({ kind: "orchut", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: oz2, ww: 64 });
+    if ((x = placeOn(r, 2, S2)) >= 0) out.push({ kind: "palisade", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: oz2 });
+    if ((x = placeOn(r, 1, S2)) >= 0) out.push({ kind: "totem", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: oz2 });
+    if ((x = placeOn(r, 2, S2)) >= 0 && S2() < 0.7) out.push({ kind: "orcdrum", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: oz2 });
+    if ((x = placeOn(r, 2, S2)) >= 0 && S2() < 0.6) out.push({ kind: "campfire", x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S2() * 999), zone: oz2, heal: 0 });
+    for (let k = 0; k < 2; k++) out.push({ kind: "orcbanner", x: (r.tx + 3 + Math.floor(S2() * (r.tw - 8))) * TS, y: (r.ty + 1) * TS, seed: Math.floor(S2() * 999), zone: oz2 });
     if (S2() < 0.45 && (x = placeOn(r, 2, S2)) >= 0) items.push({ id: r.id * 100 + 29, kind: "chest", x: x * TS, y: (fl - 2) * TS });
   }
   // a friendly town on level 5
@@ -3998,6 +3999,7 @@ function buildTowns(rooms, items, spawns, traps, get, set, out, E, S, roomOf, ci
     });
   }
 }
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
