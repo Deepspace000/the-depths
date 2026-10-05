@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.44">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.44">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.45">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.45">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.44</title>
+<title>Black Tiger: The Depths v0.45</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.44";   // bump by 0.01 with every change
+const VERSION = "0.45";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -751,6 +751,7 @@ function generateWorld(seed) {
   placeHiddenKeys(rooms, items, get, set, chainCell, standSpots, ruinDecor);
   buildFungus(rooms, items, get, ruinDecor);
   buildTowns(rooms, items, spawns, traps, get, set, ruinDecor, E, S, roomOf, ci, standSpots);
+  buildBosses(rooms, items, spawns, get, ruinDecor);
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
   const decor = [...ruinDecor];
   for (const r of rooms) {
@@ -1090,6 +1091,7 @@ function updateItems() {
     if (it.kind === "prisoner") { updatePrisoner(it); continue; }
     if (it.kind === "bigshroom") { updateBigShroom(it, hb); continue; }
     if (it.kind === "villager") { updateVillager(it, hb); continue; }
+    if (it.kind === "boss") { updateBoss(it, hb); continue; }
     if (it.kind === "fountain") { updateFountain(it, hb); continue; }
     if (!overlap(hb, box)) continue;
     if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; popup(it.x + 8, it.y, "+" + it.value); }
@@ -1449,6 +1451,7 @@ function draw() {
     if (it.kind === "prisoner") { put(Art.obj("frozen", ["man0", "man1", "man2", "man1"][(G.frame >> 4) & 3], 0, zone), it.x, it.y); continue; }
     if (it.kind === "bigshroom") { drawBigShroom(it, cx, cy); continue; }
     if (it.kind === "villager") { drawVillager(it, cx, cy, zone); continue; }
+    if (it.kind === "boss") { drawBoss(it, cx, cy); continue; }
     if (it.kind === "house" || it.kind === "fountain") continue;
     if (it.kind === "treasure") { put(Art.obj(it.art, "idle", 0, zone), it.x, it.y); continue; }
     const bob = it.kind === "coin" && !it.falling ? Math.round(Math.sin((G.frame + it.x) / 12) * 1.5) : 0;
@@ -3810,13 +3813,14 @@ function drawMap() {
     else if (it.kind === "shop") dot(it.x, it.y, "#ffd24a", 2);
     else if (it.kind === "house" && it.cell && !it.open) dot(it.px, it.py, "#6ab4ff", 2);
     else if (it.kind === "fountain") dot(it.x, it.y, "#8aeaff", 2);
+    else if (it.kind === "boss" && !it.gone) dot(it.fx, it.fy - 10, it.kind2 === "chief" ? "#ffa030" : "#ff2020", it.kind2 === "chief" ? 2 : 3);
   }
   for (const r of world.rooms) for (const d of (r.decor || [])) { if (d.kind === "chapelfront") dot(d.x, d.y + 40, "#e090ff", 2); }
   for (const r of world.rooms) if (r.town) { let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (seenCell(r.x + i, r.y + j)) seen = true; if (seen) dot((r.x + r.w / 2) * CW * TS, (r.y + r.h / 2) * CH * TS, r.town === "orc" ? "#ff7a3a" : "#6aff8a", 3); }
   const hx = ox + (h.x + 16) / (CW * TS) * s, hy = oy + (h.y + 16) / (CH * TS) * sy;
   ctx.fillStyle = (G.frame & 16) ? "#fff" : "#ff5030"; ctx.fillRect(Math.round(hx) - 1, Math.round(hy) - 1, 3, 3);
   // legend
-  ctx.textAlign = "left"; ctx.font = "7px monospace"; let lx = 4; const leg = [["#ff5a5a", "shrine"], ["#ffd24a", "shop"], ["#6ab4ff", "cell"], ["#8aeaff", "fountain"], ["#e090ff", "chapel"], ["#3a8ad0", "flooded"], ["#ff7a3a", "orcs"], ["#6aff8a", "town"]];
+  ctx.textAlign = "left"; ctx.font = "7px monospace"; let lx = 4; const leg = [["#ff5a5a", "shrine"], ["#ffd24a", "shop"], ["#6ab4ff", "cell"], ["#8aeaff", "fountain"], ["#e090ff", "chapel"], ["#3a8ad0", "flooded"], ["#ff7a3a", "orcs"], ["#6aff8a", "town"], ["#ff2020", "boss"]];
   for (const [c, t] of leg) { ctx.fillStyle = c; ctx.fillRect(lx, 199, 4, 4); ctx.fillStyle = "#aab"; ctx.fillText(t, lx + 6, 204); lx += 9 + t.length * 4.2; }
   ctx.fillStyle = "#fff"; ctx.fillRect(4, 208, 3, 3); ctx.fillStyle = "#aab"; ctx.fillText("white = door or chain path   dim = not yet visited", 10, 212);
   ctx.textAlign = "center"; ctx.fillText("Press M to close", VW / 2, 222);
@@ -3964,7 +3968,7 @@ function buildTowns(rooms, items, spawns, traps, get, set, out, E, S, roomOf, ci
   // orc towns on level 3
   const seeds = [];
   for (const [oc, want] of [[2, 3], [6, 1]]) { const oz = zRooms(oc), mine = []; for (let k = oz.length - 1; k > 0; k--) { const j = Math.floor(R0() * (k + 1)); [oz[k], oz[j]] = [oz[j], oz[k]]; }
-    for (const s of oz) { if (mine.length >= want) break; if (mine.every(q => Math.abs(q.x - s.x) + Math.abs(q.y - s.y) > 8)) { const cl = townCluster(rooms, E, S, roomOf, ci, oc, 5, s, taken); if (cl.length >= 4) { mine.push(s); seeds.push(s); cl.forEach(r => taken.add(r.id)); cl.forEach(r => r.town = "orc"); s.__cl = cl; } } } }
+    for (const s of oz) { if (mine.length >= want) break; if (mine.every(q => Math.abs(q.x - s.x) + Math.abs(q.y - s.y) > 8)) { const cl = townCluster(rooms, E, S, roomOf, ci, oc, 5, s, taken); if (cl.length >= 4) { mine.push(s); seeds.push(s); cl.forEach(r => taken.add(r.id)); cl.forEach(r => { r.town = "orc"; r.townId = s.id; }); s.__cl = cl; } } } }
   for (const s of seeds) for (const r of s.__cl) {
     const S2 = rng(r.id * 29 + 5), fl = r.ty + r.th - 1;
     clearRoom(r);
@@ -3998,6 +4002,129 @@ function buildTowns(rooms, items, spawns, traps, get, set, out, E, S, roomOf, ci
       for (let k = 0, n = 1 + (r.w > 1 ? 1 : 0); k < n; k++) if ((x = placeOn(r, 2, S2)) >= 0) items.push({ id: r.id * 100 + 31 + k, kind: "villager", x: x * TS, y: (fl - 2) * TS, homeX: x * TS, dir: S2() < 0.5 ? 1 : -1, zone: 4 });
     });
   }
+}
+
+
+
+
+
+function bossName(it) { return it.kind2 === "chief" ? ["Grub the Chieftain", "Gorash Skullsplitter", "Urgan Bloodtusk", "Mogdar Ironjaw"][it.zone % 4] : ["Stone Warden", "Moss Colossus", "Sandstone Titan", "Drowned Knight", "Iron Juggernaut", "Crystal Wraith", "Magma Titan", "The Core Sentinel"][it.zone % 8]; }
+
+function bossGlow(z) { return ["#ff8030", "#90ff60", "#ffd060", "#60c0ff", "#ff6040", "#c080ff", "#ff4a20", "#40ffd0"][z % 8]; }
+
+function bossArt(kind, zone, pose, flash) {
+  return baked("boss" + kind + zone + pose + (flash ? "f" : ""), 64, 76, (R, g) => {
+    const o = "#0c0a08";
+    if (kind === "guardian") {
+      const T = stoneTone(zone), st = T[0], lt = T[1], dk = T[2], gl = bossGlow(zone), lean = pose === "charge" ? 5 : 0, up = pose === "windup", slam = pose === "slam";
+      const blk = (x, y, w, h) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x, y, w, 2, lt); R(x, y, 3, h, lt); R(x + w - 4, y + 2, 4, h - 2, dk); R(x - 1, y - 1, 2, 2, "rgba(0,0,0,0)"); };
+      blk(14 + lean, 54, 14, 22); blk(36 + lean, 54, 14, 22); blk(12 + lean, 70, 18, 6); blk(34 + lean, 70, 18, 6);   // legs and feet
+      blk(14 + lean, 22, 36, 34);                                                                                     // torso
+      blk(6 + lean, 16, 14, 12); blk(44 + lean, 16, 14, 12);                                                          // shoulders
+      if (up) { blk(4 + lean, 0, 10, 20); blk(50 + lean, 0, 10, 20); blk(2 + lean, 0, 14, 8); blk(48 + lean, 0, 14, 8); }
+      else if (slam) { blk(0, 40, 12, 30); blk(52, 40, 12, 30); blk(0, 62, 16, 12); blk(48, 62, 16, 12); }
+      else { blk(4 + lean - (pose === "charge" ? 6 : 0), 26, 10, 30); blk(50 + lean - (pose === "charge" ? 6 : 0), 26, 10, 30); blk(2 + lean, 52, 14, 10); blk(48 + lean, 52, 14, 10); }
+      blk(22 + lean, 6, 20, 18); R(25 + lean, 13, 5, 3, gl); R(35 + lean, 13, 5, 3, gl); R(26 + lean, 13, 2, 1, "#ffffff"); R(36 + lean, 13, 2, 1, "#ffffff"); R(24 + lean, 10, 16, 2, o);   // head and glowing eyes
+      R(30 + lean, 32, 5, 12, gl); R(26 + lean, 36, 13, 4, gl); R(31 + lean, 33, 3, 10, "#ffffff");                  // a glowing rune on the chest
+      if (zone === 5) { for (const [x, y] of [[8, 8], [14, 4], [46, 6], [52, 10]]) { R(x + lean, y, 3, 10, o); R(x + lean + 1, y + 1, 1, 8, gl); } }
+      if (zone === 6) { for (let k = 0; k < 7; k++) R(16 + k * 4 + lean, 24 + (k % 3) * 8, 1, 6, gl); }
+      if (zone === 1) { for (let k = 0; k < 14; k++) R(8 + (k * 11) % 48 + lean, 18 + (k * 7) % 50, 3, 1, "#4a8a38"); }
+      if (zone === 3) { for (let k = 0; k < 5; k++) { R(16 + k * 8 + lean, 50, 1, 4 + (k % 3), "rgba(120,190,255,.7)"); } }
+      for (let k = 0; k < 5; k++) { const cx = 14 + (k * 9) % 36, cy = 26 + (k * 13) % 28; R(cx + lean, cy, 1, 6, o); R(cx + lean + 1, cy + 5, 1, 3, o); }
+    } else {
+      const sk = ["#1c3a14", "#2e5a22", "#4a8a34", "#78b850"], lea = ["#2a1a0e", "#4a3220", "#6a4a2e"], lean = pose === "charge" ? 4 : 0;
+      R(14 + lean, 50, 8, 22, o); R(15 + lean, 51, 6, 20, sk[1]); R(26 + lean, 50, 8, 22, o); R(27 + lean, 51, 6, 20, sk[1]); R(12 + lean, 68, 11, 6, o); R(13 + lean, 69, 9, 4, lea[1]); R(25 + lean, 68, 11, 6, o); R(26 + lean, 69, 9, 4, lea[1]);
+      R(10 + lean, 24, 28, 28, o); R(11 + lean, 25, 26, 26, sk[1]); R(11 + lean, 25, 4, 26, sk[2]); R(33 + lean, 26, 4, 25, sk[0]);
+      R(11 + lean, 32, 26, 16, lea[1]); R(11 + lean, 32, 26, 2, lea[2]); R(11 + lean, 44, 26, 4, lea[0]); R(22 + lean, 34, 4, 12, "#c8bca0");         // leather harness and a bone buckle
+      R(4 + lean, 22, 10, 10, o); R(5 + lean, 23, 8, 8, "#5a5a66"); R(34 + lean, 22, 10, 10, o); R(35 + lean, 23, 8, 8, "#5a5a66");                  // iron pauldrons
+      R(14 + lean, 8, 20, 18, o); R(15 + lean, 9, 18, 16, sk[2]); R(15 + lean, 9, 5, 16, sk[3]); R(18 + lean, 15, 4, 3, "#ff3020"); R(26 + lean, 15, 4, 3, "#ff3020"); R(18 + lean, 22, 3, 6, "#e8e0c8"); R(27 + lean, 22, 3, 6, "#e8e0c8");
+      R(13 + lean, 6, 22, 6, o); R(14 + lean, 7, 20, 4, "#5a5a66"); R(10 + lean, 2, 4, 8, "#e8e0c8"); R(34 + lean, 2, 4, 8, "#e8e0c8"); R(9 + lean, 0, 3, 4, "#e8e0c8"); R(36 + lean, 0, 3, 4, "#e8e0c8");  // horned helm
+      R(16 + lean, 19, 3, 2, "#c02018"); R(29 + lean, 19, 3, 2, "#c02018");
+      const armUp = pose === "windup", swing = pose === "slam";
+      if (armUp) { R(36 + lean, 4, 4, 28, "#6a4a2e"); R(30 + lean, 0, 16, 10, o); R(31 + lean, 1, 14, 8, "#9a9aa8"); R(31 + lean, 1, 14, 2, "#d8d8e8"); R(40 + lean, 20, 8, 8, sk[2]); }
+      else if (swing) { R(40 + lean, 34, 22, 4, "#6a4a2e"); R(52 + lean, 26, 12, 20, o); R(53 + lean, 27, 10, 18, "#9a9aa8"); R(53 + lean, 27, 3, 18, "#d8d8e8"); R(38 + lean, 30, 8, 8, sk[2]); }
+      else { R(38 + lean, 30, 4, 34, "#6a4a2e"); R(34 + lean, 58, 14, 12, o); R(35 + lean, 59, 12, 10, "#9a9aa8"); R(35 + lean, 59, 3, 10, "#d8d8e8"); R(38 + lean, 28, 8, 8, sk[2]); }
+      R(2 + lean, 30, 8, 18, sk[1]); R(2 + lean, 30, 2, 18, sk[2]);
+    }
+    if (flash) { g.globalCompositeOperation = "source-atop"; g.fillStyle = "rgba(255,255,255,.7)"; g.fillRect(0, 0, 64, 76); g.globalCompositeOperation = "source-over"; }
+  }, zone * 5 + (kind === "chief" ? 1 : 0));
+}
+
+function bossBox(it) { const bw = it.kind2 === "chief" ? 28 : 38, bh = it.kind2 === "chief" ? 46 : 58; return { x: it.fx - bw / 2, y: it.fy - bh, w: bw, h: bh }; }
+
+function drawBoss(it, cx, cy) {
+  if (it.dead && it.dieT > 50) return;
+  const pose = it.state === "windup" || it.state === "telegraph" ? "windup" : it.state === "slam" || it.state === "swing" ? "slam" : it.state === "charge" ? "charge" : "idle", flash = it.hurtT > 12 || (it.dead && (it.dieT >> 2) & 1);
+  const img = bossArt(it.kind2, it.zone, pose, flash), x = Math.round(it.fx - cx) - 32, y = Math.round(it.fy - cy) - 76 + 2, bob = it.state === "walk" ? ((G.frame >> 4) & 1) : 0;
+  ctx.save(); if (it.dir < 0) { ctx.translate(Math.round(it.fx - cx) * 2, 0); ctx.scale(-1, 1); }
+  ctx.globalAlpha = it.dead ? Math.max(0, 1 - it.dieT / 50) : 1; ctx.drawImage(img, x, y + bob); ctx.restore(); ctx.globalAlpha = 1;
+  for (const w of (it.waves || [])) { ctx.fillStyle = bossGlow(it.zone); ctx.fillRect(Math.round(w.x - cx) - 4, Math.round(it.fy - cy) - 8, 8, 8); ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.fillRect(Math.round(w.x - cx) - 2, Math.round(it.fy - cy) - 6, 4, 3); }
+  for (const o of (it.orbs || [])) { const gx = Math.round(o.x - cx), gy = Math.round(o.y - cy); ctx.fillStyle = bossGlow(it.zone); ctx.fillRect(gx - 3, gy - 3, 6, 6); ctx.fillStyle = "#ffffff"; ctx.fillRect(gx - 1, gy - 1, 2, 2); }
+}
+
+function updateBoss(it, hb) {
+  const h = G.hero, box = bossBox(it), chief = it.kind2 === "chief";
+  if (!it.init) { it.init = true; it.hp = it.maxHp; it.state = "idle"; it.t = 0; it.dir = -1; it.waves = []; it.orbs = []; it.hurtT = 0; it.seen = false; }
+  if (it.dead) { if (++it.dieT === 50) { bossLoot(it); it.gone = true; G.got.add(it.id); } return; }
+  if (!it.seen && Math.abs(h.x - it.fx) < 170 && Math.abs(h.y - it.fy) < 100) { it.seen = true; G.banner = bossName(it) + (chief ? " the orc chieftain" : " guards this level"); G.bannerT = 200; }
+  if (!it.seen) return;
+  const phase2 = it.hp <= it.maxHp / 2, sp = (chief ? 0.55 : 0.4) * (phase2 ? 1.5 : 1);
+  it.t++; if (it.hurtT > 0) it.hurtT--;
+  const fb = flailBox();
+  if (fb && !it.hurtT && overlap(fb, box) && it.lastSwing !== h.swing) { it.lastSwing = h.swing; it.hp -= strDamage(); it.hurtT = 20; burst(it.fx, it.fy - 30, "#ffd080"); it.fx = Math.max(it.ax0 + 24, Math.min(it.ax1 - 24, it.fx + h.dir * 3)); if (it.hp <= 0) { it.dead = true; it.dieT = 0; it.waves = []; it.orbs = []; G.banner = bossName(it) + " is defeated!"; G.bannerT = 220; return; } }
+  const toHero = h.x + 16 > it.fx ? 1 : -1, dist = Math.abs(h.x + 16 - it.fx);
+  const touch = () => { if (!h.inv && G.mode === "play" && overlap(hb, box)) hurtHero(toHero); };
+  const clampX = () => { it.fx = Math.max(it.ax0 + 24, Math.min(it.ax1 - 24, it.fx)); };
+  switch (it.state) {
+    case "idle": it.dir = toHero; it.state = "walk"; it.t = 0; break;
+    case "walk": { it.dir = toHero; if (dist > 34) it.fx += it.dir * sp; clampX(); touch();
+      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
+    case "telegraph": it.dir = toHero; if (it.t > 26) { it.state = "charge"; it.t = 0; it.cdir = toHero; } break;
+    case "charge": it.fx += it.cdir * (chief ? 2.4 : 2.2); clampX(); touch(); if (it.t > 55 || it.fx <= it.ax0 + 25 || it.fx >= it.ax1 - 25) { it.state = "recover"; it.t = 0; } break;
+    case "windup": if (it.t > 28) { it.state = "slam"; it.t = 0; if (chief) { const hit = { x: it.dir > 0 ? it.fx : it.fx - 52, y: it.fy - 44, w: 52, h: 44 }; if (!h.inv && overlap(hb, hit)) hurtHero(it.dir); } else { it.waves.push({ x: it.fx - 20, v: -1.9, t: 0 }, { x: it.fx + 20, v: 1.9, t: 0 }); if (phase2) it.waves.push({ x: it.fx - 20, v: -1.1, t: 0 }, { x: it.fx + 20, v: 1.1, t: 0 }); burst(it.fx, it.fy - 4, "#c8c0b0"); } } break;
+    case "slam": touch(); if (it.t > 22) { it.state = "recover"; it.t = 0; } break;
+    case "orbs": if (it.t === 20 || it.t === 34 || it.t === 48) { for (const a of [-0.25, 0, 0.25]) { const dx = h.x + 16 - it.fx, dy = h.y + 10 - (it.fy - 46), L = Math.hypot(dx, dy) || 1, ang = Math.atan2(dy, dx) + a; it.orbs.push({ x: it.fx, y: it.fy - 46, vx: Math.cos(ang) * 1.5, vy: Math.sin(ang) * 1.5, t: 0 }); } } if (it.t > 64) { it.state = "recover"; it.t = 0; } break;
+    case "recover": if (it.t > (phase2 ? 18 : 36)) { it.state = "walk"; it.t = 0; } break;
+  }
+  for (let i = it.waves.length - 1; i >= 0; i--) { const w = it.waves[i]; w.x += w.v; if (++w.t > 70 || w.x < it.ax0 || w.x > it.ax1) { it.waves.splice(i, 1); continue; } if (!h.inv && G.mode === "play" && h.ground && overlap(hb, { x: w.x - 4, y: it.fy - 8, w: 8, h: 8 })) hurtHero(w.v > 0 ? 1 : -1); }
+  for (let i = it.orbs.length - 1; i >= 0; i--) { const o = it.orbs[i]; o.x += o.vx; o.y += o.vy; if (++o.t > 150 || solid(Math.floor(o.x / TS), Math.floor(o.y / TS))) { it.orbs.splice(i, 1); continue; } if (!h.inv && G.mode === "play" && overlap(hb, { x: o.x - 3, y: o.y - 3, w: 6, h: 6 })) { hurtHero(o.vx > 0 ? 1 : -1); it.orbs.splice(i, 1); } }
+}
+
+function bossLoot(it) {
+  const at = { x: it.fx - 8, y: it.fy - 30 }, chief = it.kind2 === "chief";
+  drop(at, "coin", "coin1000", { value: chief ? 500 : 1000, src: "guardian" }); drop({ x: at.x + 14, y: at.y }, "coin", chief ? "coin500" : "coin1000", { value: chief ? 500 : 1000, src: "guardian" });
+  drop({ x: at.x - 14, y: at.y }, "key", "key"); drop({ x: at.x + 28, y: at.y }, "potion", "potion");
+  const sl = [["helm"], ["chest"], ["legs"], ["bracer"], ["ring", "m"], ["ring", "w"]][Math.floor(Math.random() * 6)], tr = Math.min(5, gearTier(it.zone) + (chief ? 0 : 1));
+  drop({ x: at.x, y: at.y - 10 }, "armour", "armour:" + sl[0] + ":" + tr + ":" + (sl[1] || "m"), { slot: sl[0], rk: sl[1] || "m", tier: tr });
+  for (let i = 0; i < 18; i++) G.particles.push({ x: it.fx, y: it.fy - 30, vx: (Math.random() - .5) * 4, vy: -Math.random() * 3.5, t: 40, color: bossGlow(it.zone) });
+}
+
+function drawBossBar() {
+  const r = G.room; if (!r || G.mode === "map") return;
+  for (const it of world.items) {
+    if (it.kind !== "boss" || it.gone || !it.seen || it.dead) continue; if (it.fx < r.tx * TS || it.fx > (r.tx + r.tw) * TS || it.fy < r.ty * TS || it.fy > (r.ty + r.th) * TS) continue;
+    const w = Math.min(VW - 40, 180), x = (VW - w) / 2, y = VH - 20, f = Math.max(0, it.hp) / it.maxHp;
+    ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(x - 3, y - 12, w + 6, 24); ctx.fillStyle = "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText(bossName(it), VW / 2, y - 3);
+    ctx.fillStyle = "#2a0c0c"; ctx.fillRect(x, y + 1, w, 7); ctx.fillStyle = f > 0.5 ? "#d03030" : "#ff7030"; ctx.fillRect(x, y + 1, Math.round(w * f), 7); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(x, y + 1, Math.round(w * f), 2); ctx.fillStyle = "#000"; for (let i = 1; i < 10; i++) ctx.fillRect(x + Math.round(w * i / 10), y + 1, 1, 7);
+  }
+}
+
+function buildBosses(rooms, items, spawns, get, out) {
+  const runOf = (r, rowsUp) => { const fl = r.ty + r.th - 1; let best = [0, 0, 0], run = 0, st = 0; for (let x = r.tx + 1; x < r.tx + r.tw - 1; x++) { let ok = get(x, fl) === SOLID; for (let y = fl - rowsUp; y <= fl - 1 && ok; y++) if (get(x, y) !== EMPTY) ok = false; if (ok) { if (!run) st = x; run++; if (run > best[0]) best = [run, st, x]; } else run = 0; } return best; };
+  const busy = r => out.some(d => ["housefront", "cellfront", "chapelfront", "fountain", "bigstatue", "cottage", "orchut"].includes(d.kind) && d.x >= r.tx * TS && d.x < (r.tx + r.tw) * TS && d.y >= r.ty * TS && d.y < (r.ty + r.th) * TS) || items.some(i => ["shop", "fountain", "house", "villager", "chest"].includes(i.kind) && i.x >= r.tx * TS && i.x < (r.tx + r.tw) * TS && (i.y || 0) >= r.ty * TS && (i.y || 0) < (r.ty + r.th) * TS);
+  const make = (r, zone, kind2, hp) => {
+    const run = runOf(r, 5); if (run[0] < 6) return false;
+    const fl = r.ty + r.th - 1, ax0 = run[1] * TS, ax1 = (run[2] + 1) * TS;
+    for (let i = spawns.length - 1; i >= 0; i--) if (spawns[i].room === r.id) spawns.splice(i, 1);
+    items.push({ id: r.id * 100 + (kind2 === "chief" ? 28 : 27), kind: "boss", kind2, zone, maxHp: hp, fx: (ax0 + ax1) / 2, fy: fl * TS, ax0, ax1, x: (ax0 + ax1) / 2 - 16, y: (fl - 2) * TS });
+    r.boss = kind2; return true;
+  };
+  for (let z = 0; z < 8; z++) {
+    const pool = rooms.filter(r => r.zone === z && r.id > 0 && !r.cave && !r.ruin && !r.flood && !r.town && !busy(r)).map(r => [r, runOf(r, 5)[0]]).filter(a => a[1] >= 6).sort((a, b) => b[1] - a[1] || a[0].id - b[0].id);
+    for (const [r] of pool) if (make(r, z, "guardian", 30 + 2 * z)) break;
+  }
+  const towns = {}; for (const r of rooms) if (r.town === "orc") (towns[r.townId] = towns[r.townId] || []).push(r);
+  for (const id in towns) { const pool = towns[id].map(r => [r, runOf(r, 5)[0]]).filter(a => a[1] >= 6).sort((a, b) => b[1] - a[1]); for (const [r] of pool) if (make(r, r.zone, "chief", 15 + r.zone)) break; }
 }
 
 
@@ -4052,6 +4179,7 @@ function drawHUD() {
   { const hw = 54, f = G.hunger / 100; ctx.fillStyle = "#000"; ctx.fillRect(16, 40, hw + 2, 6); ctx.fillStyle = "#3a2410"; ctx.fillRect(17, 41, hw, 4); ctx.fillStyle = f > 0.5 ? "#e0a030" : f > 0.25 ? "#e07020" : ((G.frame >> 4) & 1 ? "#e03020" : "#a02010"); ctx.fillRect(17, 41, Math.round(hw * f), 4); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(17, 41, Math.round(hw * f), 1); }
   ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(3, 50, 98, 20);
   { const z = G.room ? G.room.zone : 0; ctx.fillStyle = "#c8e0a0"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("PRISONERS " + prisonersFreed(z) + "/5", 6, 66); }
+  drawBossBar();
   { const s = gearStats(); if (s.str || s.def) { ctx.fillStyle = "#ff9a60"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("STR " + s.str, 6, 56); ctx.fillStyle = "#80c0ff"; ctx.fillText("DEF " + s.def, 36, 56); } }
   // minimap: 5 x 3 cells around the hero
   const hcx = Math.floor((h.x + 16) / (CW * TS)), hcy = Math.floor((h.y + 16) / (CH * TS)), mx = VW - 5 * 8 - 4, my = 4;
