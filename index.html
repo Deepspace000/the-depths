@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.33">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.33">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.34">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.34">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.33</title>
+<title>Black Tiger: The Depths v0.34</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.33";   // bump by 0.01 with every change
+const VERSION = "0.34";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -737,10 +737,13 @@ function generateWorld(seed) {
     }
   }
   for (let i = items.length - 1; i >= 0; i--) if (items[i].id < 100 && items[i].id !== 52) items.splice(i, 1);   // nothing in the first room but its shrine
-  { // the backpack lies in an early level-1 room, close to the entrance
-    let best = null, bd = 1e9; const c0x = rooms[0].x + 1, c0y = rooms[0].y;
-    for (const r of rooms) { if (r.id === 0 || r.zone !== 0 || r.cave) continue; const d = Math.abs(r.x + r.w / 2 - c0x) + Math.abs(r.y - c0y) * 2; if (d < bd) { const sp = standSpots(r); if (sp.length) { bd = d; best = [r, sp]; } } }
-    if (best) { const [r, sp] = best, fl = sp.filter(([x, y]) => y === r.ty + r.th - 2 && !items.some(i => Math.abs(i.x - x * TS) < 24 && Math.abs(i.y - y * TS) < 24)), [x, y] = fl.length ? fl[Math.floor(fl.length / 2)] : sp[0]; items.push({ id: r.id * 100 + 56, kind: "backpack", art: "backpack", x: x * TS, y: y * TS }); }
+  // one backpack on each level; each is two slots bigger than the one before, and each looks different
+  for (let z = 0; z < ZONES.length; z++) {
+    let best = null, bd = 1e9; const cx0 = GW >> 1, cy0 = z * 3;
+    for (const r of rooms) { if (r.id === 0 || r.zone !== z || r.cave || r.ruin) continue; const d = Math.abs(r.x + r.w / 2 - cx0) * 0.5 + Math.abs(r.y - cy0) * 2 + r.id * 0.0001; if (d < bd) { const sp = standSpots(r); if (sp.length) { bd = d; best = [r, sp]; } } }
+    if (!best) continue;
+    const [r, sp] = best, fl = sp.filter(([x, y]) => y === r.ty + r.th - 2 && !items.some(i => Math.abs(i.x - x * TS) < 24 && Math.abs(i.y - y * TS) < 24)), [x, y] = fl.length ? fl[Math.floor(fl.length / 2)] : sp[0];
+    items.push({ id: r.id * 100 + 56, kind: "backpack", tier: z, art: "backpack" + z, x: x * TS, y: y * TS });
   }
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
   const decor = [...ruinDecor];
@@ -872,10 +875,10 @@ function newGame(seed, saved) {
   G = {
     hero: { x: world.start.x, y: world.start.y, vx: 0, vy: 0, dir: -1, ground: true, climb: false, crouch: false, atk: 0, anim: 0, climbDist: 0, hp: CFG.maxHP, inv: 0, chainTop: 0, drop: 0 },
     zenny: 0, keys: 0, maxHP: CFG.maxHP, fires: [], traps: [], shots: [], confuse: 0, got: new Set(), visited: new Set(), shrine: { ...world.start }, room: null, enemies: [], popups: [], particles: [],
-    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
+    cam: { x: 0, y: 0 }, frame: 0, hunger: 100, hasPack: false, packTier: -1, packCap: 8, pack: [], packSel: 0, packMsg: "", wind: 0, pebbles: [], flies: [], bugs: [], windFx: [], mode: "play", banner: null, bannerT: 0, dead: 0, debug: false,
   };
   if (saved) {
-    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.hasPack = !!saved.hasPack; G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, 8) : []; G.maxHP = saved.maxHP || CFG.maxHP;
+    Object.assign(G.hero, { x: saved.x, y: saved.y, hp: saved.hp }); G.zenny = saved.zenny; G.keys = saved.keys || 0; G.hunger = saved.hunger == null ? 100 : saved.hunger; G.packTier = saved.packTier == null ? (saved.hasPack ? 0 : -1) : saved.packTier; G.hasPack = G.packTier >= 0; G.packCap = 8 + 2 * Math.max(0, G.packTier); G.pack = Array.isArray(saved.pack) ? saved.pack.slice(0, G.packCap) : []; G.maxHP = saved.maxHP || CFG.maxHP;
     G.got = new Set(saved.got); G.visited = new Set(saved.visited); G.shrine = saved.shrine;
   }
   if (saved && hitsSolid(G.hero, G.hero.x, G.hero.y)) {   // the world's layout changed since this save: start at the entrance
@@ -890,7 +893,7 @@ function newGame(seed, saved) {
 }
 function save() {
   const h = G.hero;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ seed: world.seed, x: G.shrine.x, y: G.shrine.y, hp: h.hp, zenny: G.zenny, hunger: Math.round(G.hunger), hasPack: G.hasPack, packTier: G.packTier, pack: G.pack, keys: G.keys, maxHP: G.maxHP, got: [...G.got], visited: [...G.visited], shrine: G.shrine })); } catch (e) {}
 }
 function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { return null; } }
 
@@ -1077,7 +1080,7 @@ function updateItems() {
     if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; popup(it.x + 8, it.y, "+" + it.value); }
     if (it.kind === "potion" || it.kind === "food") takeStorable(it);
     if (it.kind === "key") { it.gone = true; G.keys++; popup(it.x + 8, it.y, "Key"); }
-    if (it.kind === "backpack") { it.gone = true; G.got.add(it.id); G.hasPack = true; popup(it.x + 8, it.y, "Backpack!"); G.banner = "You found a backpack. Press I (or Pack) to open it. It holds 8 things."; G.bannerT = 260; }
+    if (it.kind === "backpack") equipPack(it);
     if (it.kind === "treasure") {
       it.gone = true;
       if (it.art === "berry") { G.zenny += 300; popup(it.x + 8, it.y, "+300"); }
@@ -1783,7 +1786,7 @@ function chickenArt() {
   g.fillStyle = "#2a1206"; for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (!solidAt(x, y) && (solidAt(x - 1, y) || solidAt(x + 1, y) || solidAt(x, y - 1) || solidAt(x, y + 1))) g.fillRect(x, y, 1, 1);
   gritCanvas(c, 77, 0.1, 0.08, 0.92); Art.cache.set("chicken2", c); return c;
 }
-const itemArt = name => name === "chicken" ? chickenArt() : name === "backpack" ? backpackArt() : Art.item(name);
+const itemArt = name => name === "chicken" ? chickenArt() : typeof name === "string" && name.indexOf("backpack") === 0 ? backpackArt(+name.slice(8) || 0) : Art.item(name);
 function updateHunger() {
   if (G.mode !== "play") return; const h = G.hero;
   G.hunger = Math.max(0, G.hunger - 100 / (CFG.hungerSeconds * 60));
@@ -2346,55 +2349,67 @@ function roseArt(seed, pal) {
 
 
 
-function backpackArt() {
-  return baked("backpackitem", 16, 16, (R) => {
-    const o = "#1c1008", d = "#4e2e14", m = "#7e5024", l = "#aa7438", h = "#d09c58", st = "#c8a850";
-    R(3, 2, 10, 2, o); R(4, 2, 8, 1, "#5a3c20");                                       // a rolled blanket on top
-    R(2, 4, 12, 11, o); R(3, 5, 10, 9, m); R(3, 5, 10, 1, l); R(3, 5, 2, 9, l); R(11, 5, 2, 9, d); R(3, 13, 10, 1, d);
-    R(4, 6, 8, 4, d); R(4, 6, 8, 1, m); R(7, 9, 2, 3, st); R(7, 9, 2, 1, "#f0dc88"); R(7, 11, 2, 1, "#7a5a18");     // the flap and its buckle
-    R(1, 7, 2, 7, o); R(2, 8, 1, 5, d); R(13, 7, 2, 7, o); R(13, 8, 1, 5, d);                                          // side pockets
-    R(5, 3, 1, 3, d); R(10, 3, 1, 3, d);
-    R(3, 14, 10, 1, o); for (let x = 4; x < 12; x += 2) R(x, 12, 1, 1, h);                                           // stitching
-  }, 5);
+function backpackArt(tier) {
+  tier = Math.max(0, Math.min(7, tier | 0)); const P = packPal(tier);
+  return baked("pack16_" + tier, 16, 16, (R) => {
+    const o = "#120a06";
+    switch (tier) {
+      case 0: R(3, 2, 10, 2, o); R(4, 2, 8, 1, "#5a3c20"); R(2, 4, 12, 11, o); R(3, 5, 10, 9, P.b); R(3, 5, 10, 1, P.l); R(3, 5, 2, 9, P.l); R(11, 5, 2, 9, P.d); R(4, 6, 8, 4, P.d); R(7, 9, 2, 3, P.t); R(7, 9, 2, 1, "#f0dc88"); R(1, 7, 2, 7, o); R(13, 7, 2, 7, o); break;
+      case 1: R(4, 1, 8, 2, o); R(5, 1, 6, 1, P.l); R(2, 3, 12, 12, o); R(3, 4, 10, 10, P.b); R(3, 4, 10, 1, P.l); R(3, 4, 2, 10, P.l); R(11, 4, 2, 10, P.d); R(5, 5, 6, 3, P.d); R(5, 5, 6, 1, P.l); R(6, 7, 4, 1, P.t); R(1, 8, 3, 6, o); R(2, 9, 1, 4, P.d); R(12, 8, 3, 6, o); R(13, 9, 1, 4, P.d); R(5, 10, 6, 3, P.d); R(6, 11, 4, 1, P.t); break;
+      case 2: R(2, 1, 12, 3, o); R(3, 1, 10, 2, "#8a8a98"); R(3, 1, 10, 1, "#b0b0c0"); R(4, 4, 8, 11, o); R(2, 4, 12, 11, o); R(3, 5, 10, 9, P.b); R(3, 5, 10, 1, P.l); R(3, 5, 2, 9, P.l); R(11, 5, 2, 9, P.d); R(5, 3, 1, 8, P.t); R(10, 3, 1, 8, P.t); R(5, 11, 6, 2, P.d); R(7, 10, 2, 2, "#d8c070"); break;
+      case 3: R(5, 0, 1, 4, "#c8c0a8"); R(7, 0, 1, 3, "#c8c0a8"); R(9, 0, 1, 4, "#c8c0a8"); R(4, 3, 8, 2, o); R(2, 4, 12, 11, o); R(3, 5, 10, 9, P.b); R(3, 5, 10, 1, P.l); R(3, 5, 2, 9, P.l); R(11, 5, 2, 9, P.d); R(4, 6, 8, 4, P.d); for (const x of [4, 6, 8, 10]) R(x, 6, 1, 1, P.t); for (const x of [4, 6, 8, 10]) R(x, 9, 1, 1, P.t); R(7, 11, 2, 2, P.t); R(1, 6, 2, 8, o); R(2, 7, 1, 6, P.a); break;
+      case 4: R(3, 2, 10, 2, o); R(4, 2, 8, 1, P.t); R(2, 4, 12, 11, o); R(3, 5, 10, 9, P.b); R(3, 5, 10, 1, P.l); R(3, 5, 2, 9, P.l); R(11, 5, 2, 9, P.d); R(3, 5, 10, 1, P.t); R(3, 13, 10, 1, P.t); R(6, 7, 4, 5, o); R(7, 7, 2, 4, P.t); R(7, 7, 2, 1, P.a); R(7, 10, 2, 1, "#a08030"); R(1, 7, 2, 7, o); R(2, 8, 1, 5, P.d); R(13, 7, 2, 7, o); R(13, 8, 1, 5, P.d); break;
+      case 5: R(4, 1, 8, 3, o); R(5, 1, 6, 2, P.l); R(2, 3, 12, 12, o); R(3, 4, 10, 10, P.b); R(3, 4, 10, 1, P.l); R(3, 4, 2, 10, P.l); R(11, 4, 2, 10, P.d); R(7, 6, 2, 2, P.t); R(7, 5, 2, 1, P.a); R(6, 7, 1, 1, P.a); R(9, 7, 1, 1, P.a); R(7, 8, 2, 1, P.a); R(4, 11, 8, 1, P.d); R(7, 12, 2, 2, P.t); R(1, 9, 2, 5, o); R(13, 9, 2, 5, o); break;
+      case 6: R(3, 1, 10, 3, o); R(4, 1, 8, 2, "#d8c8a0"); R(2, 4, 12, 11, o); R(3, 5, 10, 9, P.b); R(3, 5, 10, 1, P.l); R(3, 5, 2, 9, P.l); R(11, 5, 2, 9, P.d); R(4, 5, 1, 9, P.t); R(11, 5, 1, 9, P.t); R(6, 7, 4, 4, P.d); R(7, 8, 2, 2, P.a); R(12, 0, 1, 5, P.a); R(13, 1, 1, 3, P.a); break;
+      default: R(3, 1, 10, 3, o); R(4, 1, 8, 1, P.t); R(2, 3, 12, 12, o); R(3, 4, 10, 10, P.b); R(3, 4, 10, 1, P.l); R(3, 4, 2, 10, P.l); R(11, 4, 2, 10, P.d); R(3, 4, 10, 1, P.t); R(3, 13, 10, 1, P.t); R(3, 4, 1, 10, P.t); R(12, 4, 1, 10, P.t); R(6, 6, 4, 6, P.d); R(7, 7, 2, 4, P.a); R(7, 7, 2, 1, "#ffffff"); R(6, 8, 1, 2, P.t); R(9, 8, 1, 2, P.t); break;
+    }
+    R(3, 14, 10, 1, o);
+  }, 5 + tier * 3);
 }
 
-function wornPackArt(back) {
-  return baked("backpackworn" + (back ? "b" : "s"), 14, 16, (R) => {
-    const o = "#1c1008", d = "#4e2e14", m = "#7e5024", l = "#aa7438", st = "#c8a850";
-    R(2, 0, 10, 3, o); R(3, 0, 8, 2, "#5a3c20"); R(3, 0, 8, 1, "#7a5a38");
-    R(0, 2, 14, 14, o); R(1, 3, 12, 12, m); R(1, 3, 12, 1, l); R(1, 3, 2, 12, l); R(11, 3, 2, 12, d); R(1, 14, 12, 1, d);
-    R(3, 5, 8, 5, d); R(3, 5, 8, 1, m); R(6, 8, 2, 3, st); R(6, 8, 2, 1, "#f0dc88");
-    if (!back) { R(0, 6, 3, 8, o); R(1, 7, 1, 6, d); }
-  }, back ? 11 : 12);
+function wornPackArt(back, tier) {
+  tier = Math.max(0, Math.min(7, tier | 0)); const P = packPal(tier);
+  return baked("packworn_" + tier + (back ? "b" : "s"), 16, 18, (R) => {
+    const o = "#120a06", w = 12 + (tier >> 2) * 2, h = 13 + (tier >> 1 & 1) * 2, x0 = (16 - w) >> 1, y0 = 18 - h - 1;
+    R(x0, y0, w, h, o); R(x0 + 1, y0 + 1, w - 2, h - 2, P.b); R(x0 + 1, y0 + 1, w - 2, 1, P.l); R(x0 + 1, y0 + 1, 2, h - 2, P.l); R(x0 + w - 3, y0 + 1, 2, h - 2, P.d);
+    R(x0 + 2, y0 + 3, w - 4, 4, P.d); R(x0 + 2, y0 + 3, w - 4, 1, P.l); R(x0 + (w >> 1) - 1, y0 + 6, 2, 3, P.t); R(x0 + (w >> 1) - 1, y0 + 6, 2, 1, "#f4e8b0");
+    if (tier === 0 || tier === 2 || tier === 6) { R(x0 + 1, y0 - 2, w - 2, 3, o); R(x0 + 2, y0 - 2, w - 4, 2, tier === 2 ? "#8a8a98" : tier === 6 ? "#d8c8a0" : "#5a3c20"); }
+    if (tier === 3) { R(x0 + 2, y0 - 4, 1, 4, "#c8c0a8"); R(x0 + 4, y0 - 3, 1, 3, "#c8c0a8"); R(x0 + 6, y0 - 4, 1, 4, "#c8c0a8"); }
+    if (tier === 1 || tier === 5) { R(x0 + 2, y0 - 1, w - 4, 2, o); R(x0 + 3, y0 - 1, w - 6, 1, P.l); }
+    if (tier === 4 || tier === 7) { R(x0 + 1, y0 + 1, w - 2, 1, P.t); R(x0 + 1, y0 + h - 3, w - 2, 1, P.t); }
+    if (tier === 5) { R(x0 + (w >> 1), y0 + 9, 1, 1, P.a); R(x0 + (w >> 1) - 1, y0 + 10, 3, 1, P.a); }
+    if (tier === 7) { R(x0 + (w >> 1) - 1, y0 + 7, 2, 2, P.a); }
+    if (!back) { R(x0 - 2, y0 + 5, 3, h - 7, o); R(x0 - 1, y0 + 6, 1, h - 9, P.d); }
+  }, 11 + tier);
 }
 
 function drawWornPack(h, cx, cy) {
-  const dir = h.dir, climbing = h.climb, crouch = h.crouch, dy = crouch ? 10 : 6;
-  if (climbing) ctx.drawImage(wornPackArt(true), Math.round(h.x + 9 - cx), Math.round(h.y + 4 - cy));
-  else ctx.drawImage(wornPackArt(false), Math.round((dir > 0 ? h.x - 3 : h.x + 21) - cx), Math.round(h.y + dy - cy));
+  const t = G.packTier | 0, dir = h.dir, dy = h.crouch ? 8 : 4;
+  if (h.climb) ctx.drawImage(wornPackArt(true, t), Math.round(h.x + 8 - cx), Math.round(h.y + 2 - cy));
+  else ctx.drawImage(wornPackArt(false, t), Math.round((dir > 0 ? h.x - 4 : h.x + 20) - cx), Math.round(h.y + dy - cy));
 }
 
 function packLayout() {
-  const sw = 34, gap = 6, gw = 4 * sw + 3 * gap, x0 = Math.round((VW - gw) / 2), y0 = 64;
-  return { sw, gap, x0, y0, use: { x: Math.round(VW / 2) - 62, y: 172, w: 56, h: 16 }, close: { x: Math.round(VW / 2) + 6, y: 172, w: 56, h: 16 }, panel: { x: x0 - 12, y: 30, w: gw + 24, h: 166 } };
+  const G2 = packGrid(), gw = G2.cols * G2.sw + (G2.cols - 1) * G2.gap, gh = G2.rows * G2.sw + (G2.rows - 1) * G2.gap, x0 = Math.round((VW - gw) / 2), tall = G2.rows >= 4, y0 = tall ? 47 : 54, by = y0 + gh + (tall ? 26 : 30), py = tall ? 12 : 20, ph = by + 24 - py;
+  return { ...G2, gw, gh, x0, y0, use: { x: Math.round(VW / 2) - 62, y: by, w: 56, h: 16 }, close: { x: Math.round(VW / 2) + 6, y: by, w: 56, h: 16 }, panel: { x: x0 - 12, y: py, w: gw + 24, h: ph }, nameY: y0 + gh + (tall ? 11 : 12), descY: y0 + gh + (tall ? 21 : 22) };
 }
 
 function drawPack() {
-  const L = packLayout(), P = L.panel, sel = G.packSel | 0, t = G.frame, g = ctx;
+  const L = packLayout(), P = L.panel, sel = Math.min(G.packSel | 0, L.cap - 1), t = G.frame, g = ctx, tier = G.packTier | 0;
   g.fillStyle = "rgba(4,2,2,.72)"; g.fillRect(0, 0, VW, VH);
   g.fillStyle = "#120a04"; g.fillRect(P.x - 2, P.y - 2, P.w + 4, P.h + 4); g.fillStyle = "#4a2c14"; g.fillRect(P.x, P.y, P.w, P.h); g.fillStyle = "#6a4020"; g.fillRect(P.x, P.y, P.w, 2); g.fillStyle = "#34200e"; g.fillRect(P.x, P.y + P.h - 2, P.w, 2);
-  g.fillStyle = "#8a6a3a"; for (let x = P.x + 4; x < P.x + P.w - 4; x += 5) { g.fillRect(x, P.y + 4, 3, 1); g.fillRect(x, P.y + P.h - 5, 3, 1); } for (let y = P.y + 4; y < P.y + P.h - 4; y += 5) { g.fillRect(P.x + 4, y, 1, 3); g.fillRect(P.x + P.w - 5, y, 1, 3); }   // stitching
-  g.drawImage(backpackArt(), P.x + 10, P.y + 8, 24, 24);
-  g.fillStyle = "#ffe680"; g.font = "bold 10px monospace"; g.textAlign = "left"; g.fillText("BACKPACK", P.x + 40, P.y + 20);
-  g.fillStyle = "#c8a870"; g.font = "8px monospace"; g.fillText(G.pack.length + " / 8", P.x + 40, P.y + 30);
-  for (let i = 0; i < 8; i++) {
-    const x = L.x0 + (i % 4) * (L.sw + L.gap), y = L.y0 + (i >> 2) * (L.sw + L.gap), on = i === sel;
+  g.fillStyle = "#8a6a3a"; for (let x = P.x + 4; x < P.x + P.w - 4; x += 5) { g.fillRect(x, P.y + 4, 3, 1); g.fillRect(x, P.y + P.h - 5, 3, 1); } for (let y = P.y + 4; y < P.y + P.h - 4; y += 5) { g.fillRect(P.x + 4, y, 1, 3); g.fillRect(P.x + P.w - 5, y, 1, 3); }
+  g.imageSmoothingEnabled = false; g.drawImage(backpackArt(tier), P.x + 8, P.y + 7, 24, 24);
+  g.fillStyle = "#ffe680"; g.font = "bold 9px monospace"; g.textAlign = "left"; g.fillText(packName(tier).toUpperCase(), P.x + 38, P.y + 17);
+  g.fillStyle = "#c8a870"; g.font = "8px monospace"; g.fillText(G.pack.length + " / " + L.cap, P.x + 38, P.y + 27);
+  for (let i = 0; i < L.cap; i++) {
+    const x = L.x0 + (i % L.cols) * (L.sw + L.gap), y = L.y0 + Math.floor(i / L.cols) * (L.sw + L.gap), on = i === sel;
     g.fillStyle = on ? ((t >> 3) & 1 ? "#f0c860" : "#c89a40") : "#1c1208"; g.fillRect(x - 2, y - 2, L.sw + 4, L.sw + 4);
     g.fillStyle = "#2a1a0c"; g.fillRect(x, y, L.sw, L.sw); g.fillStyle = "#160e06"; g.fillRect(x, y, L.sw, 2); g.fillRect(x, y, 2, L.sw); g.fillStyle = "#3e2810"; g.fillRect(x, y + L.sw - 1, L.sw, 1);
-    const it = G.pack[i]; if (it) { g.imageSmoothingEnabled = false; g.drawImage(it.kind === "potion" ? itemArt("potion") : chickenArt(), x + 5, y + 5, 24, 24); }
+    const it = G.pack[i]; if (it) { const s = L.sw - 10; g.drawImage(it.kind === "potion" ? itemArt("potion") : chickenArt(), x + 5, y + 5, s, s); }
   }
-  const it = G.pack[sel], name = it ? (it.kind === "potion" ? "Potion" : "Roast chicken") : "Empty slot", desc = it ? (it.kind === "potion" ? "Heals 3 life." : "Fills your hunger gauge.") : "Potions and food you find are stored here.";
-  g.fillStyle = "#ffe680"; g.font = "bold 8px monospace"; g.textAlign = "center"; g.fillText(name, VW / 2, 152); g.fillStyle = "#d8c090"; g.font = "8px monospace"; g.fillText(G.packMsg || desc, VW / 2, 163);
+  const it = G.pack[sel], name = it ? (it.kind === "potion" ? "Potion" : "Roast chicken") : "Empty slot", desc = it ? (it.kind === "potion" ? "Heals 3 life." : "Fills your hunger gauge.") : "Food and potions are stored here.";
+  g.fillStyle = "#ffe680"; g.font = "bold 8px monospace"; g.textAlign = "center"; g.fillText(name, VW / 2, L.nameY); g.fillStyle = "#d8c090"; g.font = "8px monospace"; g.fillText(G.packMsg || desc, VW / 2, L.descY);
   for (const [b, label, on] of [[L.use, "USE", !!it], [L.close, "CLOSE", true]]) { g.fillStyle = "#120a04"; g.fillRect(b.x - 1, b.y - 1, b.w + 2, b.h + 2); g.fillStyle = on ? "#7a5028" : "#3a2814"; g.fillRect(b.x, b.y, b.w, b.h); g.fillStyle = on ? "#a8743a" : "#503a1e"; g.fillRect(b.x, b.y, b.w, 2); g.fillStyle = on ? "#ffe680" : "#8a7a5a"; g.font = "bold 9px monospace"; g.textAlign = "center"; g.fillText(label, b.x + b.w / 2, b.y + 11); }
   g.fillStyle = "#a89870"; g.font = "7px monospace"; g.fillText("move: arrows   use: Z / A   close: X / B / I", VW / 2, P.y + P.h + 12);
 }
@@ -2403,13 +2418,15 @@ function packTap(px, py) {
   const L = packLayout(), inB = (b) => px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h;
   if (inB(L.close)) { G.mode = "play"; return; }
   if (inB(L.use)) { usePackSlot(G.packSel | 0); return; }
-  for (let i = 0; i < 8; i++) { const x = L.x0 + (i % 4) * (L.sw + L.gap), y = L.y0 + (i >> 2) * (L.sw + L.gap); if (px >= x && px <= x + L.sw && py >= y && py <= y + L.sw) { if (G.packSel === i && G.pack[i]) usePackSlot(i); else G.packSel = i; G.packMsg = ""; return; } }
+  for (let i = 0; i < L.cap; i++) { const x = L.x0 + (i % L.cols) * (L.sw + L.gap), y = L.y0 + Math.floor(i / L.cols) * (L.sw + L.gap); if (px >= x && px <= x + L.sw && py >= y && py <= y + L.sw) { if (G.packSel === i && G.pack[i]) usePackSlot(i); else G.packSel = i; G.packMsg = ""; return; } }
   const P = L.panel; if (!(px >= P.x && px <= P.x + P.w && py >= P.y && py <= P.y + P.h)) G.mode = "play";
 }
 
 function packInput() {
-  let s = G.packSel | 0; const col = s % 4, row = s >> 2;
-  if (pressed.left) s = row * 4 + (col + 3) % 4; if (pressed.right) s = row * 4 + (col + 1) % 4; if (pressed.up || pressed.down) s = (1 - row) * 4 + col;
+  const L = packGrid(); let s = Math.min(G.packSel | 0, L.cap - 1); const col = s % L.cols, row = Math.floor(s / L.cols);
+  if (pressed.left) s = row * L.cols + (col + L.cols - 1) % L.cols; if (pressed.right) s = row * L.cols + (col + 1) % L.cols;
+  if (pressed.up) s = ((row + L.rows - 1) % L.rows) * L.cols + col; if (pressed.down) s = ((row + 1) % L.rows) * L.cols + col;
+  s = Math.min(s, L.cap - 1);
   if (s !== G.packSel) G.packMsg = ""; G.packSel = s;
   if (pressed.jump || pressed.enter) usePackSlot(s);
   if (pressed.attack) G.mode = "play";
@@ -2430,7 +2447,7 @@ function useStorable(kind, px, py) {
 
 function takeStorable(it) {
   const h = G.hero, need = it.kind === "potion" ? h.hp < G.maxHP : G.hunger < 98;
-  if (G.hasPack && G.pack.length < 8) { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.pack.push({ kind: it.kind }); popup(it.x + 8, it.y, (it.kind === "potion" ? "Potion" : "Chicken") + " stored"); return; }
+  if (G.hasPack && G.pack.length < G.packCap) { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.pack.push({ kind: it.kind }); popup(it.x + 8, it.y, (it.kind === "potion" ? "Potion" : "Chicken") + " stored"); return; }
   if (G.hasPack && !need) { if (!it.fullT || G.frame - it.fullT > 90) { popup(it.x + 8, it.y, "Pack full"); it.fullT = G.frame; } return; }
   it.gone = true; if (it.id >= 0) G.got.add(it.id); useStorable(it.kind, it.x + 8, it.y);
 }
@@ -2456,6 +2473,35 @@ function drawAbyss(d, cx, cy) {
   for (let k = 0; k < 4; k++) { const u = ((t * 0.9 + k * 41) % 120) / 120; ctx.fillStyle = `rgba(150,140,130,${0.7 * (1 - u)})`; ctx.fillRect(x + 6 + ((k * 23 + d.seed) % (W - 12)), Math.round(y + u * H), 1 + (k & 1), 2); }
   const gl = ctx.createRadialGradient(x + W / 2, y + H, 0, x + W / 2, y + H, W); gl.addColorStop(0, "rgba(60,90,160,.18)"); gl.addColorStop(1, "rgba(60,90,160,0)"); ctx.fillStyle = gl; ctx.fillRect(x - 20, y + H - W, W + 40, W + 4);
 }
+
+
+function packPal(t) {
+  return [
+    { n: "Satchel", b: "#7e5024", d: "#4e2e14", l: "#aa7438", t: "#c8a850", a: "#d09c58" },
+    { n: "Rucksack", b: "#5a6a34", d: "#34401c", l: "#8a9a54", t: "#c8a040", a: "#b0c070" },
+    { n: "Traveller's pack", b: "#44587a", d: "#26324c", l: "#7288b0", t: "#a83030", a: "#c89090" },
+    { n: "Hunter's pack", b: "#2e2a30", d: "#141216", l: "#58505c", t: "#c8ccd8", a: "#8a7a5a" },
+    { n: "Knight's pack", b: "#8a1c24", d: "#4a0c12", l: "#c04048", t: "#e8c050", a: "#f0dc88" },
+    { n: "Mage's pack", b: "#5a3a8a", d: "#2e1c50", l: "#8a68c0", t: "#40e0d0", a: "#c8f8f0" },
+    { n: "Ranger's pack", b: "#c8b890", d: "#8a7a58", l: "#e8dcc0", t: "#2e8a7a", a: "#60c8a8" },
+    { n: "Royal pack", b: "#1c1830", d: "#0c0a18", l: "#3c3460", t: "#f0c850", a: "#ffe880" },
+  ][Math.max(0, Math.min(7, t | 0))];
+}
+
+function packName(t) { return packPal(t).n; }
+
+function packGrid() {
+  const cap = (G.packCap || 8), cols = cap <= 8 ? 4 : cap <= 10 ? 5 : 6, rows = Math.ceil(cap / cols), sw = cols === 4 ? 34 : cols === 5 ? 30 : rows >= 4 ? 22 : 26, gap = cols === 4 ? 6 : rows >= 4 ? 3 : 4;
+  return { cap, cols, rows, sw, gap };
+}
+
+function equipPack(it) {
+  if (it.tier <= G.packTier) { if (!it.fullT || G.frame - it.fullT > 120) { popup(it.x + 8, it.y, "You have a bigger pack"); it.fullT = G.frame; } return; }
+  const first = G.packTier < 0; it.gone = true; G.got.add(it.id); G.packTier = it.tier; G.packCap = 8 + 2 * it.tier; G.hasPack = true;
+  popup(it.x + 8, it.y, packName(it.tier) + "!"); G.banner = (first ? "You found a backpack. Press I (or Pack) to open it. " : "") + packName(it.tier) + ": it now holds " + G.packCap + " things."; G.bannerT = 280;
+}
+
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
@@ -2502,7 +2548,7 @@ function drawHUD() {
   if (Art.mode === "rom") { const k = Art.obj("key", "idle", 0, G.room.zone); ctx.drawImage(k.img, 4, 25, 12, 12); } else { ctx.fillStyle = PH_COL.key; ctx.fillRect(6, 28, 8, 6); }
   ctx.fillStyle = "#ffe680"; ctx.fillText("x " + G.keys, 21, 35);
   for (let i = 0; i < G.maxHP; i++) { ctx.fillStyle = i < h.hp ? "#e04050" : "#40303a"; ctx.fillRect(6 + i * 9, 18, 7, 6); }
-  if (G.hasPack) { ctx.drawImage(backpackArt(), 58, 22, 12, 12); ctx.fillStyle = G.pack.length >= 8 ? "#ff9060" : "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "left"; ctx.fillText(G.pack.length + "/8", 72, 32); }
+  if (G.hasPack) { ctx.drawImage(backpackArt(G.packTier), 58, 22, 12, 12); ctx.fillStyle = G.pack.length >= G.packCap ? "#ff9060" : "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "left"; ctx.fillText(G.pack.length + "/" + G.packCap, 72, 32); }
   ctx.drawImage(chickenArt(), 4, 38, 10, 10);
   { const hw = 54, f = G.hunger / 100; ctx.fillStyle = "#000"; ctx.fillRect(16, 40, hw + 2, 6); ctx.fillStyle = "#3a2410"; ctx.fillRect(17, 41, hw, 4); ctx.fillStyle = f > 0.5 ? "#e0a030" : f > 0.25 ? "#e07020" : ((G.frame >> 4) & 1 ? "#e03020" : "#a02010"); ctx.fillRect(17, 41, Math.round(hw * f), 4); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(17, 41, Math.round(hw * f), 1); }
   // minimap: 5 x 3 cells around the hero
