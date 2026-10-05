@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.72">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.72">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.77">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.77">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.72</title>
+<title>Black Tiger: The Depths v0.77</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -159,7 +159,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.72";   // bump by 0.01 with every change
+const VERSION = "0.77";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1038,7 +1038,7 @@ function updateHero() {
   const lowAt = (px) => hitsSolid({ crouch: false }, px, h.y) && !hitsSolid({ crouch: true }, px, h.y);   // a one-tile-high gap: you have to crawl
   const forceCrouch = (h.ground || h.stairT > 0) && ((h.stairT > 0 && h.crouch) || lowAt(h.x) || (dirIn && lowAt(h.x + dirIn * 4)) || (dirIn && (() => { const cf = G.room.tunnel ? Math.floor((h.x + (dirIn > 0 ? 24 : 7)) / TS) : Math.floor((h.x + 16 + dirIn * 13) / TS), fr = Math.round((h.y + 32) / TS), st = tileAt(cf, fr - 1); return (st === STAIR || st === PROP) && (G.room.tunnel || solid(cf, fr - 3)) && !solid(cf, fr - 2); })()));
   h.crouch = (h.ground || h.stairT > 0) && ((keys.down && h.atk === 0) || forceCrouch) ? true : (h.atk > 0 ? h.crouch : false);
-  if (pressed.attack && h.atk === 0) { h.atk = 1; h.swing = (h.swing || 0) + 1; sfx("swing"); }
+  if (pressed.attack && h.atk === 0) { h.atk = 1; h.swing = (h.swing || 0) + 1; h.atkUp = !!(keys.up && !h.climb); sfx("swing"); }
   if (h.atk > 0 && ++h.atk > CFG.attackLength) h.atk = 0;
   // walk
   const locked = (h.atk > 0 && h.ground) || (h.crouch && !forceCrouch);
@@ -1069,7 +1069,7 @@ function updateHero() {
 function atkStage(a) { if (a <= 6) return 0; if (a <= 8) return 1; if (a <= 10) return 2; if (a <= 20) return 3; if (a <= 23) return 2; return 1; }
 // The flail's hit box: from the hand out to the ball
 function flailBox() {
-  const h = G.hero; if (!h.atk) return null; const s = atkStage(h.atk); if (!s) return null;
+  const h = G.hero; if (!h.atk) return null; if (h.atkUp) return upSwingBox(h); const s = atkStage(h.atk); if (!s) return null;
   const reach = 16 * (s + 1) + weaponReach(G.weapon), y = h.y + (h.crouch ? 12 : 4);
   return { x: h.dir < 0 ? h.x - reach : h.x + 32, y, w: reach, h: 20 };
 }
@@ -1448,6 +1448,7 @@ function heroFrame() {
   const h = G.hero;
   if (G.mode === "dead") { const t = 150 - G.dead; return t < 12 ? "die0" : t < 24 ? "die1" : t < 40 ? "die2" : t < 60 ? "die3" : "die4"; }
   if (h.climb) return ["climb0", "climb1", "climb2", "climb1"][Math.floor(h.climbDist / 6) % 4];
+  if (h.atkUp && h.atk > 0) return "stand";
   if (h.atk > 0) { const s = atkStage(h.atk); return s ? (h.crouch ? "cstrike" : "strike") + s : (h.crouch ? "cwind" : "windup"); }
   if (h.crouch) return "crouch";
   if (!h.ground) return "jump";
@@ -1488,7 +1489,7 @@ function draw() {
   for (const b of G.shots) put(Art.obj(b.art, "idle", 0, zone), b.x, b.y);
   drawPebbles(cx, cy); drawFlies(cx, cy, lights); drawGauges(cx, cy);
   const h = G.hero;
-  if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); if (G.hasPack && G.mode !== "dead") drawWornPack(h, cx, cy); ctx.drawImage(gearImg(f), Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); }
+  if (G.mode === "dead" || !(h.inv && (G.frame & 4))) { const f = Art.hero(heroFrame(), h.dir); if (G.hasPack && G.mode !== "dead") drawWornPack(h, cx, cy); ctx.drawImage(gearImg(f), Math.round(h.x) - f.ox - cx, Math.round(h.y) - f.oy - cy); if (h.atkUp && h.atk > 0 && G.mode !== "dead") drawUpSwing(h, cx, cy); }
   drawFore(cx, cy);
   for (const f of G.fires) if (!f.delay) put(Art.obj(f.blue ? "bluefire" : "fire", f.t <= 10 ? "small" : (f.t >> 2) & 1 ? "f1" : "f0", 0, zone), f.x, f.y);
   if (G.confuse > 0 && (G.frame & 16)) { ctx.fillStyle = "#80c0ff"; ctx.font = "bold 9px monospace"; ctx.textAlign = "center"; ctx.fillText("CONFUSED", VW / 2, 52); }
@@ -3787,7 +3788,7 @@ function mapLinks() {
 
 function drawMap() {
   ctx.fillStyle = "#0b0c12"; ctx.fillRect(0, 0, VW, VH);
-  const s = Math.max(4, Math.min(6, Math.floor((VW - 22) / GW))), sy = 6, ox = 4, oy = 28, h = G.hero, mw = GW * s;
+  const s = Math.max(4, Math.min(6, Math.floor((VW - 22) / GW))), sy = 5, ox = 4, oy = 28, h = G.hero, mw = GW * s;
   ctx.textAlign = "center"; ctx.fillStyle = "#ffe680"; ctx.font = "bold 10px monospace"; ctx.fillText("MAP", VW / 2, 12);
   ctx.font = "8px monospace"; ctx.fillStyle = "#aab"; ctx.fillText(G.room ? "Level " + (G.room.zone + 1) + ": " + ZONES[G.room.zone].name : "", VW / 2, 22);
   const seenCell = (cx, cy) => G.visited.has(cy * GW + cx) || G.debug;
@@ -3827,13 +3828,15 @@ function drawMap() {
   }
   for (const r of world.rooms) for (const d of (r.decor || [])) { if (d.kind === "chapelfront") dot(d.x, d.y + 40, "#e090ff", 2); }
   for (const r of world.rooms) if (r.town) { let seen = false; for (let j = 0; j < r.h; j++) for (let i = 0; i < r.w; i++) if (seenCell(r.x + i, r.y + j)) seen = true; if (seen) dot((r.x + r.w / 2) * CW * TS, (r.y + r.h / 2) * CH * TS, r.town === "orc" ? "#ff7a3a" : "#6aff8a", 3); }
+  { const blink = (G.frame >> 4) & 1; for (let z = 0; z <= 6; z++) if (bigKeyHeld(z)) for (const e of levelExits(z)) { const x = ox + e.x / (CW * TS) * s, y = oy + e.y / (CH * TS) * sy; ctx.fillStyle = "#000"; ctx.beginPath(); ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y - 4); ctx.lineTo(x, y + 3); ctx.closePath(); ctx.fill(); ctx.fillStyle = blink ? "#50ff70" : "#b0ffc0"; ctx.beginPath(); ctx.moveTo(x - 3, y - 3); ctx.lineTo(x + 3, y - 3); ctx.lineTo(x, y + 2); ctx.closePath(); ctx.fill(); } }
   const hx = ox + (h.x + 16) / (CW * TS) * s, hy = oy + (h.y + 16) / (CH * TS) * sy;
   ctx.fillStyle = (G.frame & 16) ? "#fff" : "#ff5030"; ctx.fillRect(Math.round(hx) - 1, Math.round(hy) - 1, 3, 3);
   // legend: every coloured dot, named
   const leg = [["#ff5a5a", "Save shrine"], ["#ffd24a", "Shop"], ["#6ab4ff", "Prisoner cell"], ["#8aeaff", "Fountain"], ["#e090ff", "Chapel"], ["#3a8ad0", "Flooded room"], ["#ff7a3a", "Orc town"], ["#6aff8a", "Friendly town"], ["#ff2020", "Guardian boss"], ["#ffa030", "Orc chieftain"], ["#ff5030", "You (blinks)"], ["#ffffff", "Door/chain"]];
+  { let any = false; for (let z = 0; z <= 6; z++) if (bigKeyHeld(z)) any = true; if (any) leg.push(["#50ff70", "Next level exit"]); }
   const colW = Math.floor((VW - 8) / 3), ly = oy + GH * sy + 8;
   ctx.textAlign = "left"; ctx.font = "7px monospace";
-  leg.forEach(([c, name], i) => { const x = 4 + (i % 3) * colW, y = ly + Math.floor(i / 3) * 9; ctx.fillStyle = "#000"; ctx.fillRect(x - 1, y - 1, 6, 6); ctx.fillStyle = c; ctx.fillRect(x, y, 4, 4); ctx.fillStyle = "#b8bccc"; ctx.fillText(name, x + 8, y + 5); });
+  leg.forEach(([c, name], i) => { const x = 4 + (i % 3) * colW, y = ly + Math.floor(i / 3) * 8; ctx.fillStyle = "#000"; ctx.fillRect(x - 1, y - 1, 6, 6); ctx.fillStyle = c; ctx.fillRect(x, y, 4, 4); ctx.fillStyle = "#b8bccc"; ctx.fillText(name, x + 8, y + 5); });
   ctx.fillStyle = "#7a8098"; ctx.textAlign = "center"; ctx.fillText("Dim rooms: not visited yet.   M: close", VW / 2, VH - 3);
 }
 
@@ -4399,7 +4402,7 @@ function drawBigKey(it, cx, cy) {
 function updateBigKey(it, hb) {
   if (it.gone || !overlap(hb, { x: it.x - 6, y: it.y - 18, w: 28, h: 34 })) return;
   it.gone = true; G.got.add(it.id); popup(it.x + 8, it.y - 20, "Big red key!"); sfx("fanfare");
-  G.banner = "You took the big red key. The way down to level " + (it.zone + 2) + " is open."; G.bannerT = 300; try { save(); } catch (e) {}
+  G.banner = "You took the big red key. The way down to level " + (it.zone + 2) + " is open. Every exit is marked on your map and screen."; G.bannerT = 300; try { save(); } catch (e) {}
 }
 
 function gateCheck() {
@@ -4407,6 +4410,54 @@ function gateCheck() {
   const zNow = Math.floor((h.y + 16) / (CH * TS * 3)); if (zNow <= allowed) return;
   const lim = (allowed + 1) * 3 * CH * TS; h.y = Math.min(h.y, lim - 52); h.vy = 0; h.climb = false; h.ground = true; h.x = h.x;
   if (!G.gateMsgT || G.frame - G.gateMsgT > 150) { G.gateMsgT = G.frame; G.banner = "A red lock bars the way down. Find this level's big red key."; G.bannerT = 200; popup(h.x + 16, h.y - 6, "Locked"); }
+}
+
+
+
+function levelExits(z) {
+  world.__ex = world.__ex || {}; if (world.__ex[z]) return world.__ex[z]; const out = [];
+  for (const [cx, cy, t] of mapLinks()) { if (t !== "v" || cy !== 3 * (z + 1) - 1) continue; const fy = cy * CH + CH - 1; for (let x = cx * CW + 1; x < cx * CW + CW - 1; x++) { const k = tileAt(x, fy); if (k === CHAIN || k === LEDGECHAIN) { out.push({ x: x * TS, y: fy * TS }); break; } } }
+  world.__ex[z] = out; return out;
+}
+
+function drawExitArrows() {
+  if (G.mode !== "play" || !G.room) return; const z = G.room.zone; if (z > 6 || !bigKeyHeld(z)) return; const ex = levelExits(z); if (!ex.length) return;
+  const cx = Math.round(G.cam.x), cy = Math.round(G.cam.y), h = G.hero, t = G.frame, bob = Math.round(Math.sin(t / 8) * 2);
+  ctx.save(); ctx.globalAlpha = 0.55; ctx.font = "bold 7px monospace"; ctx.textAlign = "center";
+  const tri = (x, y, ang, s) => { ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.fillStyle = "#04120a"; ctx.beginPath(); ctx.moveTo(s + 2, 0); ctx.lineTo(-s - 1, -s - 2); ctx.lineTo(-s * 0.4, 0); ctx.lineTo(-s - 1, s + 2); ctx.closePath(); ctx.fill(); ctx.fillStyle = "#50ff70"; ctx.beginPath(); ctx.moveTo(s, 0); ctx.lineTo(-s, -s); ctx.lineTo(-s * 0.4, 0); ctx.lineTo(-s, s); ctx.closePath(); ctx.fill(); ctx.restore(); };
+  const label = (x, y, txt) => { const w = txt.length * 4.3 + 6; ctx.fillStyle = "rgba(0,12,4,.8)"; ctx.fillRect(Math.round(Math.max(2, Math.min(VW - w - 2, x - w / 2))), y - 8, Math.round(w), 10); ctx.fillStyle = "#8affa0"; ctx.fillText(txt, Math.max(2 + w / 2, Math.min(VW - w / 2 - 2, x)), y); };
+  const info = ex.map(e => { const sx = e.x + 8 - cx, sy = e.y - cy; return { e, sx, sy, on: sx > 10 && sx < VW - 10 && sy > 26 && sy < VH - 10, dist: Math.hypot(e.x + 8 - (h.x + 16), e.y - (h.y + 16)) }; }).sort((a, b) => a.dist - b.dist);
+  let off = 0;
+  for (const { e, sx, sy, on, dist } of info) {
+    if (++off > 2) break;   // only the two nearest exits are marked
+    const d = Math.round(dist / 16), txt = "NEXT LEVEL " + d + "m";
+    if (on) { tri(sx, sy - 16 + bob, Math.PI / 2, 5); label(sx, sy - 24 + bob, txt); }
+    else { const ang = Math.atan2(sy - VH / 2, sx - VW / 2), c = Math.cos(ang), s = Math.sin(ang), r = Math.min((VW / 2 - 14) / (Math.abs(c) || 1e-3), (VH / 2 - 22) / (Math.abs(s) || 1e-3)), px = VW / 2 + c * r, py = VH / 2 + s * r; tri(px, py, ang, 5); label(px - c * 18, py - s * 14 + (s > 0 ? -8 : 12), txt); }
+  }
+  ctx.restore();
+}
+
+
+
+
+
+
+function upSwing(h) {
+  const t = Math.max(0, Math.min(1, (h.atk - 6) / 20)), th = t * Math.PI, R = 36 + weaponReach(G.weapon) * 0.5, px = h.x + 16, py = h.y + (h.crouch ? 18 : 10);
+  return { px, py, R, t, th, bx: px + h.dir * Math.cos(th) * R, by: py - Math.sin(th) * R };
+}
+
+function upSwingBox(h) { if (!h.atkUp || h.atk < 7 || h.atk > 26) return null; const s = upSwing(h); return { x: s.bx - 12, y: s.by - 12, w: 24, h: 24 }; }
+
+function drawUpSwing(h, cx, cy) {
+  const s = upSwing(h), wl = G.weapon | 0, ramp = weaponRamp(Math.max(1, wl)), r = 3 + wl * 0.7, x0 = s.px - cx, y0 = s.py - cy;
+  ctx.save();
+  if (h.atk > 6) { ctx.strokeStyle = "rgba(235,240,255,.35)"; ctx.lineWidth = 3; ctx.beginPath(); const a1 = s.th, a0 = Math.max(0, s.th - 1.1); for (let k = 0; k <= 10; k++) { const a = a0 + (a1 - a0) * k / 10, x = x0 + h.dir * Math.cos(a) * s.R, y = y0 - Math.sin(a) * s.R; if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y); } ctx.stroke(); }
+  const bx = Math.round(s.bx - cx), by = Math.round(s.by - cy);
+  ctx.fillStyle = "#c8c8d8"; for (let k = 1; k < 8; k++) { const f = k / 8; ctx.fillRect(Math.round(x0 + (bx - x0) * f), Math.round(y0 + (by - y0) * f), 1, 1); }
+  ctx.fillStyle = "#0c0a08"; ctx.beginPath(); ctx.arc(bx, by, r + 1.2, 0, 6.3); ctx.fill(); ctx.fillStyle = ramp[2]; ctx.beginPath(); ctx.arc(bx, by, r, 0, 6.3); ctx.fill(); ctx.fillStyle = ramp[4]; ctx.fillRect(bx - Math.round(r * 0.5), by - Math.round(r * 0.5), Math.max(1, Math.round(r * 0.4)), Math.max(1, Math.round(r * 0.4)));
+  ctx.fillStyle = ramp[3]; for (const [sx, sy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) ctx.fillRect(bx + sx * (Math.round(r) + 1), by + sy * (Math.round(r) + 1), 1, 1);
+  ctx.restore();
 }
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
@@ -4445,7 +4496,7 @@ function drawHUD() {
   ctx.drawImage(chickenArt(), 4, 38, 10, 10);
   { const hw = 54, f = G.hunger / 100; ctx.fillStyle = "#000"; ctx.fillRect(16, 40, hw + 2, 6); ctx.fillStyle = "#3a2410"; ctx.fillRect(17, 41, hw, 4); ctx.fillStyle = f > 0.5 ? "#e0a030" : f > 0.25 ? "#e07020" : ((G.frame >> 4) & 1 ? "#e03020" : "#a02010"); ctx.fillRect(17, 41, Math.round(hw * f), 4); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(17, 41, Math.round(hw * f), 1); }
   ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(3, 50, 98, 29);
-  { const z = G.room ? G.room.zone : 0; ctx.fillStyle = "#c8e0a0"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("PRISONERS " + prisonersFreed(z) + "/5", 6, 66); ctx.fillStyle = z > 6 ? "#7a8098" : bigKeyHeld(z) ? "#ff7070" : "#9a6a6a"; ctx.fillText(z > 6 ? "LAST LEVEL" : "RED KEY: " + (bigKeyHeld(z) ? "FOUND" : "NOT FOUND"), 6, 75); }
+  { const z = G.room ? G.room.zone : 0; ctx.fillStyle = "#c8e0a0"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("PRISONERS " + prisonersFreed(z) + "/5", 6, 66); drawExitArrows(); ctx.textAlign = "left"; ctx.fillStyle = z > 6 ? "#7a8098" : bigKeyHeld(z) ? "#ff7070" : "#9a6a6a"; ctx.fillText(z > 6 ? "LAST LEVEL" : "RED KEY: " + (bigKeyHeld(z) ? "FOUND" : "NOT FOUND"), 6, 75); }
   drawBossBar();
   { const s = gearStats(); if (s.str || s.def) { ctx.fillStyle = "#ff9a60"; ctx.font = "bold 7px monospace"; ctx.textAlign = "left"; ctx.fillText("STR " + s.str, 6, 56); ctx.fillStyle = "#80c0ff"; ctx.fillText("DEF " + s.def, 36, 56); } }
   // minimap: 5 x 3 cells around the hero
@@ -4665,7 +4716,7 @@ function titleKeys(e) {
 addEventListener("keydown", titleKeys, true);
 addEventListener("pointerdown", () => auStart(), { passive: true }); addEventListener("keydown", () => auStart(), { passive: true });
 (function () { let held = {}; function poll() { if (window.__titleOpen) { const gp = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(g => g && g.connected); if (gp) { const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ay = gp.axes[1] || 0, ax = gp.axes[0] || 0, st = { up: b(12) || ay < -0.5, down: b(13) || ay > 0.5, left: b(14) || ax < -0.5, right: b(15) || ax > 0.5, ok: b(0) || b(9), back: b(1) }; for (const k in st) { if (st[k] && !held[k]) titleKeys({ key: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", ok: "Enter", back: "Escape" }[k], target: {}, preventDefault() {}, stopPropagation() {} }); held[k] = st[k]; } } } requestAnimationFrame(poll); } requestAnimationFrame(poll); })();
-document.addEventListener("DOMContentLoaded", () => { const mb = $("menuBtn"); if (mb) mb.addEventListener("click", () => { if (typeof G !== "undefined" && G) titleShow(true); }); const cb = $("crtBtn"); if (cb) cb.addEventListener("click", e => { e.stopImmediatePropagation(); const s = titleSettings(); s.crtType = (s.crtType || "arcade") === "off" ? "arcade" : "off"; titleSave(s); applyCRT(); }, true); applySettings(); });
+(function () { const init = () => { const mb = $("menuBtn"); if (mb) mb.addEventListener("click", () => { if (typeof G !== "undefined" && G) titleShow(true); }); const cb = $("crtBtn"); if (cb) cb.addEventListener("click", e => { e.stopImmediatePropagation(); const s = titleSettings(); s.crtType = (s.crtType || "arcade") === "off" ? "arcade" : "off"; titleSave(s); applyCRT(); }, true); applySettings(); }; if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init(); })();
 // ---- the logo: angular brush-stroke lettering, a red sun, and a tiger seal ----
 const BRUSH = {
   B: [[[0, 0], [0, 6]], [[0, 0], [3, 0], [4, 1], [3, 3], [0, 3]], [[0, 3], [3, 3], [4, 4.5], [3, 6], [0, 6]]], L: [[[0, 0], [0, 6], [4, 6]]], A: [[[0, 6], [2, 0], [4, 6]], [[1, 4], [3, 4]]],
