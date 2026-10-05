@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.46">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.46">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.47">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.47">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.46</title>
+<title>Black Tiger: The Depths v0.47</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.46";   // bump by 0.01 with every change
+const VERSION = "0.47";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4014,38 +4014,63 @@ function bossName(it) { return it.kind2 === "chief" ? ["Grub the Chieftain", "Go
 function bossGlow(z) { return ["#ff8030", "#90ff60", "#ffd060", "#60c0ff", "#ff6040", "#c080ff", "#ff4a20", "#40ffd0"][z % 8]; }
 
 function bossArt(kind, zone, pose, flash) {
-  return baked("boss" + kind + zone + pose + (flash ? "f" : ""), 64, 76, (R, g) => {
-    const o = "#0c0a08";
+  return bakedR("boss2" + kind + zone + pose + (flash ? "f" : ""), 64, 76, (R, g) => {
+    const o = "#0a0806", E = "rgba(0,0,0,0)", gl = bossGlow(zone);
+    const up = pose === "windup", slam = pose === "slam", chg = pose === "charge", lean = chg ? 4 : 0, cr = up ? 2 : 0, hd = slam ? 3 : 0;
     if (kind === "guardian") {
-      const T = stoneTone(zone), st = T[0], lt = T[1], dk = T[2], gl = bossGlow(zone), lean = pose === "charge" ? 5 : 0, up = pose === "windup", slam = pose === "slam";
-      const blk = (x, y, w, h) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x, y, w, 2, lt); R(x, y, 3, h, lt); R(x + w - 4, y + 2, 4, h - 2, dk); R(x - 1, y - 1, 2, 2, "rgba(0,0,0,0)"); };
-      blk(14 + lean, 54, 14, 22); blk(36 + lean, 54, 14, 22); blk(12 + lean, 70, 18, 6); blk(34 + lean, 70, 18, 6);   // legs and feet
-      blk(14 + lean, 22, 36, 34);                                                                                     // torso
-      blk(6 + lean, 16, 14, 12); blk(44 + lean, 16, 14, 12);                                                          // shoulders
-      if (up) { blk(4 + lean, 0, 10, 20); blk(50 + lean, 0, 10, 20); blk(2 + lean, 0, 14, 8); blk(48 + lean, 0, 14, 8); }
-      else if (slam) { blk(0, 40, 12, 30); blk(52, 40, 12, 30); blk(0, 62, 16, 12); blk(48, 62, 16, 12); }
-      else { blk(4 + lean - (pose === "charge" ? 6 : 0), 26, 10, 30); blk(50 + lean - (pose === "charge" ? 6 : 0), 26, 10, 30); blk(2 + lean, 52, 14, 10); blk(48 + lean, 52, 14, 10); }
-      blk(22 + lean, 6, 20, 18); R(25 + lean, 13, 5, 3, gl); R(35 + lean, 13, 5, 3, gl); R(26 + lean, 13, 2, 1, "#ffffff"); R(36 + lean, 13, 2, 1, "#ffffff"); R(24 + lean, 10, 16, 2, o);   // head and glowing eyes
-      R(30 + lean, 32, 5, 12, gl); R(26 + lean, 36, 13, 4, gl); R(31 + lean, 33, 3, 10, "#ffffff");                  // a glowing rune on the chest
-      if (zone === 5) { for (const [x, y] of [[8, 8], [14, 4], [46, 6], [52, 10]]) { R(x + lean, y, 3, 10, o); R(x + lean + 1, y + 1, 1, 8, gl); } }
-      if (zone === 6) { for (let k = 0; k < 7; k++) R(16 + k * 4 + lean, 24 + (k % 3) * 8, 1, 6, gl); }
-      if (zone === 1) { for (let k = 0; k < 14; k++) R(8 + (k * 11) % 48 + lean, 18 + (k * 7) % 50, 3, 1, "#4a8a38"); }
-      if (zone === 3) { for (let k = 0; k < 5; k++) { R(16 + k * 8 + lean, 50, 1, 4 + (k % 3), "rgba(120,190,255,.7)"); } }
-      for (let k = 0; k < 5; k++) { const cx = 14 + (k * 9) % 36, cy = 26 + (k * 13) % 28; R(cx + lean, cy, 1, 6, o); R(cx + lean + 1, cy + 5, 1, 3, o); }
+      const metal = zone === 4 || zone === 3 || zone === 7, T = zone === 4 ? ["#5a6678", "#8c9ab0", "#262e3c"] : zone === 3 ? ["#4a5a6a", "#7a90a6", "#1e2a38"] : zone === 7 ? ["#6a6a58", "#a8a890", "#2a2a22"] : zone === 6 ? ["#5a3a30", "#8a5a46", "#241410"] : zone === 5 ? ["#5a5470", "#8a84a8", "#241e34"] : stoneTone(zone);
+      const st = T[0], lt = T[1], dk = T[2], wide = zone === 1 ? 3 : zone === 4 ? 3 : 0;
+      // a block: outline, three tones (lit top-left, mid, dark bottom-right), chipped corners, a crack on the edge
+      const blk = (x, y, w, h, crack) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, st); R(x + 1, y + 1, w - 3, h - 3, shade(st, 1.08)); R(x, y, w, 2, lt); R(x, y, 2, h, lt); R(x + w - 3, y + 2, 3, h - 2, dk); R(x + 2, y + h - 3, w - 2, 3, dk); R(x - 1, y - 1, 2, 2, E); R(x + w - 1, y + h - 1, 2, 2, E); if (crack) { R(x + w - 6, y + 2, 1, 4, o); R(x + w - 5, y + 5, 1, 3, o); } };
+      // legs (not for the Wraith, whose body tapers away)
+      if (zone !== 5) { blk(14 - wide + lean, 54, 15 + (wide >> 1), 20, true); blk(35 + lean, 54, 15 + wide, 20); blk(12 - wide + lean, 70, 19, 6); blk(33 + lean, 70, 19 + wide, 6); if (slam) { R(10, 71, 8, 2, "rgba(220,210,190,.5)"); R(48, 71, 10, 2, "rgba(220,210,190,.5)"); R(6, 72, 5, 2, "rgba(220,210,190,.4)"); R(54, 72, 6, 2, "rgba(220,210,190,.4)"); } }
+      else { for (let y = 0; y < 22; y++) { const hw = Math.round(17 - y * 0.55); R(32 + lean - hw - 1, 54 + y - 0, hw * 2 + 2, 1, y < 18 ? o : E); R(32 + lean - hw, 54 + y, hw * 2, 1, y < 16 ? "rgba(90,84,112,.8)" : "rgba(90,84,112,.35)"); } for (const [sx, sy] of [[10, 66], [50, 70], [32, 74]]) { R(sx + lean, sy, 3, 5, o); R(sx + lean + 1, sy + 1, 1, 3, gl); } }
+      // torso
+      if (zone === 5) { blk(12 + lean, 24 + cr, 12, 30, true); blk(40 + lean, 24 + cr, 12, 30); R(24 + lean, 26 + cr, 16, 26, "rgba(20,14,40,.65)"); for (const [sx, sy] of [[28, 30], [34, 38], [30, 46]]) { R(sx + lean - 1, sy + cr - 1, 5, 7, o); R(sx + lean, sy + cr, 3, 5, gl); R(sx + lean, sy + cr, 1, 2, "#fff"); } }
+      else blk(14 - wide + lean, 22 + cr, 36 + wide * 2, 34, true);
+      // shoulders and arms
+      const sh = zone === 1 ? -4 : 0;
+      blk(5 - wide + lean, 16 + sh + cr, 15, 13); blk(44 + wide + lean, 16 + sh + cr, 15, 13);
+      if (up) { blk(4 + lean, 0, 10, 20, true); blk(50 + lean, 0, 10, 20); blk(2 + lean, -1, 14, 8); blk(48 + lean, -1, 14, 8); R(6 + lean, 6, 4, 2, gl); R(52 + lean, 6, 4, 2, gl); }
+      else if (slam) { blk(0, 44, 12, 28); blk(52, 44, 12, 28); blk(-1, 64, 17, 12); blk(48, 64, 17, 12); R(2, 60, 8, 2, gl); R(54, 60, 8, 2, gl); }
+      else { const dx = chg ? -6 : 0; blk(4 + dx + lean, 28 + cr, 10, 28, true); blk(50 + dx + lean, 28 + cr, 10, 28); blk(2 + dx + lean, 54 + cr, 14, 11); blk(48 + dx + lean, 54 + cr, 14, 11); for (const kx of [4, 8, 12]) R(kx + dx + lean, 63 + cr, 1, 2, o); for (const kx of [50, 54, 58]) R(kx + dx + lean, 63 + cr, 1, 2, o); if (zone === 6) { R(6 + dx + lean, 32 + cr, 1, 20, gl); R(56 + dx + lean, 32 + cr, 1, 20, gl); } }
+      // head, per guardian
+      const hx = 22 + lean + (chg ? 3 : 0), hy = 6 + hd + cr;
+      if (zone === 4) { blk(18 + lean, 14 + hd + cr, 28, 12); R(22 + lean, 19 + hd + cr, 20, 3, o); R(24 + lean, 20 + hd + cr, 5, 1, gl); R(35 + lean, 20 + hd + cr, 5, 1, gl); for (const rx2 of [20, 30, 42]) R(rx2 + lean, 15 + hd + cr, 2, 2, o); }
+      else if (zone === 7) { for (let y = 0; y < 18; y++) { const t = (y - 10) / 10, hw = Math.round(14 * Math.sqrt(Math.max(0, 1 - t * t))); R(32 + lean - hw - 1, 4 + hd + cr + y, hw * 2 + 2, 1, o); } for (let y = 0; y < 17; y++) { const t = (y - 10) / 10, hw = Math.round(14 * Math.sqrt(Math.max(0, 1 - t * t))); R(32 + lean - hw, 4 + hd + cr + y, hw * 2, 1, y < 5 ? lt : st); } R(27 + lean, 12 + hd + cr, 10, 7, o); R(28 + lean, 13 + hd + cr, 8, 5, gl); R(30 + lean, 14 + hd + cr, 4, 3, "#fff"); }
+      else {
+        blk(hx, hy, 20, 18);
+        if (zone === 2) { for (let k = 0; k < 6; k++) { R(hx + 4 + k, hy - 2 - k, 12 - 2 * k, 1, o); R(hx + 5 + k, hy - 2 - k, 10 - 2 * k, 1, k < 2 ? lt : st); } R(hx + 8, hy - 8, 4, 3, gl); R(hx - 2, hy + 14, 24, 2, gl); }
+        if (zone === 3) { R(hx + 1, hy + 8, 18, 3, o); for (let k = 0; k < 5; k++) { R(hx + 6 + k * 2, hy - 8 + (k % 2) * 2, 2, 9, o); R(hx + 7 + k * 2, hy - 7 + (k % 2) * 2, 1, 8, "#2a8a50"); } }
+        if (zone === 6) { for (let k = 0; k < 5; k++) { const x2 = hx + 1 + k * 4, hh = 5 + (k % 3) * 3; R(x2 - 1, hy - hh - 1, 4, hh + 1, o); R(x2, hy - hh, 2, hh, k % 2 ? "#ff7030" : "#c04020"); } }
+        if (zone === 0) R(hx - 2, hy - 2, 24, 3, lt);
+        if (zone !== 3) { R(hx + 3, hy + 6, 5, 3, o); R(hx + 12, hy + 6, 5, 3, o); R(hx + 4, hy + 7, 3, 2, gl); R(hx + 13, hy + 7, 3, 2, gl); R(hx + 5, hy + 7, 1, 1, "#fff"); R(hx + 14, hy + 7, 1, 1, "#fff"); R(hx + 2, hy + 3, 7, 2, o); R(hx + 11, hy + 3, 7, 2, o); }
+        else { R(hx + 3, hy + 8, 14, 2, gl); R(hx + 7, hy + 8, 2, 1, "#fff"); }
+        R(hx + 6, hy + 13, 8, 2, o); R(hx + 7, hy + 13, 2, 1, "#e8e0c8"); R(hx + 11, hy + 13, 2, 1, "#e8e0c8");   // a mouth slit with teeth
+      }
+      // chest glyph: a jagged glowing seam with a halo
+      const gx = 32 + lean, gy = 30 + cr;
+      if (zone !== 5) { R(gx - 3, gy - 1, 7, 18, gl.replace("#", "#") + "40"); const zz = [[0, 0], [1, 3], [-1, 6], [1, 9], [-1, 12], [0, 15]]; for (let k = 0; k < zz.length - 1; k++) { R(gx + zz[k][0], gy + zz[k][1], 2, 4, gl); R(gx + zz[k][0], gy + zz[k][1], 1, 4, "#fff"); } R(gx - 7, gy + 8, 6, 1, gl); R(gx + 3, gy + 5, 6, 1, gl); }
+      if (zone === 2) for (let k = 0; k < 4; k++) R(15 + lean, 46 + cr + k * 3, 34, 1, gl);   // a belt of stripes
+      if (zone === 1) for (const mx of [10, 24, 38, 52]) for (let k = 0; k < 7; k++) R(mx + lean + (k % 2), 28 + cr + k, 2, 1, "#4a8a38");   // hanging moss
+      if (zone === 4) for (let y2 = 28; y2 < 54; y2 += 8) for (const rx2 of [16, 46]) { R(rx2 + lean, y2 + cr, 2, 2, o); R(rx2 + lean, y2 + cr, 1, 1, lt); }
+      if (zone === 3) { for (let k = 0; k < 6; k++) R(14 + k * 7 + lean, 50 + cr, 1, 5 + (k % 3), "rgba(120,190,255,.7)"); R(56 + lean, 42 + cr, 2, 20, o); R(56 + lean, 36 + cr, 2, 8, "#9a9aa8"); }   // drips and a broken sword hilt
+      if (zone === 6) { R(18 + lean, 24 + cr, 1, 10, gl); R(44 + lean, 36 + cr, 1, 12, gl); R(24 + lean, 46 + cr, 8, 1, gl); }
     } else {
-      const sk = ["#1c3a14", "#2e5a22", "#4a8a34", "#78b850"], lea = ["#2a1a0e", "#4a3220", "#6a4a2e"], lean = pose === "charge" ? 4 : 0;
-      R(14 + lean, 50, 8, 22, o); R(15 + lean, 51, 6, 20, sk[1]); R(26 + lean, 50, 8, 22, o); R(27 + lean, 51, 6, 20, sk[1]); R(12 + lean, 68, 11, 6, o); R(13 + lean, 69, 9, 4, lea[1]); R(25 + lean, 68, 11, 6, o); R(26 + lean, 69, 9, 4, lea[1]);
-      R(10 + lean, 24, 28, 28, o); R(11 + lean, 25, 26, 26, sk[1]); R(11 + lean, 25, 4, 26, sk[2]); R(33 + lean, 26, 4, 25, sk[0]);
-      R(11 + lean, 32, 26, 16, lea[1]); R(11 + lean, 32, 26, 2, lea[2]); R(11 + lean, 44, 26, 4, lea[0]); R(22 + lean, 34, 4, 12, "#c8bca0");         // leather harness and a bone buckle
-      R(4 + lean, 22, 10, 10, o); R(5 + lean, 23, 8, 8, "#5a5a66"); R(34 + lean, 22, 10, 10, o); R(35 + lean, 23, 8, 8, "#5a5a66");                  // iron pauldrons
-      R(14 + lean, 8, 20, 18, o); R(15 + lean, 9, 18, 16, sk[2]); R(15 + lean, 9, 5, 16, sk[3]); R(18 + lean, 15, 4, 3, "#ff3020"); R(26 + lean, 15, 4, 3, "#ff3020"); R(18 + lean, 22, 3, 6, "#e8e0c8"); R(27 + lean, 22, 3, 6, "#e8e0c8");
-      R(13 + lean, 6, 22, 6, o); R(14 + lean, 7, 20, 4, "#5a5a66"); R(10 + lean, 2, 4, 8, "#e8e0c8"); R(34 + lean, 2, 4, 8, "#e8e0c8"); R(9 + lean, 0, 3, 4, "#e8e0c8"); R(36 + lean, 0, 3, 4, "#e8e0c8");  // horned helm
-      R(16 + lean, 19, 3, 2, "#c02018"); R(29 + lean, 19, 3, 2, "#c02018");
-      const armUp = pose === "windup", swing = pose === "slam";
-      if (armUp) { R(36 + lean, 4, 4, 28, "#6a4a2e"); R(30 + lean, 0, 16, 10, o); R(31 + lean, 1, 14, 8, "#9a9aa8"); R(31 + lean, 1, 14, 2, "#d8d8e8"); R(40 + lean, 20, 8, 8, sk[2]); }
-      else if (swing) { R(40 + lean, 34, 22, 4, "#6a4a2e"); R(52 + lean, 26, 12, 20, o); R(53 + lean, 27, 10, 18, "#9a9aa8"); R(53 + lean, 27, 3, 18, "#d8d8e8"); R(38 + lean, 30, 8, 8, sk[2]); }
-      else { R(38 + lean, 30, 4, 34, "#6a4a2e"); R(34 + lean, 58, 14, 12, o); R(35 + lean, 59, 12, 10, "#9a9aa8"); R(35 + lean, 59, 3, 10, "#d8d8e8"); R(38 + lean, 28, 8, 8, sk[2]); }
-      R(2 + lean, 30, 8, 18, sk[1]); R(2 + lean, 30, 2, 18, sk[2]);
+      const sk = ["#1c3a14", "#2e5a22", "#4a8a34", "#78b850"], lea = ["#2a1a0e", "#4a3220", "#6a4a2e"], ln = chg ? 5 : 0, dy = up ? 2 : 0, hdx = chg ? 4 : 0;
+      const shd = (x, y, w, h, c, l, d) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, c); R(x, y, w, 2, l); R(x, y, 2, h, l); R(x + w - 3, y + 2, 3, h - 2, d); };
+      shd(14 + ln, 50, 9, 22, sk[1], sk[2], sk[0]); shd(26 + ln, 50, 9, 22, sk[1], sk[2], sk[0]); shd(11 + ln, 68, 12, 6, lea[1], lea[2], lea[0]); shd(25 + ln, 68, 12, 6, lea[1], lea[2], lea[0]);
+      shd(8 + ln, 24 + dy, 32, 28, sk[1], sk[2], sk[0]); shd(9 + ln, 32 + dy, 30, 16, lea[1], lea[2], lea[0]); R(22 + ln, 34 + dy, 4, 12, "#c8bca0"); R(23 + ln, 36 + dy, 2, 2, o); R(23 + ln, 42 + dy, 2, 2, o); R(9 + ln, 46 + dy, 30, 2, "#1a1208");
+      shd(2 + ln, 20 + dy, 14, 12, "#5a5a66", "#9a9aa8", "#2a2a32"); shd(34 + ln, 20 + dy, 14, 12, "#5a5a66", "#9a9aa8", "#2a2a32"); for (const [sx, sy] of [[5, 17], [11, 16], [37, 16], [43, 17]]) { R(sx + ln, sy + dy, 2, 5, o); R(sx + ln, sy + dy + 1, 1, 3, "#c8c8d8"); }   // spiked pauldrons
+      shd(14 + ln + hdx, 6 + dy, 22, 20, sk[2], sk[3], sk[1]); R(17 + ln + hdx, 14 + dy, 5, 4, o); R(27 + ln + hdx, 14 + dy, 5, 4, o); R(18 + ln + hdx, 15 + dy, 3, 2, "#ff3020"); R(28 + ln + hdx, 15 + dy, 3, 2, "#ff3020"); R(17 + ln + hdx, 12 + dy, 6, 2, o); R(27 + ln + hdx, 12 + dy, 6, 2, o);
+      R(17 + ln + hdx, 22 + dy, 3, 6, "#e8e0c8"); R(30 + ln + hdx, 22 + dy, 3, 6, "#e8e0c8"); R(21 + ln + hdx, 24 + dy, 8, 2, o); R(20 + ln + hdx, 17 + dy, 1, 5, "#c02018"); R(31 + ln + hdx, 19 + dy, 1, 4, "#a01810");   // tusks, mouth, scar and war paint
+      shd(13 + ln + hdx, 4 + dy, 24, 7, "#5a5a66", "#9a9aa8", "#2a2a32"); R(8 + ln + hdx, 1 + dy, 5, 9, "#e8e0c8"); R(7 + ln + hdx, 0 + dy, 3, 4, "#e8e0c8"); R(37 + ln + hdx, 1 + dy, 5, 9, "#e8e0c8"); R(40 + ln + hdx, 0 + dy, 3, 4, "#e8e0c8");
+      const hamm = (x, y, w, h) => { R(x - 1, y - 1, w + 2, h + 2, o); R(x, y, w, h, "#7a7a88"); R(x, y, w, 2, "#d8d8e8"); R(x, y, 2, h, "#c0c0d0"); R(x + w - 3, y + 2, 3, h - 2, "#3a3a46"); for (let sx = x + 2; sx < x + w - 2; sx += 4) R(sx, y + h - 3, 2, 2, "#2a2a32"); };
+      if (up) { R(36 + ln, 2, 4, 34, "#6a4a2e"); for (let k = 0; k < 6; k++) R(36 + ln, 6 + k * 5, 4, 1, "#2a1a0e"); hamm(28 + ln, -2, 20, 12); shd(40 + ln, 20, 8, 10, sk[2], sk[3], sk[1]); }
+      else if (slam) { R(40 + ln, 36, 20, 4, "#6a4a2e"); hamm(50 + ln, 26, 14, 22); shd(38 + ln, 31, 8, 10, sk[2], sk[3], sk[1]); R(48, 70, 12, 3, "rgba(220,210,190,.5)"); }
+      else if (chg) { R(34 + ln - 18, 60, 22, 4, "#6a4a2e"); hamm(14 + ln - 12, 58, 14, 14); shd(36 + ln, 34, 8, 10, sk[2], sk[3], sk[1]); for (let k = 0; k < 3; k++) R(0, 30 + k * 12, 10 + k * 3, 1, "rgba(220,210,190,.55)"); }
+      else { R(38 + ln, 30, 4, 34, "#6a4a2e"); for (let k = 0; k < 6; k++) R(38 + ln, 36 + k * 5, 4, 1, "#2a1a0e"); hamm(32 + ln, 56, 16, 14); shd(36 + ln, 28, 8, 10, sk[2], sk[3], sk[1]); }
+      shd(-1 + ln, 28 + dy, 10, 20, sk[1], sk[2], sk[0]);
     }
     if (flash) { g.globalCompositeOperation = "source-atop"; g.fillStyle = "rgba(255,255,255,.7)"; g.fillRect(0, 0, 64, 76); g.globalCompositeOperation = "source-over"; }
   }, zone * 5 + (kind === "chief" ? 1 : 0));
@@ -4127,6 +4152,7 @@ function buildBosses(rooms, items, spawns, get, out) {
   const towns = {}; for (const r of rooms) if (r.town === "orc") (towns[r.townId] = towns[r.townId] || []).push(r);
   for (const id in towns) { const pool = towns[id].map(r => [r, runOf(r, 5)[0]]).filter(a => a[1] >= 6).sort((a, b) => b[1] - a[1]); for (const [r] of pool) if (make(r, r.zone, "chief", 15 + r.zone)) break; }
 }
+
 
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
