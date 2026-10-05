@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.84">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.84">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.85">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.85">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.84</title>
+<title>Black Tiger: The Depths v0.85</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.84";   // bump by 0.01 with every change
+const VERSION = "0.85";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1041,7 +1041,7 @@ function updateHero() {
   const forceCrouch = (h.ground || h.stairT > 0) && ((h.stairT > 0 && h.crouch) || lowAt(h.x) || (dirIn && lowAt(h.x + dirIn * 4)) || (dirIn && (() => { const cf = G.room.tunnel ? Math.floor((h.x + (dirIn > 0 ? 24 : 7)) / TS) : Math.floor((h.x + 16 + dirIn * 13) / TS), fr = Math.round((h.y + 32) / TS), st = tileAt(cf, fr - 1); return (st === STAIR || st === PROP) && (G.room.tunnel || solid(cf, fr - 3)) && !solid(cf, fr - 2); })()));
   h.crouch = (h.ground || h.stairT > 0) && ((keys.down && h.atk === 0) || forceCrouch) ? true : (h.atk > 0 ? h.crouch : false);
   if (pressed.attack && h.atk === 0) { h.atk = 1; h.swing = (h.swing || 0) + 1; h.atkUp = !!(keys.up && !h.climb); sfx("swing"); }
-  if (h.atk > 0 && ++h.atk > CFG.attackLength) h.atk = 0;
+  if (h.atk > 0 && ++h.atk > (h.atkUp ? 34 : CFG.attackLength)) h.atk = 0;
   // walk
   const locked = (h.atk > 0 && h.ground) || (h.crouch && !forceCrouch);
   const wade = (isWater(cc, Math.floor((h.y + 31) / TS)) ? 0.55 : 1) * (heroInWater(h) ? 0.85 : 1);   // wading through a pool
@@ -4471,16 +4471,19 @@ function upSwing(h) {
   return { th, R: P.R, bx: px + h.dir * Math.cos(th) * P.R, by: py - Math.sin(th) * P.R, px, py };
 }
 
-function upSwingBox(h) { if (!h.atkUp || h.atk < 7 || h.atk > 27) return null; const s = upSwing(h); return { x: s.bx - 12, y: s.by - 12, w: 24, h: 24 }; }
+function upSwingBox(h) { if (!h.atkUp || h.atk < 9 || h.atk > 26) return null; const s = upSwing(h); return { x: s.bx - 12, y: s.by - 12, w: 24, h: 24 }; }
 
 function drawUpSwing(h, cx, cy) {
-  const P = upParts(), f = P.f, th = upAngle(h.atk), hx = h.x + 16 - cx;
+  const P = upParts(), f = P.f, th = upAngle(h.atk), hx = h.x + 16 - cx, bd = upBody(h.atk);
   ctx.save(); ctx.translate(hx, 0); if (h.dir < 0) ctx.scale(-1, 1); ctx.translate(-hx, 0);
   const ox = Math.round(h.x - f.ox - cx), oy = Math.round(h.y - f.oy - cy);
-  ctx.drawImage(P.body, ox, oy);
-  const piece = (a) => { ctx.save(); ctx.translate(ox + P.PX, oy + P.PY); ctx.rotate(-a); ctx.drawImage(P.piece, 0, -P.PY); ctx.restore(); };
-  if (h.atk > 6) for (const [k, al] of [[2, 0.14], [1, 0.26]]) { ctx.globalAlpha = al; piece(th - k * 0.3); }
-  ctx.globalAlpha = 1; piece(th); ctx.restore();
+  ctx.save(); ctx.translate(ox + P.PX, oy + P.body.height); ctx.rotate(bd[1]); ctx.translate(-P.PX, -P.body.height + bd[0]); ctx.drawImage(P.body, 0, 0); ctx.restore();
+  const qx = ox + P.PX, qy = oy + P.PY + bd[0] - Math.round(bd[1] * 6);
+  const piece = (a, al) => { ctx.save(); ctx.globalAlpha = al; ctx.translate(qx, qy); ctx.rotate(-a); ctx.drawImage(P.piece, 0, -P.PY); ctx.restore(); };
+  if (h.atk > 9 && h.atk < 27) for (const [k, al] of [[3, 0.12], [2, 0.2], [1, 0.34]]) piece(th - k * 0.22, al);   // solid fading ghosts of the ball
+  piece(th, 1);
+  ctx.fillStyle = "#3a3040"; ctx.fillRect(qx - 2, qy - 2, 4, 4); ctx.fillStyle = "#7a6a8a"; ctx.fillRect(qx - 2, qy - 2, 4, 1);   // shoulder pad covers the joint
+  ctx.restore();
 }
 
 
@@ -4503,7 +4506,13 @@ function upParts() {
   return (C[key] = { f: f2, body, piece, PX, PY, R: Math.max(24, maxX - 7), ballR: 7 });
 }
 
-function upAngle(atk) { if (atk <= 6) return -0.9 + 0.9 * (atk / 6); if (atk <= 26) { const u = (atk - 6) / 20; return u * u * (3 - 2 * u) * Math.PI; } return Math.PI + 0.12 * Math.min(2, atk - 26); }
+function upAngle(atk) {
+  const ss = u => u * u * (3 - 2 * u), PI = Math.PI;
+  if (atk <= 7) return -0.9 - 0.45 * ss(atk / 7);                       // wind-up: ball drawn back low
+  if (atk <= 25) { const u = (atk - 7) / 18; return -1.35 + (1.35 + PI) * (u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u)); }   // slow start, fastest overhead, slow end
+  if (atk <= 28) return PI + 0.2 * Math.sin((atk - 25) / 3 * PI * 0.5);   // overshoot
+  return PI + 0.2 + (2 * PI - 0.9 - PI - 0.2) * ss(Math.min(1, (atk - 28) / 6));   // drops and swings back to the guard
+}
 
 
 function gearSlots_() { return ["helm", "chest", "legs", "bracer", "r1", "r2"]; }
@@ -4530,6 +4539,15 @@ function gearAction() {
   const want = slot[0] === "r" ? "ring" : slot, idx = G.stash.findIndex(b => b.slot === want); if (idx >= 0) { G.gearTab = 1; G.gearBagSel = idx; }
 }
 
+
+
+function upBody(atk) {   // body pose: [dy px, lean rad]
+  if (atk <= 7) return [Math.round(atk / 4), -0.05 * (atk / 7)];                 // crouch, weight back
+  if (atk <= 14) return [1, -0.05 + 0.02 * (atk - 7)];
+  if (atk <= 20) return [-2, 0.09];                                              // rise on toes under the overhead
+  if (atk <= 28) return [-1, 0.04];
+  return [atk > 31 ? 1 : 0, 0];                                                  // settle
+}
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
