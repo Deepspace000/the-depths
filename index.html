@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.62">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.62">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.63">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.63">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.62</title>
+<title>Black Tiger: The Depths v0.63</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.62";   // bump by 0.01 with every change
+const VERSION = "0.63";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -2630,23 +2630,12 @@ function shopkeeperArt(zone, f) {
 }
 
 function drawShop(it, cx, cy, lights) {
-  const x = Math.round(it.x) - cx, base = Math.round(it.y) - cy + 16, z = it.zone | 0, t = G.frame + (it.id | 0);
-  const R = (a, b, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x + a, base + b, w, h); };
-  // posts and a torn striped awning
-  R(-17, -44, 3, 44, "#120a04"); R(-16, -44, 1, 44, "#6a4a28"); R(31, -44, 3, 44, "#120a04"); R(32, -44, 1, 44, "#6a4a28");
-  const aw = baked("awn" + (z % 4), 56, 14, (Q) => { const col = [["#8a2820", "#d8c8a0"], ["#20508a", "#d8c8a0"], ["#2a6a30", "#d8c8a0"], ["#6a2a6a", "#d8c8a0"]][z % 4], S = rng(z * 5 + 3); for (let i = 0; i < 56; i += 7) { const c = (i / 7) & 1 ? col[1] : col[0]; Q(i, 0, 7, 10, c); const d = 3 + Math.floor(S() * 5); Q(i, 10, 7, d - 3 > 0 ? d - 3 : 1, c); Q(i + 1, 10 + d - 3, 5, 1, "rgba(0,0,0,0)"); } Q(0, 0, 56, 1, "#e0d0b0"); Q(0, 8, 56, 2, "rgba(0,0,0,.28)"); for (let i = 0; i < 4; i++) Q(Math.floor(S() * 52), 3 + Math.floor(S() * 4), 3, 2, "rgba(0,0,0,0)"); }, z);
-  ctx.drawImage(aw, x - 20, base - 54);
-  // hanging wares: potion bottles, a chicken, a sack
-  for (const [wx, k] of [[-10, 0], [2, 1], [14, 0], [26, 2]]) { const sw = Math.round(Math.sin((t + wx * 3) / 28) * 1); R(wx + sw, -40, 1, 8, "#3a2a18"); if (k === 0) { R(wx - 2 + sw, -32, 5, 7, "#120808"); R(wx - 1 + sw, -31, 3, 5, "#c02040"); R(wx - 1 + sw, -31, 1, 4, "#ff7088"); R(wx - 1 + sw, -34, 3, 2, "#c8c0a0"); } else if (k === 1) { R(wx - 3 + sw, -32, 7, 7, "#1a0c04"); R(wx - 2 + sw, -31, 5, 5, "#b87030"); R(wx - 2 + sw, -31, 2, 2, "#e8a850"); R(wx + 2 + sw, -26, 3, 3, "#c8a870"); } else { R(wx - 3 + sw, -32, 7, 8, "#120c06"); R(wx - 2 + sw, -31, 5, 6, "#6a5030"); R(wx - 1 + sw, -33, 3, 2, "#3a2a14"); } }
-  ctx.drawImage(shopkeeperArt(z, (t >> 5) & 1), x - 8, base - 38 + 2);
-  // the counter
-  const ct = baked("ctr" + (z % 4), 52, 16, (Q) => { const S = rng(z + 11); Q(0, 0, 52, 16, "#0e0804"); Q(1, 1, 50, 4, "#7a5230"); Q(1, 1, 50, 1, "#b08850"); Q(1, 5, 50, 10, "#4a2e16"); for (let i = 3; i < 50; i += 8 + Math.floor(S() * 4)) Q(i, 5, 1, 10, "#2a1a0a"); Q(1, 14, 50, 1, "#2a1a0a"); Q(0, 0, 2, 1, "rgba(0,0,0,0)"); Q(46, 1, 4, 2, "rgba(0,0,0,0)"); Q(30, 8, 4, 3, "#2a1a0a"); }, z);
-  ctx.drawImage(ct, x - 18, base - 14);
-  R(3, -15, 5, 2, "#8a6a10"); R(4, -17, 4, 2, "#e8c048"); R(5, -18, 3, 1, "#fff0a0"); R(20, -15, 4, 2, "#8a6a10"); R(21, -17, 3, 2, "#e8c048");   // coin stacks on the counter
-  // a lantern on the right post
-  R(33, -36, 1, 4, "#120a04"); R(31, -32, 5, 6, "#120a04"); R(32, -31, 3, 4, (t >> 3) & 1 ? "#ffd070" : "#ffb040"); R(32, -31, 1, 2, "#fff0b0");
-  lights.push([it.x + 17, it.y - 20, 78, 0.95, "255,190,100"]);
-  if (!it.near && G.mode === "play") { const b = Math.round(Math.sin(t / 10) * 1.5); ctx.fillStyle = "#ffe680"; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText(it.inn ? "INN" : "SHOP", x + 8, base - 60 + b); }
+  const x = Math.round(it.x) - cx, base = Math.round(it.y) - cy + 16, z = it.zone | 0, t = G.frame + (it.id | 0), bx = x + 8 - 36, by = base - 64;
+  // the keeper behind the right-hand window, then the front over him
+  const kp = shopkeeperArt(z, (t >> 5) & 1); ctx.save(); ctx.beginPath(); ctx.rect(bx + 52, by + 38, 10, 14); ctx.clip(); ctx.drawImage(kp, bx + 40, by + 30, 30, 38); ctx.restore();
+  ctx.drawImage(shopFrontArt(z, !!it.inn), bx, by);
+  lights.push([it.x + 8, it.y - 8, 70, 0.8, "255,190,100"]);
+  if (G.mode === "play") { const b = Math.round(Math.sin(t / 10) * 1.5), near = it.near; ctx.fillStyle = near ? "#ffe680" : "rgba(255,230,128,.55)"; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText(near ? "UP: ENTER" : "UP", x + 8, by - 3 + b); }
 }
 
 function shopStock(it) {
@@ -2733,9 +2722,8 @@ function shopTap(px, py) {
 
 function updateShop(it, hb) {
   if (G.shopCool > 0) G.shopCool--;
-  const near = overlap(hb, { x: it.x - 20, y: it.y - 24, w: 56, h: 48 });
-  if (!near) { it.near = false; return; }
-  if (!it.near && !(G.shopCool > 0) && G.mode === "play") { it.near = true; G.mode = "shop"; G.shopIt = it; G.shopSel = 0; G.shopMsg = "What do you need?"; }
+  it.near = overlap(hb, { x: it.x - 6, y: it.y - 24, w: 28, h: 48 });
+  if (it.near && pressed.up && G.mode === "play" && !G.hero.climb && !(G.shopCool > 0)) { G.mode = "shop"; G.shopIt = it; G.shopSel = 0; G.shopMsg = it.inn ? "Rooms are clean. Mostly." : "What do you need?"; }
 }
 
 function heartArt() {
@@ -4337,6 +4325,31 @@ function adaptQuality(dt) {
 
 function setQL() { const box = document.getElementById("crt"); if (!box) return; box.classList.toggle("lite", (window.__QL | 0) >= 1); box.classList.toggle("lite2", (window.__QL | 0) >= 2); }
 
+
+
+function shopFrontArt(zone, inn) {
+  const T = stoneTone(zone), wood = ["#4a2e16", "#7a5028", "#2a1a0c"];
+  return baked("shopfront" + (zone % 4) + (inn ? "i" : "s"), 72, 64, (R) => {
+    const S = rng(zone * 11 + (inn ? 5 : 2)), o = "#0c0806";
+    // gabled roof with tiles
+    for (let i = 0; i < 9; i++) { R(6 + i * 2, 12 - i, 60 - i * 4, 2, o); R(8 + i * 2, 12 - i, 56 - i * 4, 1, i & 1 ? "#5a3a24" : "#6a4630"); }
+    R(2, 12, 68, 12, o); for (let x = 3; x < 69; x += 6) { R(x, 13, 6, 9, (x / 6 | 0) & 1 ? "#5a3a24" : "#6a4630"); R(x, 13, 6, 2, "#8a5c3a"); R(x + 5, 13, 1, 9, "#2a1810"); R(x, 21 + (S() < 0.4 ? 1 : 0), 6, 2, "#3a2416"); }
+    // timber front, plaster between the posts
+    R(4, 24, 64, 40, o); R(5, 24, 62, 39, T[0]); for (let k = 0; k < 50; k++) R(6 + Math.floor(S() * 60), 26 + Math.floor(S() * 34), 1 + Math.floor(S() * 3), 1, S() < 0.5 ? T[1] : T[2]);
+    for (const bx of [4, 34, 66]) { R(bx, 24, 3, 40, wood[2]); R(bx, 24, 1, 40, wood[1]); } R(4, 24, 64, 3, wood[2]); R(4, 24, 64, 1, wood[1]); R(4, 58, 64, 6, T[2]); for (let x = 4; x < 68; x += 8 + Math.floor(S() * 4)) R(x, 58, 1, 6, o);
+    // the front door, arched, in the middle, with a lamp over it
+    R(27, 34, 18, 30, o); R(28, 35, 16, 29, wood[0]); for (let i = 0; i < 16; i += 4) { R(28 + i, 35, 1, 29, wood[2]); R(29 + i, 35, 1, 29, wood[1]); } R(28, 40, 16, 2, "#2a2a30"); R(28, 54, 16, 2, "#2a2a30"); R(40, 48, 2, 3, "#d8b858"); R(27, 33, 18, 3, wood[2]); R(27, 33, 18, 1, wood[1]);
+    R(26, 62, 20, 2, T[1]); R(25, 63, 22, 1, T[2]);   // a worn step
+    // two windows with a warm glow, the keeper shows in the right one
+    for (const wx of [8, 50]) { R(wx - 1, 35, 16, 20, o); R(wx, 36, 14, 18, wood[0]); R(wx + 2, 38, 10, 14, "#ffb860"); R(wx + 2, 38, 10, 3, "#ffd890"); R(wx + 6, 38, 1, 14, wood[0]); R(wx + 2, 44, 10, 1, wood[0]); R(wx - 2, 54, 18, 2, T[1]); }
+    // the hanging sign
+    R(12, 24 - 0, 2, 6, o); R(58, 24, 2, 6, o);
+    R(20, 26, 32, 7, o); R(21, 27, 30, 5, inn ? "#5a2a1a" : "#2a4a2a"); R(21, 27, 30, 1, inn ? "#8a4a2a" : "#4a7a4a");
+    if (inn) { R(24, 28, 2, 3, "#f0e0a0"); R(24, 28, 4, 1, "#f0e0a0"); R(31, 28, 1, 3, "#f0e0a0"); R(33, 28, 1, 3, "#f0e0a0"); R(34, 29, 1, 1, "#f0e0a0"); R(35, 28, 1, 3, "#f0e0a0"); R(38, 28, 4, 1, "#f0e0a0"); R(38, 28, 1, 3, "#f0e0a0"); R(42, 28, 1, 3, "#f0e0a0"); R(44, 28, 1, 3, "#f0e0a0"); }
+    else { R(24, 28, 4, 1, "#f0e0a0"); R(24, 28, 1, 2, "#f0e0a0"); R(24, 30, 4, 1, "#f0e0a0"); R(27, 30, 1, 2, "#f0e0a0"); R(24, 31, 4, 1, "#f0e0a0"); R(30, 28, 1, 4, "#f0e0a0"); R(33, 28, 1, 4, "#f0e0a0"); R(30, 30, 4, 1, "#f0e0a0"); R(36, 28, 4, 1, "#f0e0a0"); R(36, 28, 1, 4, "#f0e0a0"); R(36, 31, 4, 1, "#f0e0a0"); R(42, 28, 1, 4, "#f0e0a0"); R(44, 28, 1, 4, "#f0e0a0"); R(42, 29, 3, 1, "#f0e0a0"); R(42, 31, 3, 1, "#f0e0a0"); }
+    for (const [mx, my] of [[10, 60], [64, 60]]) { R(mx, my, 4, 2, "#46702e"); }
+  }, zone * 3 + (inn ? 1 : 0));
+}
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
