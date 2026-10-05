@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.71">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.71">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.72">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.72">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.71</title>
+<title>Black Tiger: The Depths v0.72</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -159,7 +159,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.71";   // bump by 0.01 with every change
+const VERSION = "0.72";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1258,17 +1258,17 @@ const BEHAVIOUR = {
   },
   bat(e) {            // pops out of the wall when you pass, then swoops at you
     const h = G.hero;
-    if (e.state === "hidden") { e.frame = null; e.vulnerable = false; if (near(e, 100, 120)) { e.state = "emerge"; e.t = 0; } return; }
+    if (e.state === "hidden") { e.frame = null; e.vulnerable = false; if (near(e, 80, 100)) { e.state = "emerge"; e.t = 0; } return; }
     e.vulnerable = true;
-    if (e.state === "emerge") { e.frame = "e" + Math.min(2, e.t >> 3); if (e.t > 24) { e.state = "fly"; e.t = 0; } return; }
+    if (e.state === "emerge") { e.frame = "e" + Math.min(2, e.t >> 3); if (e.t > 36) { e.state = "fly"; e.t = 0; } return; }
     if (e.state === "retreat") {
       // after a strike the bat peels away and loops round in a wide circle before diving again
-      const k = Math.min(1, e.t / 90), ang = e.a0 + e.spin * Math.PI * 1.15 * k, sp = 1.7;
+      const k = Math.min(1, e.t / 130), ang = e.a0 + e.spin * Math.PI * 1.15 * k, sp = 1.05;
       e.x += Math.cos(ang) * sp; e.y += Math.sin(ang) * sp;
-      if (e.t > 90) { e.state = "fly"; e.t = 0; }
+      if (e.t > 130) { e.state = "fly"; e.t = 0; }
     } else {
       const tx = h.x + 8, ty = h.y + 4 + Math.sin(e.t / 14) * 26;
-      e.x += Math.sign(tx - e.x) * 1.1; e.y += Math.max(-1.2, Math.min(1.2, (ty - e.y) * 0.05));
+      e.x += Math.sign(tx - e.x) * 0.62; e.y += Math.max(-0.7, Math.min(0.7, (ty - e.y) * 0.04));
       if (overlap(heroBox(), enemyBox(e))) {   // contact: bite, then retreat
         hitArea(e, enemyBox(e));
         const away = e.x + 8 < h.x + 16 ? -1 : 1;
