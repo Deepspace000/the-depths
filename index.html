@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.59">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.59">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.60">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.60">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.59</title>
+<title>Black Tiger: The Depths v0.60</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.59";   // bump by 0.01 with every change
+const VERSION = "0.60";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -735,7 +735,7 @@ function generateWorld(seed) {
   // one backpack on each level; each is two slots bigger than the one before, and each looks different
   for (let z = 0; z < ZONES.length; z++) {
     let best = null, bd = 1e9; const cx0 = GW >> 1, cy0 = z * 3;
-    for (const r of rooms) { if (r.id === 0 || r.zone !== z || r.cave || r.ruin) continue; const d = Math.abs(r.x + r.w / 2 - cx0) * 0.5 + Math.abs(r.y - cy0) * 2 + r.id * 0.0001; if (d < bd) { const sp = standSpots(r); if (sp.length) { bd = d; best = [r, sp]; } } }
+    for (const r of rooms) { if (r.id === 0 || r.zone !== z || r.cave || r.ruin) continue; const d = z === 0 ? -(Math.abs(r.x - rooms[0].x) + Math.abs(r.y - rooms[0].y) * 2) + r.id * 0.0001 : Math.abs(r.x + r.w / 2 - cx0) * 0.5 + Math.abs(r.y - cy0) * 2 + r.id * 0.0001; if (d < bd) { const sp = standSpots(r); if (sp.length) { bd = d; best = [r, sp]; } } }
     if (!best) continue;
     const [r, sp] = best, fl = sp.filter(([x, y]) => y === r.ty + r.th - 2 && !items.some(i => Math.abs(i.x - x * TS) < 24 && Math.abs(i.y - y * TS) < 24)), [x, y] = fl.length ? fl[Math.floor(fl.length / 2)] : sp[0];
     if (z & 1) items.push({ id: r.id * 100 + 56, kind: "shop", tier: z, zone: z, x: x * TS, y: y * TS });   // half the backpacks are sold by a pedlar
