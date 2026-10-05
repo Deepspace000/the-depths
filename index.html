@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.34">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.34">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.35">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.35">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.34</title>
+<title>Black Tiger: The Depths v0.35</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.34";   // bump by 0.01 with every change
+const VERSION = "0.35";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -412,13 +412,6 @@ function wear(n, salt) {
   return Math.min(4, Math.floor(v * 3.2 + (h(n * 7) > 0.92 ? 1 : 0)));
 }
 // A thin rope-and-plank bridge (original drawing)
-function drawBridge(g, x) {
-  g.fillStyle = "#5a3a1e"; g.fillRect(0, 1, 16, 4);
-  g.fillStyle = "#8a6034"; for (let i = (x & 1) * 2; i < 16; i += 4) g.fillRect(i, 1, 3, 3);
-  g.fillStyle = "#2a1a0c"; g.fillRect(0, 5, 16, 1);
-  g.fillStyle = "#b09060"; g.fillRect(0, 0, 16, 1);
-  if ((x & 3) === 0) { g.fillStyle = "#6a4a2a"; g.fillRect(1, 5, 1, 3); }
-}
 function q2(n) { return [[n, 0, 0], [n + 1, 16, 0], [n + 8, 0, 16], [n + 9, 16, 16]]; }   // 2x2 block of pieces
 const mk = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
 
@@ -2161,131 +2154,145 @@ function flyArt(kind, frame) {
 
 function stairTile(zone, x, y) {
   const Z = ZONES[zone];
-  return baked("stair" + zone + (x & 3), 16, 16, (R) => {
-    const o = shade(Z.solid, 0.3), d = shade(Z.solid, 0.55), m = shade(Z.solid, 0.78), l = shade(Z.solid, 1.12), h = shade(Z.solid, 1.35);
-    R(0, 0, 16, 16, o); R(0, 0, 16, 5, l); R(0, 0, 16, 1, h); R(0, 5, 16, 1, d); R(0, 6, 16, 10, m);
-    R(0, 10, 16, 1, d); R(7 + (x & 3), 6, 1, 4, d); R(3 + ((x >> 1) & 3), 11, 1, 5, d); R(12, 11, 1, 5, d);
-    R(1, 1, 5, 1, "rgba(255,255,255,.2)"); R(14, 6, 2, 10, d); R(0, 15, 16, 1, o);
-    if (x & 1) { R(12, 0, 4, 2, o); R(13, 2, 3, 1, o); } else { R(0, 0, 3, 1, o); }   // a chipped corner
-    R(5, 3, 1, 1, d); R(9, 2, 2, 1, d);
+  return bakedR("stair3" + zone + (x & 3), 16, 16, (R) => {
+    const S = rng(zone * 13 + (x & 3) * 5 + 1), o = shade(Z.solid, 0.28);
+    R(0, 0, 16, 16, o); stoneBlock(R, 0, 0, 16, 5, zone + (x & 3), S, false); R(0, 0, 16, 1, shade(Z.solid, 1.4));
+    let bx = 0; const rowY = 6; while (bx < 16) { const bw = 5 + Math.floor(S() * 5); stoneBlock(R, bx, rowY, Math.min(bw, 16 - bx), 10, (bx >> 2) + zone, S, false); bx += bw; }
+    R(5, 3, 6, 2, "rgba(0,0,0,.2)"); R(0, 5, 16, 1, o);                // the worn centre of the tread
+    if (x & 1) { R(13, 0, 3, 2, "rgba(0,0,0,0)"); R(0, 14, 2, 2, "rgba(0,0,0,0)"); } else { R(0, 0, 2, 2, "rgba(0,0,0,0)"); R(14, 14, 2, 2, "rgba(0,0,0,0)"); }
   }, zone * 9 + (x & 3));
 }
 
 function windowArt(seed, pal) {
-  return baked("cwin" + (seed % 6) + pal, 48, 96, (R) => {
-    const st = "#8a8478", st2 = "#5a564e", st3 = "#38342e", ink = "#14100e", G = glassPal(pal), S = rng(seed * 31 + pal);
-    const half = y => y < 24 ? Math.round(20 * Math.sin((y / 24) * Math.PI / 2 * 0.92 + 0.12)) + 3 : 23;   // pointed arch
-    for (let y = 0; y < 96; y++) { const hw = half(y); R(24 - hw - 4, y, hw * 2 + 8, 1, st3); R(24 - hw - 3, y, 3, 1, y % 8 < 4 ? st : st2); R(24 + hw, y, 3, 1, y % 8 < 4 ? st2 : st3); R(24 - hw, y, hw * 2, 1, "#10101a"); }
-    R(1, 92, 46, 4, st3); R(0, 94, 48, 2, st2);   // sill
-    // leaded panes in a grid, mullions and a quatrefoil, many panes broken out
-    for (let y = 6; y < 92; y += 9) for (let x = 3; x < 45; x += 9) {
-      const cx = x + 4, cy = y + 4, hw = half(y + 4); if (Math.abs(cx - 24) > hw - 1) continue;
-      const roll = S(); if (roll < 0.34) continue;                      // broken out: the dark church shows through
-      const col = roll < 0.68 ? G[0] : roll < 0.9 ? G[1] : G[2];
-      R(x, y, 8, 8, col); R(x, y, 8, 1, "rgba(255,255,255,.28)"); R(x, y, 1, 8, "rgba(255,255,255,.2)"); R(x + 7, y, 1, 8, "rgba(0,0,0,.35)");
-      if (S() < 0.3) { R(x + 1 + Math.floor(S() * 5), y + 1, 1, 6, "rgba(0,0,0,.6)"); }   // a crack
+  return bakedR("cwin3" + (seed % 6) + pal, 48, 96, (R) => {
+    const S = rng(seed * 31 + pal + 7), G = glassPal(pal), st = "#8a8478", st2 = "#5a564e", st3 = "#38342e", ink = "#14100e", hole = "#08080e";
+    const half = y => y < 26 ? Math.round(20 * Math.sin((y / 26) * Math.PI / 2 * 0.95 + 0.1)) + 3 : 23;
+    for (let y = 0; y < 96; y++) { const hw = half(y), tone = ((y >> 3) + seed) & 1; R(24 - hw - 5, y, hw * 2 + 10, 1, st3); R(24 - hw - 4, y, 4, 1, tone ? st : st2); R(24 + hw, y, 4, 1, tone ? st2 : st); R(24 - hw, y, hw * 2, 1, hole); }
+    const cols = [[5, 11], [17, 14], [32, 11]], rowsH = [9, 13, 8, 15, 9, 12, 8], panes = []; let yy = 7;
+    for (const rh of rowsH) { if (yy + rh > 91) break; for (const [cx0, cw] of cols) { if (Math.abs(cx0 + cw / 2 - 24) > half(yy + rh / 2) - 1) continue; panes.push({ x: cx0, y: yy, w: cw, h: rh - 1 }); } yy += rh; }
+    const broken = new Set(); for (let k = 0; k < 3; k++) { const c = panes[Math.floor(S() * panes.length)]; if (!c) continue; broken.add(c); for (const p of panes) if (p !== c && Math.abs(p.x - c.x) < 17 && Math.abs(p.y - c.y) < 15 && S() < 0.55) broken.add(p); }
+    for (const p of panes) {
+      if (broken.has(p)) { if (S() < 0.75) { const sh = G[Math.floor(S() * 3)]; for (let k = 0; k < Math.min(p.w, p.h) - 2; k++) R(p.x + k, p.y + p.h - 1 - k, Math.max(1, Math.round(p.w * 0.5) - k), 1, sh); } continue; }
+      const base = G[Math.floor(S() * 3)];
+      R(p.x, p.y, p.w, p.h, base); R(p.x, p.y, p.w, 2, shade(base, 1.32)); R(p.x, p.y, 2, p.h, shade(base, 1.22)); R(p.x + p.w - 2, p.y + 2, 2, p.h - 2, shade(base, 0.68)); R(p.x + 2, p.y + p.h - 2, p.w - 2, 2, shade(base, 0.76));
+      if (S() < 0.5) R(p.x + 3 + Math.floor(S() * Math.max(1, p.w - 6)), p.y + 3, 1, 3, "rgba(255,255,255,.45)");
+      if (S() < 0.25) R(p.x + 2 + Math.floor(S() * (p.w - 4)), p.y, 1, p.h, "rgba(10,6,8,.7)");   // a crack through the pane
     }
-    for (let x = 3; x < 45; x += 9) R(x - 1, 6, 1, 86, ink); for (let y = 6; y < 92; y += 9) R(3, y - 1, 42, 1, ink);
-    R(23, 4, 2, 88, st2); R(10, 28, 28, 2, st2); R(22, 7, 4, 4, st); R(21, 10, 6, 1, st2);
-    // jagged missing stone at the arch top and along one side
-    R(21, 0, 6, 2, "rgba(0,0,0,0)"); for (let k = 0; k < 6; k++) R(2 + k * 7 + ((seed >> k) & 3), 40 + ((seed * (k + 3)) % 40), 2, 3, st3);
+    for (const p of panes) { const j = (p.x + p.y) & 1; R(p.x - 2, p.y - 1 + j, p.w + 4, 2, ink); R(p.x - 2, p.y + p.h - 1 - j, p.w + 4, 2, ink); R(p.x - 1, p.y, 2, p.h, ink); R(p.x + p.w - 1, p.y + (j ? 1 : 0), 2, p.h - 1, ink); }   // bent leads
+    R(15, 5, 2, 86, st2); R(31, 5, 2, 86, st2); R(8, 30, 32, 2, st2); R(8, 30, 32, 1, st);
+    // a quatrefoil in the head of the window
+    for (const [qx, qy, qc] of [[24, 10, 0], [20, 14, 1], [28, 14, 2], [24, 18, 1]]) { R(qx - 2, qy - 2, 5, 5, ink); R(qx - 1, qy - 1, 3, 3, G[qc]); R(qx - 1, qy - 1, 2, 1, shade(G[qc], 1.4)); }
+    for (let k = 0; k < 5; k++) R(2 + Math.floor(S() * 44), 38 + Math.floor(S() * 54), 2 + Math.floor(S() * 2), 1, st3);
   }, seed + pal);
 }
 
 function pillarArt(h, broken, seed) {
-  return baked("pil" + h + (broken ? "b" : "s") + (seed % 5), 20, h * 16, (R) => {
-    const H = h * 16, st = "#9a9488", lit = "#c4bcae", dk = "#58544c", o = "#1a1814";
-    const top = broken ? 6 + (seed % 10) : 0;
-    R(2, 4 + top, 16, H - top - 4, o); R(4, 4 + top, 12, H - top - 8, st); R(4, 4 + top, 3, H - top - 8, lit); R(13, 4 + top, 3, H - top - 8, dk);
-    for (let y = 8 + top; y < H - 8; y += 3) { R(8, y, 1, 2, dk); R(11, y, 1, 2, dk); }                     // flutes
-    R(0, H - 6, 20, 6, o); R(1, H - 6, 18, 5, st); R(1, H - 6, 18, 1, lit); R(2, H - 14, 16, 1, dk);        // base
-    if (!broken) { R(0, 0, 20, 6, o); R(1, 1, 18, 4, st); R(1, 1, 18, 1, lit); R(3, 5, 14, 2, dk); }
-    else { for (let k = 0; k < 8; k++) R(2 + k * 2, 3 + top + ((k * 5 + seed) % 5), 3, 3, k % 2 ? o : st); R(4, 3 + top, 12, 2, o); }   // ragged broken top
-    for (let k = 0; k < 6; k++) R(3 + ((seed * (k + 2)) % 13), 12 + top + ((seed * (k + 5)) % (H - top - 24)), 2, 1, o);   // cracks
+  return bakedR("pil3" + h + (broken ? "b" : "s") + (seed % 5), 24, h * 16 + 8, (R) => {
+    const S = rng(seed * 7 + h), H = h * 16 + 8, st = "#9a9488", lit = "#cac2b2", dk = "#58544c", o = "#1a1814", x0 = 4;
+    const topY = broken ? 8 + Math.floor(S() * 10) : 6;
+    R(x0 - 1, topY, 18, H - topY - 6, o); R(x0, topY, 16, H - topY - 6, st); R(x0, topY, 4, H - topY - 6, lit); R(x0 + 12, topY, 4, H - topY - 6, dk);
+    for (const fx of [x0 + 6, x0 + 10]) R(fx, topY + 2, 1, H - topY - 12, dk);          // fluting
+    R(x0 + 4, topY, 1, H - topY - 6, "#b0a898");
+    // base with a chipped bevel
+    R(0, H - 8, 24, 8, o); R(1, H - 7, 22, 6, st); R(1, H - 7, 22, 1, lit); R(1, H - 7, 3, 6, lit); R(19, H - 6, 4, 5, dk); R(x0 - 1, H - 10, 18, 3, dk); R(21, H - 7, 3, 3, "rgba(0,0,0,0)");
+    if (!broken) { R(0, 0, 24, 8, o); R(1, 1, 22, 6, st); R(1, 1, 22, 1, lit); R(1, 1, 3, 6, lit); R(19, 2, 4, 5, dk); R(3, 7, 18, 2, dk); R(0, 0, 3, 2, "rgba(0,0,0,0)"); }
+    else {   // a jagged break at three different heights
+      for (let k = 0; k < 16; k++) { const jag = [0, 3, 6, 2, 5, 1][k % 6] + Math.floor(S() * 3); R(x0 + k, topY - 1, 1, jag + 1, "rgba(0,0,0,0)"); R(x0 + k, topY + jag, 1, 1, lit); }
+      for (let k = 0; k < 5; k++) R(1 + Math.floor(S() * 20), H - 11 - Math.floor(S() * 3), 3, 3, k % 2 ? st : dk);   // fallen stones at the foot
+    }
+    for (let k = 0; k < 3; k++) { const cx = x0 + 3 + Math.floor(S() * 10), cy = topY + 6 + Math.floor(S() * Math.max(4, H - topY - 28)); R(cx, cy, 1, 4, o); R(cx + 1, cy + 4, 1, 3, o); }
   }, seed * 7 + h);
 }
 
 function pewArt(broken, seed) {
-  return baked("pew" + (broken ? 1 : 0) + (seed % 4), 52, 22, (R) => {
-    const w = "#5a3a1c", wl = "#8a5c2c", wd = "#2e1c0c", o = "#150c04";
-    R(2, 6, 3, 15, o); R(46, 6, 3, 15, o); R(3, 6, 1, 15, wl); R(47, 6, 1, 15, wl);                         // end panels
-    R(1, 4, 50, 3, o); R(2, 4, 48, 1, wl); R(2, 5, 48, 2, w);                                               // backrest rail
-    R(5, 10, 41, 4, o); R(6, 10, 39, 1, wl); R(6, 11, 39, 3, w); R(5, 14, 41, 1, wd);                       // seat
-    for (let x = 8; x < 44; x += 6) R(x, 7, 1, 3, wd);
-    if (broken) { R(18, 10, 11, 4, "rgba(0,0,0,0)"); R(17, 8, 14, 7, "#0b0b12"); R(16, 14, 5, 6, o); R(15, 15, 4, 5, wd); R(28, 5, 4, 3, "#0b0b12"); R(30, 15, 8, 3, wd); }   // snapped seat, fallen plank
+  return bakedR("pew3" + (broken ? 1 : 0) + (seed % 4), 52, 24, (R) => {
+    const S = rng(seed * 5 + 1), w = "#5a3a1c", wl = "#8a5c2c", wd = "#2e1c0c", o = "#150c04";
+    R(2, 8, 4, 15, o); R(3, 8, 2, 15, w); R(3, 8, 1, 15, wl);                                                              // left end panel
+    if (!broken) { R(46, 8, 4, 15, o); R(47, 8, 2, 15, w); R(47, 8, 1, 15, wl); } else { R(46, 14, 4, 9, o); R(47, 14, 2, 9, w); for (let k = 0; k < 4; k++) R(46 + (k & 1), 10 + k, 1, 2, wl); R(44, 21, 6, 2, wd); }   // a snapped end, splinters up
+    for (let i = 0; i < 3; i++) { if (broken && i === 1) continue; const x = 7 + i * 13 + (S() < 0.5 ? 1 : 0), lean = i; R(x + lean, 3, 11, 3, o); R(x + lean + 1, 3, 9, 1, wl); R(x + lean + 1, 4, 9, 2, w); }   // leaning back slats, one missing
+    R(5, 11, 42, 5, o); R(6, 11, 40, 1, wl); R(6, 12, 40, 3, w); R(6, 15, 40, 1, wd);                                       // a thick plank seat
+    for (let x = 10; x < 44; x += 7 + Math.floor(S() * 3)) R(x, 12, 1, 3, wd);
+    if (broken) { R(19, 11, 13, 5, "rgba(0,0,0,0)"); R(18, 14, 5, 4, o); R(27, 16, 6, 3, wd); R(30, 13, 4, 2, w); }
+    R(8, 16, 3, 7, o); R(9, 16, 1, 6, wd); R(40, 16, 3, 7, o); R(41, 16, 1, 6, wd);
   }, seed);
 }
 
 function altarArt(seed, zone) {
-  return baked("altar" + (seed % 3) + zone, 48, 40, (R) => {
-    const st = "#a09a8c", lit = "#cac2b0", dk = "#5c5850", o = "#16140f";
-    R(3, 28, 42, 12, o); R(4, 28, 40, 2, lit); R(4, 30, 40, 9, st); R(4, 30, 4, 9, lit); R(38, 30, 6, 9, dk);
-    R(8, 22, 32, 8, o); R(9, 22, 30, 1, lit); R(9, 23, 30, 6, st); R(34, 23, 5, 6, dk);
-    R(6, 24, 4, 8, "#7a2018"); R(6, 24, 4, 1, "#a83428"); R(38, 25, 5, 12, "#7a2018"); R(37, 31, 8, 1, "#501410");        // faded cloth, torn
-    R(22, 6, 4, 18, o); R(23, 6, 2, 17, "#c8a850"); R(17, 11, 14, 3, o); R(18, 11, 12, 2, "#c8a850"); R(24, 6, 1, 17, "#f0dc88");  // a cross
-    R(10, 17, 4, 6, o); R(11, 18, 2, 5, "#d8cfa8"); R(34, 17, 4, 6, o); R(35, 18, 2, 5, "#d8cfa8");                    // candles
-    for (let k = 0; k < 6; k++) R(6 + ((seed * (k + 3)) % 36), 31 + (k % 6), 2, 1, o);
+  return bakedR("altar3" + (seed % 3) + zone, 48, 40, (R) => {
+    const S = rng(seed * 3 + 5), o = "#16140f";
+    for (let i = 0; i < 4; i++) stoneBlock(R, 3 + i * 10, 29, 10, 11, i + seed, S, false);
+    for (let i = 0; i < 3; i++) stoneBlock(R, 8 + i * 11, 22, 11, 8, i + seed + 1, S, false);
+    R(7, 21, 34, 1, "#cac2b0");
+    // a faded cloth with a ragged hem
+    R(6, 22, 5, 9, "#7a2018"); R(6, 22, 5, 1, "#a83428"); for (let k = 0; k < 5; k++) R(6 + k, 31, 1, Math.floor(S() * 3), "#7a2018");
+    R(37, 22, 6, 12, "#7a2018"); R(37, 22, 6, 1, "#a83428"); for (let k = 0; k < 6; k++) R(37 + k, 34, 1, Math.floor(S() * 4), "#501410"); R(38, 25, 1, 5, "#501410");
+    // a slightly crooked cross
+    R(22, 12, 4, 10, o); R(23, 12, 2, 10, "#c8a850"); R(23, 12, 1, 10, "#f0dc88"); R(23, 5, 4, 8, o); R(24, 5, 2, 8, "#c8a850"); R(24, 5, 1, 7, "#f0dc88"); R(18, 11, 14, 3, o); R(19, 11, 12, 2, "#c8a850"); R(19, 11, 12, 1, "#f0dc88"); R(31, 12, 2, 1, "rgba(0,0,0,0)");
+    // two guttered candles with uneven wax and drips
+    for (const [cx, cy] of [[10, 17], [34, 17]]) { R(cx, cy, 5, 5, o); R(cx + 1, cy, 3, 5, "#d8cfa8"); R(cx + 1, cy, 1, 5, "#f0e8c8"); R(cx + 2, cy + 5, 1, 2, "#d8cfa8"); R(cx + 4, cy + 1, 1, 3, "#b8ae88"); R(cx - 1, cy + 4, 2, 2, "#c8be98"); }
   }, seed + zone);
 }
 
 function chandelierArt(seed) {
-  return baked("chand" + (seed % 3), 40, 28, (R) => {
-    const m = "#6a5a30", l = "#c8a850", o = "#16120a";
-    for (let x = 4; x < 36; x++) { const y = 10 + Math.round(Math.sin((x - 4) / 32 * Math.PI) * 6); if (!(x > 22 && x < 27)) { R(x, y, 1, 3, o); R(x, y, 1, 1, l); R(x, y + 1, 1, 1, m); } }
-    R(19, 2, 2, 12, m); R(20, 2, 1, 12, l);
-    for (const x of [6, 14, 26, 33]) { R(x, 4, 3, 7, o); R(x + 1, 5, 1, 5, "#d8d0a8"); R(x, 15, 3, 3, o); }
-    R(2, 18, 6, 1, o); R(31, 19, 6, 1, o); R(10, 22, 1, 4, m); R(30, 24, 1, 3, m);   // snapped arms hanging loose
+  return bakedR("chand3" + (seed % 3), 34, 32, (R) => {
+    const S = rng(seed * 11 + 2), iron = "#4a4648", lit = "#8a8488", dk = "#1c1a1c";
+    for (let a = 0; a < 64; a++) { const t = a / 64 * Math.PI * 2, x = 17 + Math.cos(t) * 13, y = 22 + Math.sin(t) * 5; if (a > 30 && a < 34) continue; R(Math.round(x) - 1, Math.round(y) - 1, 3, 3, dk); R(Math.round(x), Math.round(y) - (Math.sin(t) < 0 ? 1 : 0), 2, 2, Math.sin(t) < 0.2 ? lit : iron); }   // a thick iron ring, broken once
+    for (const x of [6, 11, 17, 23, 28]) { const yy = 22 + Math.round(Math.sqrt(Math.max(0, 1 - ((x - 17) / 13) * ((x - 17) / 13))) * 5); R(x - 1, yy - 12, 4, 12, dk); R(x, yy - 10, 2, 9, "#d8d0a8"); R(x, yy - 10, 1, 9, "#f0e8c8"); R(x - 1, yy - 2, 4, 2, iron); if (S() < 0.6) R(x + 1, yy - 1, 1, 2 + Math.floor(S() * 3), "#c8be98"); }
+    for (const [x0, k] of [[7, 0], [27, 1], [17, 2]]) { const n = 16; for (let i = 0; i < n; i++) { if (k === 1 && i > 6 && i < 10) continue; const x = x0 + (17 - x0) * i / n, y = 18 - i * 17 / n; R(Math.round(x), Math.round(y), 1, 1, i % 2 ? lit : dk); } }   // three chains meeting at the hook, one with a link gone
+    R(15, 0, 4, 2, dk); R(16, 0, 2, 1, lit); R(8, 24, 1, 5, dk); R(9, 27, 1, 3, lit); R(26, 25, 1, 4, dk);   // loose links hanging from the break
   }, seed);
 }
 
 function wallArt(w, h, seed, flags) {
-  const key = "bwall" + w + "x" + h + "s" + (seed % 7) + (flags.arches ? "a" : "") + (flags.crenel ? "c" : "") + (flags.fg ? "f" : "") + (flags.arch ? "r" + flags.arch.ax + "w" + flags.arch.aw : "") + (flags.holes && flags.holes.length ? "h" + flags.holes.join("_") : "");
-  return baked(key, w * 16, h * 16, (R) => {
-    const W = w * 16, H = h * 16, S = rng(seed * 13 + w * 5 + h), fg = flags.fg, base = fg ? "#6e6a74" : "#4a4852", lit = fg ? "#9a96a4" : "#6a6874", dk = fg ? "#3a3844" : "#2a2832", o = "#0e0d14";
-    const top = flags.crenel ? 8 : 0;
-    // ragged top edge: the wall's height wanders
-    const edge = []; for (let x = 0; x < W; x++) edge.push(top + Math.round(3 * Math.sin(x / 9 + seed) + (S() < 0.12 ? 3 : 0)));
-    for (let x = 0; x < W; x++) { R(x, edge[x], 1, H - edge[x], base); R(x, edge[x], 1, 1, lit); }
-    if (flags.crenel) { for (let x = 2; x < W - 8; x += 20) { if (S() < 0.22) continue; const mh = 6 + Math.floor(S() * 3); R(x, edge[x] - mh, 12, mh, base); R(x, edge[x] - mh, 12, 1, lit); R(x, edge[x] - mh, 1, mh, lit); R(x + 11, edge[x] - mh, 1, mh, dk); } }
-    // courses of dressed stone with staggered joints
-    for (let y = 8; y < H; y += 8) { for (let x = 0; x < W; x++) if (y > edge[x]) R(x, y, 1, 1, dk); const off = (y / 8 & 1) * 8 + Math.floor(S() * 3); for (let x = off; x < W; x += 16 + Math.floor(S() * 6)) if (y + 8 > edge[Math.min(W - 1, x)]) R(x, y - 8, 1, 8, dk); }
-    for (let k = 0; k < w * h; k++) { const x = Math.floor(S() * W), y = 10 + Math.floor(S() * (H - 12)); if (y > edge[x]) { R(x, y, 3, 2, "rgba(0,0,0,.4)"); R(x, y, 2, 1, lit); } }
-    // arrow slits
-    for (let x = 22; x < W - 22; x += 44) { const y = Math.max(edge[x] + 8, 12); if (y + 14 < H) { R(x - 1, y - 1, 5, 16, o); R(x, y, 3, 14, fg ? "rgba(0,0,0,0)" : "#07060a"); } }
-    if (flags.arches) { for (let x = 6; x + 22 < W; x += 30) { const ah = Math.min(H - 6, 46); R(x - 2, H - ah - 2, 26, ah + 2, o); R(x, H - ah, 22, ah, "#050409"); for (let k = 0; k < 11; k++) { const cut = Math.round(11 - Math.sqrt(Math.max(0, 121 - (11 - k) * (11 - k)))); R(x, H - ah + k, cut, 1, base); R(x + 22 - cut, H - ah + k, cut, 1, base); } } }
-    if (flags.arch && flags.arch.aw > 0) {   // a real archway through the wall: a ring of dressed stones, then the opening cut clean through
-      const A = flags.arch, ax = A.ax * 16, aw = A.aw * 16, ah = A.ah * 16;
-      R(ax - 4, H - ah - 7, aw + 8, ah + 7, o); R(ax - 3, H - ah - 6, aw + 6, 1, lit); for (let k = 0; k < aw + 6; k += 8) R(ax - 3 + k, H - ah - 6, 1, 6, dk);
+  const key = "bwall3" + w + "x" + h + "s" + (seed % 7) + (flags.crenel ? "c" : "") + (flags.fg ? "f" : "") + (flags.blind ? "b" : "") + (flags.arch ? "r" + flags.arch.ax + "w" + flags.arch.aw : "") + (flags.holes && flags.holes.length ? "h" + flags.holes.join("_") : "");
+  return bakedR(key, w * 16, h * 16, (R) => {
+    const W = w * 16, H = h * 16, S = rng(seed * 13 + w * 5 + h), fg = flags.fg, o = "#0e0d14", off = fg ? 1 : 0;
+    const edge = []; for (let x = 0; x < W; x++) edge.push(Math.round(2.5 * Math.sin(x / 8 + seed) + (S() < 0.06 ? 3 : 0)));
+    // courses of different heights, blocks of different widths, three tones per block
+    let y = 0; while (y < H) { const rh = 6 + Math.floor(S() * 4); let x = Math.floor(S() * 6) - 4; while (x < W) { const bw = 9 + Math.floor(S() * 14), bx0 = Math.max(0, x), bw2 = Math.min(bw, W - bx0) - (x < 0 ? -x : 0); if (bw2 > 3 && y + rh > edge[Math.min(W - 1, bx0)]) stoneBlock(R, bx0, Math.max(y, edge[Math.min(W - 1, bx0)]), bw2, y + rh - Math.max(y, edge[Math.min(W - 1, bx0)]), Math.floor(S() * 3) + off, S, true); x += bw; } y += rh; }
+    for (let x = 0; x < W; x++) if (edge[x] > 0) R(x, 0, 1, edge[x], "rgba(0,0,0,0)");
+    for (let x = 22; x < W - 22; x += 44) { const sy = Math.max(edge[x] + 8, 12); if (sy + 14 < H && !(flags.arch && x > flags.arch.ax * 16 - 6 && x < (flags.arch.ax + flags.arch.aw) * 16 + 6)) { R(x - 2, sy - 2, 7, 18, o); R(x - 1, sy - 1, 5, 16, fg ? "rgba(0,0,0,0)" : "#06050a"); R(x - 1, sy - 1, 1, 16, "#5a5868"); } }
+    if (flags.blind) for (let x = 8; x + 24 < W; x += 36) { R(x - 2, 6, 28, H - 6, o); R(x, 8, 24, H - 8, "#0c0b12"); for (let k = 0; k < 12; k++) { const cut = Math.round(12 - Math.sqrt(Math.max(0, 144 - (12 - k) * (12 - k)))); R(x, 8 + k, cut, 1, "#6a6674"); R(x + 24 - cut, 8 + k, cut, 1, "#4a4654"); } R(x, 8, 24, 1, "#7a7684"); }   // blind arcade recesses
+    if (flags.arch && flags.arch.aw > 0) {
+      const A = flags.arch, ax = A.ax * 16, aw = A.aw * 16, ah = A.ah * 16, cx = ax + aw / 2;
+      for (let yy = 0; yy < ah + 8; yy++) for (let xx = -4; xx < aw + 4; xx++) { const px = ax + xx, py = H - ah - 8 + yy; if (px < 0 || px >= W) continue; const inRing = yy < 18 ? ((xx + 0.5 - aw / 2) * (xx + 0.5 - aw / 2) / ((aw / 2 + 4) * (aw / 2 + 4)) + (yy - 18) * (yy - 18) / (26 * 26) <= 1) : true; if (inRing) { const ang = Math.atan2(yy - 18, xx - aw / 2), seg = Math.floor((ang + Math.PI) / (Math.PI / 7)); R(px, py, 1, 1, (seg & 1) ? "#6a6674" : "#8a8694"); } }
+      R(ax - 4, H - ah - 8, aw + 8, 1, "#b8b4c4"); R(cx - 3, H - ah - 8, 6, 5, "#9a96a4"); R(cx - 3, H - ah - 8, 6, 1, "#c8c4d4"); R(cx + 1, H - ah - 6, 3, 3, "rgba(0,0,0,0)");   // keystone, chipped
       for (let yy = 0; yy < ah; yy++) { const cut = yy < 16 ? Math.round((aw / 2) * (1 - Math.sqrt(1 - Math.pow((16 - yy) / 16, 2)))) : 0; R(ax + cut, H - ah + yy, aw - 2 * cut, 1, "rgba(0,0,0,0)"); }
-      for (let yy = 0; yy < 16; yy++) { const cut = Math.round((aw / 2) * (1 - Math.sqrt(1 - Math.pow((16 - yy) / 16, 2)))); R(ax + cut - 2, H - ah + yy, 2, 1, lit); R(ax + aw - cut, H - ah + yy, 2, 1, dk); }
+      for (let k = 0; k < 4; k++) R(ax - 3 + Math.floor(S() * (aw + 4)), H - ah - 4 + Math.floor(S() * 6), 3, 1, "#46702e");   // moss in the cracks
     }
     if (flags.holes) for (const hc of flags.holes) R(hc * 16, 0, 16, H, "rgba(0,0,0,0)");
-    if (fg) { R(0, 0, W, 1, "rgba(0,0,0,0)"); }
-    // the edges crumble: ragged sides and fallen chunks
-    for (let y = 0; y < H; y += 4) { const a = Math.floor(S() * 5); R(0, y, a, 3, "rgba(0,0,0,0)"); const b2 = Math.floor(S() * 5); R(W - b2, y, b2, 3, "rgba(0,0,0,0)"); }
+    for (let yy = 0; yy < H; yy += 3) { const a = Math.floor(S() * 5); R(0, yy, a, 3, "rgba(0,0,0,0)"); const b2 = Math.floor(S() * 5); R(W - b2, yy, b2, 3, "rgba(0,0,0,0)"); }
   }, seed + w * 7);
 }
 
 function battlementArt(w, seed) {
-  return baked("battl" + w + (seed % 5), w * 16, 22, (R) => {
-    const W = w * 16, S = rng(seed * 3 + w), base = "#7e7a86", lit = "#a8a4b2", dk = "#46444e", o = "#0e0d14";
-    R(0, 12, W, 10, o); R(0, 13, W, 8, base); R(0, 13, W, 1, lit); for (let x = 7; x < W; x += 16) R(x, 14, 1, 7, dk); R(0, 17, W, 1, dk);
-    for (let x = 1; x + 11 <= W; x += 16) {   // merlons with gaps between them, a few knocked down
-      const r0 = S(); if (r0 < 0.18) { R(x + 2, 9, 6, 4, base); R(x + 2, 9, 6, 1, lit); continue; }
-      const mh = r0 < 0.4 ? 7 : 12; R(x - 1, 13 - mh - 1, 14, mh + 2, o); R(x, 13 - mh, 12, mh, base); R(x, 13 - mh, 12, 1, lit); R(x, 13 - mh, 1, mh, lit); R(x + 11, 13 - mh, 1, mh, dk);
-      R(x + 4, 13 - mh + 3, 1, 2, dk); if (r0 > 0.8) { R(x + 8, 13 - mh, 4, 3, "rgba(0,0,0,0)"); R(x + 9, 13 - mh + 3, 3, 1, o); }
+  return bakedR("battl3" + w + (seed % 5), w * 16, 24, (R) => {
+    const W = w * 16, S = rng(seed * 3 + w), o = "#0e0d14";
+    R(0, 14, W, 10, o); let bx = 0; while (bx < W) { const bw = 8 + Math.floor(S() * 8); stoneBlock(R, bx, 15, Math.min(bw, W - bx), 8, bx + seed, S, true); bx += bw; }
+    R(0, 14, W, 1, "#b8b4c4");
+    let x = 1, k = 0; while (x + 10 <= W) {
+      const mw = 10 + Math.floor(S() * 4), r0 = S(), mh = r0 < 0.15 ? 0 : 6 + Math.floor(S() * 8);
+      if (mh === 0) { stoneBlock(R, x + 1, 10, 6, 4, k, S, true); stoneBlock(R, x + 8, 11, 4, 3, k + 1, S, true); }              // a fallen merlon, rubble on the wall top
+      else { stoneBlock(R, x, 14 - mh, mw, mh, k + seed, S, true); R(x, 14 - mh, mw, 2, "#b8b4c4"); R(x + mw - 3, 14 - mh + 2, 3, mh - 2, "rgba(0,0,0,.18)"); if (r0 > 0.7) { R(x + mw - 4, 14 - mh, 4, 3, "rgba(0,0,0,0)"); R(x, 14 - mh + 2, 2, 2, "rgba(0,0,0,0)"); } }
+      x += mw + 4 + Math.floor(S() * 3); k++;
     }
+    for (let q = 0; q < W; q += 2 + Math.floor(S() * 3)) R(q, 22 + Math.floor(S() * 2), 2, 2, "rgba(0,0,0,0)");   // a jagged broken base
   }, seed + w);
 }
 
 function balustradeArt(w, seed) {
-  return baked("balus" + w + (seed % 5), w * 16, 18, (R) => {
-    const W = w * 16, S = rng(seed * 5 + w), st = "#a8a296", lit = "#d2cabc", dk = "#5c5850", o = "#16140f";
-    R(0, 15, W, 3, o); R(0, 15, W, 1, lit); R(0, 16, W, 2, st);
-    for (let x = 3; x < W - 4; x += 8) { if (S() < 0.22) { R(x, 12, 6, 3, st); R(x + 1, 12, 2, 1, lit); continue; }   // a baluster lost, only the stump left
-      R(x, 4, 6, 12, o); R(x + 1, 5, 4, 10, st); R(x + 1, 5, 1, 10, lit); R(x + 4, 5, 1, 10, dk); R(x - 1, 14, 8, 2, st); R(x - 1, 4, 8, 2, st); R(x + 1, 8, 4, 3, lit); R(x + 2, 9, 2, 1, dk); }
-    R(0, 0, W, 4, o); R(0, 1, W, 3, st); R(0, 1, W, 1, lit); for (let k = 0; k < 4; k++) R(Math.floor(S() * W), 0, 6 + Math.floor(S() * 8), 4, "rgba(0,0,0,0)");   // the rail has broken away in places
-    R(0, 0, 2, 18, "rgba(0,0,0,0)");
+  return bakedR("balus3" + w + (seed % 5), w * 16, 20, (R) => {
+    const W = w * 16, S = rng(seed * 5 + w), st = "#a8a296", lit = "#d6cec0", dk = "#5c5850", o = "#16140f", prof = [2, 3, 4, 5, 5, 4, 3, 2, 2, 3, 4, 5, 4, 3];
+    R(0, 17, W, 3, o); R(1, 17, W - 2, 1, lit); R(1, 18, W - 2, 2, st);
+    let x = 3; while (x < W - 7) {
+      const gap = 7 + Math.floor(S() * 5);
+      if (S() < 0.22) { R(x, 13, 5, 4, o); R(x + 1, 13, 3, 3, st); R(x + 1, 13, 1, 3, lit); }              // only a stump left
+      else for (let j = 0; j < 14; j++) { const pw = prof[j]; R(x + 3 - (pw >> 1) - 1, 3 + j, pw + 2, 1, o); R(x + 3 - (pw >> 1), 3 + j, pw, 1, st); R(x + 3 - (pw >> 1), 3 + j, 1, 1, lit); R(x + 3 - (pw >> 1) + pw - 1, 3 + j, 1, 1, dk); }
+      x += gap;
+    }
+    R(0, 0, W, 4, o); R(1, 1, W - 2, 3, st); R(1, 1, W - 2, 1, lit); R(1, 3, W - 2, 1, dk);                     // the cap rail
+    const bx = 8 + Math.floor(S() * Math.max(1, W - 24)); R(bx, 0, 6 + Math.floor(S() * 8), 4, "rgba(0,0,0,0)"); R(bx - 1, 3, 3, 3, o);   // a broken section
+    R(0, 0, 2, 20, "rgba(0,0,0,0)");
   }, seed + w);
 }
 
@@ -2329,21 +2336,28 @@ function glassPal(i) { return [["#c03030", "#e8a030", "#702030"], ["#3a64c8", "#
 
 
 function podiumArt(w, seed, zone) {
-  return baked("podium" + w + (seed % 4), w * 16, 38, (R) => {
-    const W = w * 16, st = "#8e887c", lit = "#bcb4a4", dk = "#4e4a42", o = "#16140f";
-    R(0, 22, W, 16, o); R(1, 22, W - 2, 2, lit); R(1, 24, W - 2, 13, st); R(1, 24, 3, 13, lit); R(W - 6, 24, 5, 13, dk); for (let x = 12; x < W - 8; x += 16) R(x, 24, 1, 13, dk); R(1, 30, W - 2, 1, dk);
-    R(32, 6, W - 64, 18, o); R(33, 6, W - 66, 2, lit); R(33, 8, W - 66, 15, st); R(33, 8, 3, 15, lit); R(W - 36, 8, 3, 15, dk); R(33, 15, W - 66, 1, dk);
+  return bakedR("podium3" + w + (seed % 4), w * 16, 38, (R) => {
+    const W = w * 16, S = rng(seed * 3 + w), o = "#16140f";
+    R(0, 22, W, 16, o); for (let r = 0; r < 2; r++) { let bx = 0; while (bx < W) { const bw = 10 + Math.floor(S() * 12); stoneBlock(R, bx, 22 + r * 8, Math.min(bw, W - bx), 8, bx + r + seed, S, false); bx += bw; } }
+    R(0, 22, W, 1, "#cac2b0"); R(34, 14, W - 68, 8, o); for (let r = 0; r < 1; r++) { let bx = 34; while (bx < W - 34) { const bw = 10 + Math.floor(S() * 12); stoneBlock(R, bx, 14, Math.min(bw, W - 34 - bx), 8, bx + seed, S, false); bx += bw; } }
+    R(34, 6, W - 68, 8, o); stoneBlock(R, 35, 7, W - 70, 7, seed + 2, S, false); R(35, 7, W - 70, 1, "#cac2b0"); R(W - 16, 22, 6, 3, "rgba(0,0,0,0)"); R(2, 36, 4, 2, "rgba(0,0,0,0)");
   }, seed);
 }
 
 function roseArt(seed, pal) {
-  return baked("rose" + (seed % 5) + pal, 64, 64, (R) => {
-    const G = glassPal(pal), S = rng(seed * 17 + pal), st = "#8a8478", st2 = "#5a564e", st3 = "#38342e", ink = "#14100e";
-    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) { const dx = x + 0.5 - 32, dy = y + 0.5 - 32, d = Math.sqrt(dx * dx + dy * dy), a = Math.atan2(dy, dx); if (d > 31) continue;
-      let col; if (d > 27) col = ((x + y) & 7) < 4 ? st : st2; else if (d > 25) col = st3; else if (d < 5) col = G[1]; else if (d < 7) col = st2;
-      else { const sp = Math.floor(((a + Math.PI) / (Math.PI * 2)) * 12 + 0.5), edge = Math.abs(((a + Math.PI) / (Math.PI * 2)) * 12 - Math.round(((a + Math.PI) / (Math.PI * 2)) * 12)) < 0.07; const ring = d < 16 ? 0 : d < 24 ? 1 : 2; if (edge || Math.abs(d - 16) < 0.8 || Math.abs(d - 24) < 0.8) col = ink; else { const k = (sp * 7 + ring * 3 + seed) % 11; col = k < 4 ? null : k < 7 ? G[0] : k < 9 ? G[1] : G[2]; } }
-      if (col) R(x, y, 1, 1, col); }
-    for (let i = 0; i < 12; i++) R(Math.floor(S() * 56) + 4, Math.floor(S() * 56) + 4, 2, 2, "rgba(0,0,0,0)");
+  return bakedR("rose3" + (seed % 5) + pal, 64, 64, (R) => {
+    const G = glassPal(pal), S = rng(seed * 17 + pal), st = "#8a8478", st2 = "#5a564e", st3 = "#38342e", ink = "#14100e", brk = Math.floor(S() * 12);
+    for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+      const dx = x + 0.5 - 32, dy = y + 0.5 - 32, d = Math.sqrt(dx * dx + dy * dy), a = (Math.atan2(dy, dx) + Math.PI) / (Math.PI * 2) * 12, sec = Math.floor(a), fr = a - sec; if (d > 31) continue;
+      let col;
+      if (d > 28) col = ((x * 3 + y) & 7) < 4 ? st : st2; else if (d > 25) col = st3;
+      else if (d < 6) col = G[1]; else if (d < 8) col = st2;
+      else if (fr < 0.09 || fr > 0.91 || Math.abs(d - 17) < 1.1) col = ink;        // 2px spokes and one ring
+      else if (sec === brk && d > 12) col = null;                                   // one sector knocked out
+      else { const k = (sec * 5 + (d > 17 ? 2 : 0) + seed) % 7, base = k < 3 ? G[0] : k < 5 ? G[1] : G[2]; col = (fr < 0.3 || d < 12 && fr < 0.4) ? shade(base, 1.3) : (fr > 0.72 ? shade(base, 0.7) : base); }
+      if (col) R(x, y, 1, 1, col);
+    }
+    for (let k = 0; k < 2; k++) { const a = S() * 6.28; R(32 + Math.round(Math.cos(a) * 29) - 2, 32 + Math.round(Math.sin(a) * 29) - 2, 4, 4, "rgba(0,0,0,0)"); }   // chips out of the stone ring
   }, seed + pal);
 }
 
@@ -2502,6 +2516,30 @@ function equipPack(it) {
 }
 
 
+
+
+function bakedR(key, w, h, fn, seed) {
+  const BK = (window.__BAKED = window.__BAKED || {}); if (BK[key]) return BK[key];
+  const c = mk(w, h), g = c.getContext("2d"); fn((a, b, ww, hh, col) => { if (col === "rgba(0,0,0,0)") { g.clearRect(a, b, ww, hh); return; } g.fillStyle = col; g.fillRect(a, b, ww, hh); }, g);
+  gritCanvas(c, seed, 0.1, 0.012, 0.98); BK[key] = c; return c;
+}
+
+function stoneBlock(R, x, y, w, h, tone, S, mossy) {
+  const T = [["#7c7870", "#a8a298", "#4a4640"], ["#6e6a64", "#9a9488", "#3e3a36"], ["#8a8478", "#b8b0a0", "#58544c"]][tone % 3];
+  R(x, y, w, h, T[0]); R(x, y, w, 1, T[1]); R(x, y, 1, h, T[1]); R(x, y + h - 1, w, 1, T[2]); R(x + w - 1, y, 1, h, T[2]);
+  if (S() < 0.5) { const cx = x + 2 + Math.floor(S() * Math.max(1, w - 5)); R(cx, y + 1, 1, 2, T[2]); R(cx + 1, y + 3, 1, Math.max(1, h - 5), T[2]); }
+  if (S() < 0.45) { const c = Math.floor(S() * 3) + 2; R(x + w - c, y, c, c, "rgba(0,0,0,0)"); R(x + w - c, y + c, 1, 1, T[2]); }
+  if (mossy && S() < 0.35) { R(x + 1 + Math.floor(S() * (w - 4)), y + h - 2, 3, 1, "#46702e"); R(x + 2, y + h - 1, 2, 1, "#2e5020"); }
+}
+
+function drawBridge(g, x) {
+  const S = rng(x * 7919 + 13), gapAt = (x * 5 + 3) % 11 === 0, h = (i) => 1 + ((x * 3 + i * 5) % 3 === 0 ? 1 : 0);
+  g.fillStyle = "#b09060"; g.fillRect(0, 0, 16, 1);
+  for (let i = 0; i < 4; i++) { const px = i * 4 + ((x & 1) ? 2 : 0) - 2 + Math.floor(S() * 2), pw = 3 + Math.floor(S() * 2), py = 1 + Math.floor(S() * 2); if (gapAt && i === 1) continue; g.fillStyle = "#3a2410"; g.fillRect(px, py, pw, 4 - (py - 1)); g.fillStyle = S() < 0.5 ? "#8a6034" : "#6e4a28"; g.fillRect(px + 1, py, pw - 1, 3 - (py - 1)); g.fillStyle = "#b08a50"; g.fillRect(px + 1, py, pw - 1, 1); }
+  g.fillStyle = "#2a1a0c"; g.fillRect(0, 5, 16, 1);
+  g.fillStyle = "#6a4a2a"; for (let i = 0; i < 3; i++) { const fx = Math.floor(S() * 15); g.fillRect(fx, 5 + (i & 1), 1, 2 + Math.floor(S() * 3)); }   // frayed rope ends hanging
+  if ((x & 3) === 0) { g.fillStyle = "#6a4a2a"; g.fillRect(1, 5, 1, 4); g.fillStyle = "#3a2410"; g.fillRect(2, 8, 1, 2); }
+}
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
