@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.88">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.88">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.89">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.89">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.88</title>
+<title>Black Tiger: The Depths v0.89</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.88";   // bump by 0.01 with every change
+const VERSION = "0.89";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3161,7 +3161,7 @@ function gearImg(f) {
   if (g.legs >= 2) { for (let x = cx - 6; x <= cx + 6; x++) put(x, lt + Math.round(BH * 0.18), gearRamp(g.legs)[4]); }
   if (g.legs >= 3) { for (let x = cx - 7; x <= cx + 7; x++) put(x, lt, gearAccent(g.legs)); }
 
-  if (g.bracer >= 1) { const yb = top + Math.round(BH * 0.64), ya = top + Math.round(BH * 0.42); for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4 && isArm(x, yb)) { put(x, yb, g.bracer >= 3 ? gearAccent(g.bracer) : gearRamp(g.bracer)[4]); put(x, yb - 1, gearRamp(g.bracer)[1]); if (g.bracer === 5) put(x, yb - 2, "#ffffff"); } for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4 && isArm(x, ya)) { put(x, ya, gearRamp(g.bracer)[g.bracer === 1 ? 3 : 4]); put(x, ya + 1, gearRamp(g.bracer)[1]); } }
+  if (g.bracer >= 1) { const yb = top + Math.round(BH * 0.64), ya = top + Math.round(BH * 0.42); for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4 && isArm(x, yb)) { put(x, yb, g.bracer >= 3 ? gearAccent(g.bracer) : gearRamp(g.bracer)[4]); put(x, yb - 1, gearRamp(g.bracer)[1]); if (g.bracer === 5) put(x, yb - 2, "#ffffff"); } for (let x = bx0; x < bx1; x++) if (Math.abs(x - cx) >= 4 && isArm(x, ya)) { put(x, ya, g.bracer >= 3 ? gearAccent(g.bracer) : gearRamp(g.bracer)[4]); put(x, ya + 1, gearRamp(g.bracer)[g.bracer === 1 ? 3 : 4]); put(x, ya + 2, gearRamp(g.bracer)[0]); } }
   const addW = (x, y, col) => { if (x < 0 || x >= W || y < 0 || y >= H) return; const i = (y * W + x) * 4, [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
   if (wl > 0) {   // the morning star: recolour the chain and ball, and grow the ball
     const ramp = weaponRamp(wl); let minX = 1e9, maxX = -1;
@@ -3179,13 +3179,13 @@ function gearImg(f) {
   }
   for (let y = y1; y < bot + 1; y++) for (let x = bx0; x < bx1; x++) { const i = (y * W + x) * 4; if (d[i + 3] < 128) continue; const b = bandOf(y, x); if (b === "head") continue; const t = b === "chest" ? g.chest : b === "legs" ? g.legs : g.bracer; if (!t) continue; const fx = x - cx, fy = y - y1; if (fx < -2 && fy < BH * 0.35) { d[i] = Math.min(255, d[i] * 1.18 + 6); d[i + 1] = Math.min(255, d[i + 1] * 1.18 + 6); d[i + 2] = Math.min(255, d[i + 2] * 1.18 + 6); } else if (fx > 2 && fy > BH * 0.12) { d[i] *= 0.78; d[i + 1] *= 0.78; d[i + 2] *= 0.78; } }
   if (g.chest) for (let x = cx - 6; x <= cx + 6; x++) put(x, lt - 1, "#14100c");           // belt line
-  if (g.legs) { const ky = lt + Math.round(BH * 0.2); for (let x = cx - 6; x <= cx + 6; x++) put(x, ky, "#14100c"); }   // knee line
+  if (g.legs) { const ky = lt + Math.round(BH * 0.2); for (let x = cx - 6; x <= cx + 6; x++) put(x, ky, gearRamp(g.legs)[1]); }   // knee line
   if (g.bracer) { for (let y = top + Math.round(BH * 0.40); y < top + Math.round(BH * 0.66); y++) for (let x = bx0; x < bx1; x++) { const i = (y * W + x) * 4; if (d[i + 3] > 128 && Math.abs(x - cx) >= 4 && (d[(y * W + x - 1) * 4 + 3] < 128 || d[(y * W + x + 1) * 4 + 3] < 128)) { d[i] = 12; d[i + 1] = 10; d[i + 2] = 8; } } }   // bracer outline
   // grade-specific silhouettes: pauldrons grow, the helm changes outline, grade 1 is worn and pitted
   const add = (x, y, col) => { if (x < 0 || x >= W || y < 0 || y >= H) return; const i = (y * W + x) * 4, [r, gg, b] = hexRGB(col); d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; };
   const ext = (ya, yb) => { let a = 1e9, b = -1; for (let y = ya; y <= yb; y++) for (let x = bx0; x < bx1; x++) if (d[(y * W + x) * 4 + 3] > 128) { if (x < a) a = x; if (x > b) b = x; } return [a, b]; };
   const [hl, hr] = ext(hy + 2, hy + 4); let sl = 1e9, sr = -1; for (let y = y1; y <= y1 + 2; y++) for (let x = Math.max(bx0, cx - 11); x <= Math.min(bx1 - 1, cx + 11); x++) if (d[(y * W + x) * 4 + 3] > 128) { if (x < sl) sl = x; if (x > sr) sr = x; }
-  const blob = (x0, y0, r, side, rp, ac, rim) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const dd = Math.sqrt(x * x + y * y * 1.3); if (dd > r + 0.4) continue; const px = x0 + side * x, py = y0 + y; if (y > 1 && Math.abs(x) < 2) continue; add(px, py, dd > r - 0.6 ? (y < 0 ? rp[4] : "#0c0a08") : (y < 0 ? rp[3] : rp[side < 0 ? 2 : 1])); } if (rim) add(x0 - side, y0 - r, ac); };
+  const blob = (x0, y0, r, side, rp, ac, rim) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const dd = Math.sqrt(x * x * 1.35 + y * y * 1.3); if (dd > r + 0.4) continue; const px = x0 + side * x, py = y0 + y; if (y > 1 && Math.abs(x) < 2) continue; add(px, py, dd > r - 0.6 ? (y < 0 ? rp[4] : "#0c0a08") : (y < 0 ? rp[3] : rp[side < 0 ? 2 : 1])); } if (rim) add(x0 - side, y0 - r, ac); };
   if (g.chest >= 2 && sl < 1e9) { sl = Math.max(sl, cx - 8); sr = Math.min(sr, cx + 8); const r = Math.min(4, g.chest), rp = gearRamp(g.chest), ac = gearAccent(g.chest);
     blob(sl + 1 - (r >> 1), y1 + 1, r, -1, rp, ac, g.chest >= 4); blob(sr - 1 + (r >> 1), y1 + 1, r, 1, rp, ac, g.chest >= 4);
     if (g.chest === 5) for (let k = 0; k < 4; k++) { add(sl - r + 1 + (k >> 1), y1 - r - k, rp[4]); add(sr + r - 1 - (k >> 1), y1 - r - k, rp[4]); } }
@@ -3197,6 +3197,10 @@ function gearImg(f) {
     if (g.helm >= 4) { const pl = g.helm === 5 ? 6 : 5; for (let k = 0; k < pl; k++) { const c = g.helm === 5 ? (k < 2 ? "#ffb0b8" : "#ff3050") : (k < 2 ? "#ff7060" : "#c82020"); add(cx + 1 + (k > 3 ? 1 : 0), hy - 1 - k + 3, c); add(cx + 2 + (k > 3 ? 1 : 0), hy - 1 - k + 3, k < 3 ? c : "#7a1018"); } }   // a full plume
     if (g.helm === 5) { for (const side of [-1, 1]) { const bx = side < 0 ? hl : hr; for (let i = 1; i <= 6; i++) { const th = i < 3 ? 3 : i < 5 ? 2 : 1, y0 = hy + 4 - i; for (let j = 0; j < th; j++) add(bx + side * (i + 1), y0 + j, j === 0 ? "#fff0a0" : ac); if (i < 5) add(bx + side * (i + 1), y0 + th + 1, rp[2]); } } } }   // swept wings
   if (g.helm <= 2 || g.chest <= 2 || g.legs <= 2 || g.bracer <= 2) { const S = rng(7); for (let k = 0; k < 22; k++) { const x = bx0 + Math.floor(S() * 32), y = top + Math.floor(S() * BH), i = (Math.min(H - 1, y) * W + Math.min(W - 1, x)) * 4; if (d[i + 3] > 128) { const band = bandOf(y, x), t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (t >= 1 && t <= 2) { d[i] = 26; d[i + 1] = 20; d[i + 2] = 16; } } } }   // rust pits and cracks in plain gear
+  if (g.chest === 1) { for (let k = 0; k < lt - ct - 3; k++) { put(cx - 3 + k, ct + 1 + k, gearRamp(1)[0]); put(cx - 2 + k, ct + 1 + k, gearRamp(1)[3]); } }   // leather strap
+  if (g.chest === 2) { for (const [rx, ry] of [[-4, 2], [3, 2], [-4, 6], [3, 6]]) { put(cx + rx, ct + ry, gearAccent(2)); put(cx + rx + 1, ct + ry, gearRamp(2)[0]); } for (let x = cx - 4; x <= cx + 4; x++) put(x, ct + 4, gearRamp(2)[4]); }   // rivets, a plate seam
+  if (g.helm >= 1 && hl < 1e9) for (let x = hl; x <= hr; x++) put(x, ct - 1, gearRamp(g.helm)[0]);   // helm brim
+  if (g.helm === 1 && hl < 1e9) for (let x = hl + 1; x <= hr - 1; x++) put(x, hy + 1, gearRamp(1)[4]);   // cap highlight
   if (g.helm === 5 || g.chest === 5 || g.legs === 5 || g.bracer === 5) { put(cx - 2, ct + 2, "#ffffff"); put(cx + 3, lt - 3, "#ffffff"); put(cx - 4, lt + 3, "#fff8d0"); put(cx + 2, hy + 3, "#ffffff"); }   // a few specular glints
   cg.putImageData(id, 0, 0); C[sig] = c; return c;
 }
@@ -4583,6 +4587,7 @@ function upBody(atk) {   // body pose: [dy px, lean rad]
   if (atk <= 28) return [-1, 0.04];
   return [atk > 31 ? 1 : 0, 0];                                                  // settle
 }
+
 
 
 
