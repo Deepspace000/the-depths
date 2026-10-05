@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.37">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.37">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.38">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.38">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.37</title>
+<title>Black Tiger: The Depths v0.38</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.37";   // bump by 0.01 with every change
+const VERSION = "0.38";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -740,6 +740,8 @@ function generateWorld(seed) {
     if (z & 1) items.push({ id: r.id * 100 + 56, kind: "shop", tier: z, zone: z, x: x * TS, y: y * TS });   // half the backpacks are sold by a pedlar
     else items.push({ id: r.id * 100 + 56, kind: "backpack", tier: z, art: "backpack" + z, x: x * TS, y: y * TS });
   }
+  buildHouses(rooms, items, spawns, get, set, ruinDecor, standSpots);
+  buildGarden(rooms, items, get, ruinDecor, 8);
   // ---- 4e. decoration: torches, hanging vines, bushes and flowers on the edges of drops ----
   const decor = [...ruinDecor];
   for (const r of rooms) {
@@ -864,7 +866,7 @@ const roomAtPx = (px, py) => { const cx = Math.floor(px / (CW * TS)), cy = Math.
    6. GAME STATE, SAVE, LOAD
    ====================================================================== */
 let G;   // everything that changes while playing
-const SAVE_KEY = "btdepths.save.L23";   // bump only when the world generator changes: an old save would drop you into the wrong room
+const SAVE_KEY = "btdepths.save.L24";   // bump only when the world generator changes: an old save would drop you into the wrong room
 function newGame(seed, saved) {
   world = generateWorld(seed);
   G = {
@@ -881,7 +883,7 @@ function newGame(seed, saved) {
   }
   for (const it of world.items) {   // things already used stay used; opened chests and freed men stay in place
     const used = G.got.has(it.id);
-    if (it.kind === "chest") { it.open = used; it.t = used ? 99 : 0; } else if (it.kind === "frozen") it.thawed = used; else it.gone = used;
+    if (it.kind === "chest") { it.open = used; it.t = used ? 99 : 0; } else if (it.kind === "frozen") it.thawed = used; else if (it.kind === "house") { if (used) openHouse(it); } else if (it.kind === "fountain") it.dry = 0; else it.gone = used;
   }
   enterRoom(roomAtPx(G.hero.x + 16, G.hero.y + 16), true);
   $("seedLbl").textContent = "World seed " + seed;
@@ -1074,6 +1076,8 @@ function updateItems() {
     if (it.kind === "chest") { updateChest(it, box, hb); continue; }
     if (it.kind === "frozen") { updateFrozen(it, box, hb); continue; }
     if (it.kind === "shop") { updateShop(it, hb); continue; }
+    if (it.kind === "house") { updateHouse(it, hb); continue; }
+    if (it.kind === "fountain") { updateFountain(it, hb); continue; }
     if (!overlap(hb, box)) continue;
     if (it.kind === "coin") { it.gone = true; if (it.id >= 0) G.got.add(it.id); G.zenny += it.value; popup(it.x + 8, it.y, "+" + it.value); }
     if (it.kind === "potion" || it.kind === "food") takeStorable(it);
@@ -1425,6 +1429,7 @@ function draw() {
     if (it.kind === "pot" || it.kind === "key") { put(Art.obj(it.kind, "idle", 0, zone), it.x + (it.shake ? Math.round(Math.sin(it.shake * 1.7) * 2) : 0), it.y); continue; }
     if (it.kind === "shrine") { drawShrine(it, cx, cy, lights); continue; }
     if (it.kind === "shop") { drawShop(it, cx, cy, lights); continue; }
+    if (it.kind === "house" || it.kind === "fountain") continue;
     if (it.kind === "treasure") { put(Art.obj(it.art, "idle", 0, zone), it.x, it.y); continue; }
     const bob = it.kind === "coin" && !it.falling ? Math.round(Math.sin((G.frame + it.x) / 12) * 1.5) : 0;
     const art = it.kind === "shrine" ? ((G.frame >> 3) & 1 ? "shrineA" : "shrineB") : it.art;
@@ -1646,7 +1651,7 @@ function drawMouth(d, cx, cy, zone) {
 function drawDecor(cx, cy, zone, lights) {
   const r = G.room, dark = r.dark || r.cave;
   for (const d of r.decor) {
-    if (d.kind === "fwall" || d.kind === "battlement") continue;
+    if (d.kind === "fwall" || d.kind === "battlement" || d.kind === "housefront") continue;
     if (d.bb) { if (d.bb[2] < cx - 8 || d.bb[0] > cx + VW + 8 || d.bb[3] < cy - 8 || d.bb[1] > cy + 232) continue; }
     else if (d.x < cx - 240 || d.x > cx + VW + 240 || d.y < cy - 120 || d.y > cy + 240) continue;
     switch (d.kind) {
@@ -1658,6 +1663,8 @@ function drawDecor(cx, cy, zone, lights) {
       case "lantern": drawLantern(d, cx, cy, lights); break;
       case "mouth": drawMouth(d, cx, cy, zone); break;
       case "abyss": drawAbyss(d, cx, cy); break;
+      case "houseback": drawHouseBack(d, cx, cy, lights); break;
+      case "statue": case "tree": case "fountain": drawGarden(d, cx, cy, lights); break;
       case "cwindow": case "pillar": case "pew": case "altar": case "chandelier": case "rubble": case "bwall": case "wallface": case "podium": case "rose": case "balustrade": drawRuin(d, cx, cy, lights); break;
       default: { drawPlant(d, cx, cy, zone); const p = plantArt(d.kind, d.seed, d.zone != null ? d.zone : zone); if (p.glow && dark) lights.push([d.x + 8, d.y + 6, 26, 0.55, p.glow]); }
     }
@@ -2035,11 +2042,18 @@ function lanternBody(seed) {
 
 function epx0(R, cx, cy, rx, ry, fn) { for (let y = Math.floor(cy - ry); y <= cy + ry; y++) for (let x = Math.floor(cx - rx); x <= cx + rx; x++) { const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry; if (u * u + v * v > 1) continue; R(x, y, 1, 1, fn(u, v)); } }
 
-function drawLantern(h, cx, cy) {
-  const L = G.lan, l = G.lantern | 0; if (!L || l < 1) return;
-  const steps = 7; ctx.fillStyle = "#3a3a44";
-  for (let i = 1; i < steps; i++) { const f = i / steps; ctx.fillRect(Math.round(L.ax + (L.wx - L.ax) * f - cx), Math.round(L.ay + (L.wy - 4 - L.ay) * f - cy), 1, 1); }
-  ctx.drawImage(lanternSmall(l), Math.round(L.wx - 3 - cx), Math.round(L.wy - 4 - cy));
+function drawLantern(d, cx, cy, lights) {
+  const t = G.frame + d.seed, sway = Math.round(Math.sin(t / 60) * 1.5 + (G.wind || 0) * 3), x = Math.round(d.x - cx) + 8, y0 = Math.round(d.y - cy), top = y0 + d.len * 16 + 2;
+  ctx.fillStyle = "#3a2a1a"; for (let yy = y0; yy < top; yy++) { const f = (yy - y0) / Math.max(1, top - y0); ctx.fillRect(x + Math.round(sway * f), yy, 1, 1); }
+  const pul = 0.82 + 0.18 * Math.sin(t / 9) + 0.08 * Math.sin(t / 3.1), bx = x - 5 + sway, by = top, gx = bx + 5, gy = by + 9;
+  // the glow: a wide red bloom, a hot orange halo and a bright core, added on top of the scene
+  ctx.globalCompositeOperation = "lighter";
+  let gl = ctx.createRadialGradient(gx, gy, 0, gx, gy, 84); gl.addColorStop(0, `rgba(255,66,38,${0.72 * pul})`); gl.addColorStop(0.3, `rgba(240,44,26,${0.36 * pul})`); gl.addColorStop(0.65, `rgba(220,36,22,${0.14 * pul})`); gl.addColorStop(1, "rgba(220,30,20,0)"); ctx.fillStyle = gl; ctx.fillRect(gx - 84, gy - 84, 168, 168);
+  gl = ctx.createRadialGradient(gx, gy, 0, gx, gy, 22); gl.addColorStop(0, `rgba(255,170,90,${0.85 * pul})`); gl.addColorStop(1, "rgba(255,90,40,0)"); ctx.fillStyle = gl; ctx.fillRect(gx - 22, gy - 22, 44, 44);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.drawImage(lanternBody(d.seed), bx, by);
+  ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,110,50,${0.38 * pul})`; ctx.fillRect(bx + 3, by + 4, 4, 9); ctx.fillStyle = `rgba(255,220,150,${0.5 * pul})`; ctx.fillRect(bx + 4, by + 9, 2, 2); ctx.globalCompositeOperation = "source-over";
+  lights.push([d.x + 8 + sway, by + cy + 9, 124 + 8 * pul, 1, "255,56,34"]);
 }
 
 function updateSmoke() {
@@ -2325,6 +2339,7 @@ function drawRuin(d, cx, cy, lights) {
 function drawFore(cx, cy) {
   const r = G.room; if (!r.decor) return;
   for (const d of r.decor) {
+    if (d.kind === "housefront") { drawHouseFront(d, cx, cy); continue; }
     if (d.kind !== "fwall" && d.kind !== "battlement") continue;
     const x = Math.round(d.x - cx), y = Math.round(d.y - cy); if (x < -200 || x > VW + 200 || y < -120 || y > VH + 40) continue;
     ctx.globalAlpha = 0.95;
@@ -2403,7 +2418,7 @@ function drawWornPack(h, cx, cy) {
   const t = G.packTier | 0, dir = h.dir, dy = h.crouch ? 8 : 4;
   if (h.climb) ctx.drawImage(wornPackArt(true, t), Math.round(h.x + 8 - cx), Math.round(h.y + 2 - cy));
   else ctx.drawImage(wornPackArt(false, t), Math.round((dir > 0 ? h.x - 4 : h.x + 20) - cx), Math.round(h.y + dy - cy));
-  if ((G.lantern | 0) > 0) { lanternStep(h); drawLantern(h, cx, cy); }
+  if ((G.lantern | 0) > 0) { lanternStep(h); drawPackLantern(h, cx, cy); }
 }
 
 function packLayout() {
@@ -2742,6 +2757,256 @@ function carveTunnel(r, set, CW, CH) {
   }
   r.style = "cave"; r.tunnelF = F; r.tunnelX = cL;
 }
+
+
+function drawPackLantern(h, cx, cy) {
+  const L = G.lan, l = G.lantern | 0; if (!L || l < 1) return;
+  const steps = 7; ctx.fillStyle = "#3a3a44";
+  for (let i = 1; i < steps; i++) { const f = i / steps; ctx.fillRect(Math.round(L.ax + (L.wx - L.ax) * f - cx), Math.round(L.ay + (L.wy - 4 - L.ay) * f - cy), 1, 1); }
+  ctx.drawImage(lanternSmall(l), Math.round(L.wx - 3 - cx), Math.round(L.wy - 4 - cy));
+}
+
+
+
+function houseFront(seed, side, open, zone) {
+  const tone = [["#8a7a60", "#a89878", "#5a4c38"], ["#7a8068", "#98a080", "#4c5440"], ["#8a6a58", "#a88470", "#583e30"], ["#7a7488", "#948ea8", "#4a465a"]][(zone + seed) % 4];
+  return baked("hfront3" + (seed % 6) + side + (open ? "o" : "c") + (zone % 4), 112, 60, (R) => {
+    const S = rng(seed * 29 + 7), o = "#0c0806", wood = "#4a2e16", woodL = "#7a5028", woodD = "#2a1a0c", W = 112;
+    const rx = (x, w) => side > 0 ? x : W - x - w;
+    for (let i = 0; i < 8; i++) { R(10 + i * 2, 12 - i - 1, W - 20 - i * 4, 2, o); R(12 + i * 2, 12 - i, W - 24 - i * 4, 1, i & 1 ? "#5a3a24" : "#6a4630"); }
+    R(rx(80, 12), 0, 12, 13, o); R(rx(81, 10), 1, 10, 11, "#6a5a4a"); R(rx(81, 3), 1, 3, 11, "#8a7a68"); R(rx(81, 10), 0, 10, 2, "#2a2420");
+    R(0, 12, W, 16, o); for (let x = 0; x < W; x += 8) { const j = Math.floor(S() * 3); R(x, 13, 8, 14, (x >> 3) & 1 ? "#5a3a24" : "#6a4630"); R(x, 13, 8, 2, "#8a5c3a"); R(x + 7, 13, 1, 14, "#2a1810"); R(x, 24 + j, 8, 3, "#3a2416"); }
+    R(0, 26, W, 2, "#1a100a"); for (let k = 0; k < 6; k++) R(Math.floor(S() * 104), 14 + Math.floor(S() * 10), 4, 3, "rgba(0,0,0,0)");
+    R(0, 28, W, 32, o); R(1, 28, W - 2, 31, tone[0]);
+    for (let k = 0; k < 70; k++) { const x = 2 + Math.floor(S() * 104), y = 30 + Math.floor(S() * 20); R(x, y, 1 + Math.floor(S() * 3), 1, S() < 0.5 ? tone[1] : tone[2]); }
+    for (let y = 52; y < 60; y += 8) { let x = 0; while (x < W) { const bw = 10 + Math.floor(S() * 8); R(x, y, Math.min(bw, W - x), 8, o); R(x + 1, y + 1, Math.min(bw, W - x) - 2, 6, tone[(x >> 3) % 3 === 0 ? 2 : 0]); R(x + 1, y + 1, Math.min(bw, W - x) - 2, 1, tone[1]); x += bw; } }
+    for (const bx of [0, 34, 72, W - 3]) { R(bx, 28, 3, 32, woodD); R(bx, 28, 1, 32, woodL); }
+    R(0, 28, W, 3, woodD); R(0, 28, W, 1, woodL);
+    for (const wx of [rx(10, 24), rx(46, 24)]) {
+      R(wx - 3, 31, 30, 24, o); R(wx - 2, 32, 28, 22, wood); R(wx - 2, 32, 28, 2, woodL); R(wx, 34, 24, 18, "rgba(0,0,0,0)");
+      R(wx - 4, 53, 32, 4, o); R(wx - 3, 53, 30, 2, tone[1]); R(wx - 3, 55, 30, 1, tone[2]);
+      R(wx + 11, 34, 2, 18, wood); R(wx + 12, 34, 1, 18, woodL);
+      const sh = S() < 0.5; R(wx - 8, 34, 6, 18, o); R(wx - 7, 35, 4, 16, "#5a4020"); for (let y = 37; y < 50; y += 3) R(wx - 7, y, 4, 1, woodD); if (sh) R(wx - 6, 44, 3, 7, "rgba(0,0,0,0)");
+    }
+    const dx = rx(W - 16, 16);
+    R(dx - 1, 29, 18, 31, o);
+    if (!open) {
+      R(dx, 30, 16, 30, wood); for (let i = 0; i < 16; i += 4) { R(dx + i, 30, 1, 30, woodD); R(dx + i + 1, 30, 1, 30, woodL); }
+      R(dx, 34, 16, 3, "#2a2a30"); R(dx, 52, 16, 3, "#2a2a30"); R(dx, 34, 16, 1, "#5a5a68"); R(dx, 52, 16, 1, "#5a5a68");
+      R(dx + 5, 40, 7, 8, "#1a1a20"); R(dx + 6, 41, 5, 6, "#b89838"); R(dx + 6, 41, 5, 1, "#e8d068"); R(dx + 8, 43, 1, 3, "#1a1208");
+    } else { R(dx, 30, 16, 30, "rgba(0,0,0,0)"); R(dx + (side > 0 ? 0 : 13), 30, 3, 30, wood); R(dx + (side > 0 ? 0 : 13), 30, 1, 30, woodL); }
+    R(dx - 2, 28, 20, 3, woodD); R(dx - 2, 28, 20, 1, woodL);
+  }, seed * 5 + side + (open ? 1 : 0));
+}
+
+function houseBack(seed, zone) {
+  return baked("hback3" + (seed % 8), 80, 32, (R) => {
+    const S = rng(seed * 13 + 3), o = "#0a0604";
+    R(0, 0, 80, 32, "#2a1c12"); for (let x = 0; x < 80; x += 8) { R(x, 0, 1, 32, "#1c120a"); if (S() < 0.5) R(x + 3, 3 + Math.floor(S() * 18), 1, 5, "#3a281a"); }
+    R(0, 28, 80, 4, "#3a2412"); R(0, 28, 80, 1, "#6a4a28"); for (let x = 5; x < 80; x += 11 + Math.floor(S() * 5)) R(x, 29, 1, 3, "#1a0e06");
+    const kinds = ["table", "bed", "shelf", "barrel", "rug"]; let x = 4;
+    while (x < 64) {
+      const k = kinds[Math.floor(S() * kinds.length)], w = k === "bed" ? 28 : k === "table" ? 22 : k === "rug" ? 20 : 12;
+      if (k === "table") { R(x, 18, w, 3, o); R(x + 1, 18, w - 2, 2, "#8a5c2c"); R(x + 2, 21, 2, 7, o); R(x + w - 4, 21, 2, 7, o); R(x + 9, 12, 4, 6, "#d8d0a8"); R(x + 10, 10, 2, 2, "#ffd070"); }
+      else if (k === "bed") { R(x, 20, w, 8, o); R(x + 1, 21, w - 2, 4, "#6a2a2a"); R(x + 1, 21, w - 2, 1, "#8a4040"); R(x + 1, 25, w - 2, 2, "#3a2410"); R(x + w - 9, 18, 8, 4, "#c8c0a0"); }
+      else if (k === "shelf") { R(x, 4, w, 24, o); for (let y = 6; y < 24; y += 8) { R(x + 1, y + 6, w - 2, 2, "#6a4420"); R(x + 2, y + 1, 3, 5, S() < 0.5 ? "#8a3a2a" : "#3a5a7a"); R(x + 7, y + 2, 3, 4, "#a89060"); } }
+      else if (k === "barrel") { R(x, 16, 12, 12, o); R(x + 1, 17, 10, 10, "#6a4420"); R(x + 1, 17, 2, 10, "#8a6030"); R(x, 20, 12, 1, "#2a2a30"); R(x, 25, 12, 1, "#2a2a30"); }
+      else { R(x, 27, w, 2, "#7a2a2a"); R(x, 27, w, 1, "#a04040"); R(x + 2, 28, w - 4, 1, "#d8b040"); }
+      x += w + 4 + Math.floor(S() * 8);
+    }
+    R(38, 0, 1, 6, o); R(35, 6, 7, 3, o); R(36, 7, 5, 1, "#c8a850"); R(37, 9, 3, 2, "#ffd070");
+  }, seed);
+}
+
+function drawHouseBack(d, cx, cy, lights) {
+  ctx.drawImage(houseBack(d.seed, d.zone), Math.round(d.x - cx), Math.round(d.y - cy));
+  lights.push([d.x + 40, d.y + 10, 58, 0.85, "255,180,90"]);
+}
+
+function drawHouseFront(d, cx, cy) {
+  const it = d.house; ctx.drawImage(houseFront(d.seed, d.side, !!(it && it.open), d.zone), Math.round(d.x - cx), Math.round(d.fy - cy));
+}
+
+function openHouse(it) {
+  it.open = true; for (const [c, r] of it.doorTiles) world.tiles[r * WT + c] = EMPTY;
+}
+
+function updateHouse(it, hb) {
+  if (it.open) return;
+  const near = overlap(hb, { x: it.px - 10, y: it.py, w: 36, h: 32 });
+  if (!near) { it.near = false; return; }
+  if (it.near) return; it.near = true;
+  if (G.keys > 0) { G.keys--; G.got.add(it.id); openHouse(it); popup(it.px + 8, it.py - 4, "Unlocked"); }
+  else popup(it.px + 8, it.py - 4, "Locked. Needs a key");
+}
+
+function buildHouses(rooms, items, spawns, get, set, out, standSpots) {
+  let n = 0;
+  for (const r of rooms) {
+    if (r.id === 0 || r.cave || r.ruin || r.zone > 7) continue;
+    if (r.style === "low") continue;
+    const S = rng(r.id * 53 + 17); if (S() > 0.25 + 0.1 * r.zone) continue;
+    const fl = r.ty + r.th - 1; let x = -1, left = S() < 0.5;
+    const cand = []; for (let xx0 = r.tx + 1; xx0 + 7 <= r.tx + r.tw - 1; xx0++) cand.push(xx0);
+    for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(S() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
+    for (const xx0 of cand) {
+      const lo = Math.max(xx0 - 1, r.tx + 1), hi2 = Math.min(xx0 + 7, r.tx + r.tw - 2);
+      let ok = true; for (let yy = fl - 3; yy <= fl - 1 && ok; yy++) for (let xx = lo; xx <= hi2; xx++) if (get(xx, yy) !== EMPTY) { ok = false; break; }
+      for (let xx = lo; xx <= hi2 && ok; xx++) if (get(xx, fl) !== SOLID) ok = false;
+      if (!ok) continue;
+      const high = get(xx0, fl - 4) === EMPTY && get(xx0 + 3, fl - 4) === EMPTY && get(xx0 + 6, fl - 4) === EMPTY && get(xx0, fl - 5) === EMPTY && get(xx0 + 6, fl - 5) === EMPTY;
+      const wallL = xx0 === r.tx + 1 && [1, 2, 3].every(d => get(r.tx, fl - d) === SOLID), wallR = xx0 + 6 === r.tx + r.tw - 2 && [1, 2, 3].every(d => get(r.tx + r.tw - 1, fl - d) === SOLID);
+      if (!high && !wallL && !wallR) continue;
+      x = xx0; if (!high) left = wallL; break;   // against a closed wall the door faces the open side
+    }
+    if (x < 0) continue;
+    const dc = left ? x + 6 : x, door = [[dc, fl - 1], [dc, fl - 2]];
+    for (let yy = fl - 3; yy <= fl - 1; yy++) for (let xx = x; xx < x + 7; xx++) set(xx, yy, SOLID);
+    for (let yy = fl - 2; yy <= fl - 1; yy++) for (let xx = x + 1; xx < x + 6; xx++) set(xx, yy, EMPTY);
+    for (let i = items.length - 1; i >= 0; i--) { const t = items[i]; if (t.x >= (x - 1) * TS && t.x < (x + 8) * TS && t.y >= (fl - 4) * TS && t.y < (fl + 1) * TS) items.splice(i, 1); }
+    for (let i = spawns.length - 1; i >= 0; i--) { const t = spawns[i]; if (t.room === r.id && t.x >= (x - 2) * TS && t.x < (x + 10) * TS) spawns.splice(i, 1); }
+    const id = r.id * 100 + 60, seed = r.id * 7 + n, it = { id, kind: "house", px: (left ? x + 7 : x - 1) * TS, py: (fl - 2) * TS, doorTiles: door, open: false };
+    items.push(it);
+    // money inside: a few small coins, and often a chest
+    const nc = 3 + Math.floor(S() * 3); for (let k = 0; k < nc; k++) { const cxx = x + 1 + Math.floor(S() * 5), v = S() < 0.5 ? 100 : 200; items.push({ id: id + 1 + k, kind: "coin", art: "coin100", value: v, x: cxx * TS, y: (fl - 1) * TS }); }
+    if (S() < 0.6) { const cxx = x + 1 + Math.floor(S() * 3); items.push({ id: id + 9, kind: "chest", x: cxx * TS, y: (fl - 2) * TS }); }
+    out.push({ kind: "houseback", x: (x + 1) * TS, y: (fl - 2) * TS, seed, zone: r.zone });
+    out.push({ kind: "housefront", x: x * TS, y: (fl - 3) * TS, fy: (fl - 3) * TS - 12, seed, side: left ? 1 : -1, zone: r.zone, house: it });
+    // a key lies in another room of the same level
+    const pool = rooms.filter(q => q.id !== r.id && q.zone === r.zone && !q.cave && !q.ruin && q.id > 0); let placed = false;
+    for (let tries = 0; tries < 8 && pool.length && !placed; tries++) { const q = pool[Math.floor(S() * pool.length)], sp = standSpots(q).filter(([sx, sy]) => !items.some(i => Math.abs(i.x - sx * TS) < 20 && Math.abs(i.y - sy * TS) < 20)); if (sp.length) { const [sx, sy] = sp[Math.floor(S() * sp.length)]; items.push({ id: q.id * 100 + 62 + (r.id % 30), kind: "key", art: "key", x: sx * TS, y: sy * TS }); placed = true; } }
+    n++;
+  }
+  return n;
+}
+
+
+function stoneTone(zone) { return [["#8a8478", "#b8b0a0", "#4a463e"], ["#7a8272", "#a8b098", "#3e463a"], ["#8a7a78", "#b8a8a4", "#4a3e3c"], ["#787a8a", "#a4a8bc", "#3c3e4e"]][zone % 4]; }
+
+function statueArt(type, seed, zone) {
+  return baked("statue" + type + (seed % 4) + (zone % 4), 24, 52, (R) => {
+    const S = rng(seed * 19 + type), T = stoneTone(zone), o = "#100e0a", st = T[0], lt = T[1], dk = T[2];
+    // pedestal: two stepped blocks
+    R(1, 42, 22, 10, o); R(2, 43, 20, 9, st); R(2, 43, 20, 1, lt); R(2, 43, 2, 9, lt); R(18, 44, 4, 8, dk); R(4, 36, 16, 7, o); R(5, 37, 14, 6, st); R(5, 37, 14, 1, lt); R(15, 38, 4, 5, dk);
+    for (let k = 0; k < 4; k++) R(3 + Math.floor(S() * 17), 44 + Math.floor(S() * 7), 1 + Math.floor(S() * 3), 1, dk);
+    if (type === 0) {        // a knight leaning on a sword, helm cracked
+      R(8, 14, 8, 22, o); R(9, 15, 6, 21, st); R(9, 15, 2, 21, lt); R(13, 17, 2, 19, dk); R(7, 6, 10, 10, o); R(8, 7, 8, 8, st); R(8, 7, 3, 8, lt); R(9, 10, 6, 2, o); R(15, 9, 2, 3, "rgba(0,0,0,0)");
+      R(10, 3, 4, 4, o); R(11, 3, 2, 3, lt); R(17, 18, 2, 18, o); R(17, 19, 1, 16, "#b8b4a8"); R(15, 20, 6, 2, o); R(6, 18, 3, 10, o); R(7, 19, 1, 8, lt);
+    } else if (type === 1) { // a robed angel with one wing snapped off
+      R(8, 12, 8, 24, o); R(9, 13, 6, 23, st); R(9, 13, 2, 23, lt); R(13, 16, 2, 20, dk); R(9, 4, 6, 8, o); R(10, 5, 4, 6, st); R(10, 5, 2, 6, lt);
+      R(1, 8, 8, 20, o); R(2, 9, 6, 18, st); R(2, 9, 2, 18, lt); for (let y = 12; y < 26; y += 3) R(3, y, 4, 1, dk);
+      R(15, 8, 3, 10, o); R(16, 9, 1, 8, st); R(18, 12, 3, 3, "rgba(0,0,0,0)"); R(17, 16, 5, 2, dk);   // the broken wing stump
+      R(7, 36, 10, 2, dk);
+    } else if (type === 2) { // a crouching gargoyle
+      R(4, 24, 16, 12, o); R(5, 25, 14, 11, st); R(5, 25, 14, 2, lt); R(15, 27, 4, 9, dk); R(3, 12, 8, 14, o); R(4, 13, 6, 12, st); R(4, 13, 2, 12, lt);
+      R(2, 6, 10, 8, o); R(3, 7, 8, 6, st); R(3, 7, 3, 6, lt); R(3, 9, 2, 2, "#d8c060"); R(8, 9, 2, 2, "#d8c060"); R(2, 4, 3, 3, o); R(3, 3, 1, 2, lt); R(9, 4, 3, 3, o);
+      R(14, 14, 8, 12, o); R(15, 15, 6, 10, st); R(21, 17, 3, 3, "rgba(0,0,0,0)"); R(5, 34, 5, 3, o); R(14, 34, 5, 3, o);
+    } else {                 // a hooded figure holding a bowl, head missing
+      R(7, 14, 10, 22, o); R(8, 15, 8, 21, st); R(8, 15, 3, 21, lt); R(13, 18, 3, 18, dk); R(8, 10, 8, 5, o); R(9, 11, 6, 4, st); R(9, 11, 6, 1, lt);
+      R(3, 20, 6, 3, o); R(4, 21, 4, 1, st); R(1, 18, 8, 4, o); R(2, 19, 6, 2, dk); R(2, 19, 6, 1, "#4a6a7a");
+      R(15, 20, 4, 8, o); R(16, 21, 2, 6, st); for (let y = 24; y < 36; y += 4) R(9, y, 5, 1, dk);
+    }
+    for (let k = 0; k < 7; k++) R(5 + Math.floor(S() * 14), 8 + Math.floor(S() * 30), 2 + Math.floor(S() * 2), 1, "#46702e");   // moss
+    for (let k = 0; k < 3; k++) { const cx = 7 + Math.floor(S() * 10), cy = 12 + Math.floor(S() * 20); R(cx, cy, 1, 4, o); R(cx + 1, cy + 3, 1, 3, o); }
+  }, seed + type * 7);
+}
+
+function treeArt(type, seed, zone) {
+  const pal = [["#2a5a22", "#3e7a2e", "#68a844"], ["#3a5a22", "#58782e", "#88a040"], ["#5a4a1e", "#7a6a2a", "#a89040"], ["#3a3a4a", "#50506a", "#7a7a98"], ["#4a2a1e", "#6a3a22", "#a05a2c"], ["#2a4a4a", "#3e6a6a", "#68a0a0"], ["#3a2a4a", "#5a3e6a", "#8a64a8"], ["#4a1a1a", "#7a2a1a", "#c05a2a"]][zone % 8];
+  return baked("tree" + type + (seed % 4) + (zone % 8), 48, 64, (R) => {
+    const S = rng(seed * 23 + type * 5), o = "#0e0a06", bark = "#4a3220", barkL = "#7a5a3a", barkD = "#2a1a0e";
+    const trunk = (x0, y0, x1, y1, w) => { const n = Math.max(1, Math.abs(y1 - y0)); for (let i = 0; i <= n; i++) { const f = i / n, x = Math.round(x0 + (x1 - x0) * f + Math.sin(f * 5 + seed) * 1.5), y = y0 + (y1 - y0) * f, ww = Math.max(2, Math.round(w * (1 - f * 0.45))); R(x - (ww >> 1) - 1, y, ww + 2, 1, o); R(x - (ww >> 1), y, ww, 1, bark); R(x - (ww >> 1), y, 1, 1, barkL); R(x + (ww >> 1) - 1, y, 1, 1, barkD); } };
+    const blob = (cx, cy, rx, ry) => { for (let y = -ry; y <= ry; y++) { const hw = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry)) + (S() < 0.3 ? 1 : 0) - (S() < 0.25 ? 1 : 0)); R(cx - hw - 1, cy + y, hw * 2 + 2, 1, o); } for (let y = -ry; y <= ry; y++) { const hw = Math.round(rx * Math.sqrt(1 - (y * y) / (ry * ry)) - (S() < 0.3 ? 1 : 0)); const c = y < -ry * 0.3 ? pal[2] : y < ry * 0.3 ? pal[1] : pal[0]; R(cx - hw, cy + y, hw * 2, 1, c); if (S() < 0.5 && hw > 3) R(cx - hw + Math.floor(S() * hw * 2), cy + y, 2, 1, S() < 0.5 ? pal[0] : pal[2]); } };
+    // roots flaring at the foot
+    R(14, 58, 20, 6, "rgba(0,0,0,0)");
+    for (const [dx, w] of [[-8, 5], [6, 5], [-3, 4]]) { R(24 + dx, 59, w, 5, o); R(25 + dx, 60, w - 2, 4, bark); }
+    if (type === 0) {        // a round-topped little tree with a twisted trunk
+      trunk(24, 62, 22, 30, 7); trunk(23, 40, 14, 24, 3); trunk(24, 38, 33, 22, 3);
+      blob(24, 17, 14, 11); blob(11, 24, 9, 7); blob(36, 24, 9, 7); blob(24, 8, 8, 6);
+    } else if (type === 1) { // a leaning dead tree: bare branches, a few leaves
+      trunk(26, 62, 20, 14, 7); trunk(22, 36, 6, 18, 3); trunk(22, 28, 38, 14, 3); trunk(20, 20, 30, 4, 2); trunk(11, 24, 4, 14, 2); trunk(34, 18, 44, 22, 2);
+      for (let k = 0; k < 9; k++) R(4 + Math.floor(S() * 40), 6 + Math.floor(S() * 22), 3, 2, S() < 0.5 ? pal[0] : pal[1]);
+    } else if (type === 2) { // a squat tree with a wide flat crown
+      trunk(24, 62, 24, 34, 9); trunk(24, 38, 8, 28, 3); trunk(24, 36, 40, 28, 3);
+      blob(10, 25, 9, 6); blob(24, 21, 13, 7); blob(38, 25, 9, 6); blob(24, 14, 8, 5);
+    } else {                 // a tall thin conifer
+      trunk(24, 62, 24, 20, 5);
+      for (let i = 0; i < 6; i++) { const y = 50 - i * 8, w = 14 - i * 2; for (let k = 0; k < 8; k++) { const hw = Math.round(w * (1 - k / 8)); R(24 - hw - 1, y - 8 + k, hw * 2 + 2, 1, o); } for (let k = 0; k < 8; k++) { const hw = Math.round(w * (1 - k / 8)); R(24 - hw, y - 8 + k, hw * 2, 1, k < 3 ? pal[2] : k < 6 ? pal[1] : pal[0]); } }
+    }
+    for (let k = 0; k < 4; k++) R(Math.floor(S() * 46), 61 + Math.floor(S() * 2), 2, 1, "#46702e");
+  }, seed + type * 11);
+}
+
+function fountainArt(seed, zone) {
+  return baked("fount" + (seed % 3) + (zone % 4), 56, 40, (R) => {
+    const S = rng(seed * 31 + 9), T = stoneTone(zone), o = "#0e0c08", st = T[0], lt = T[1], dk = T[2];
+    // the basin: a wide low bowl of blocks
+    R(2, 22, 52, 18, o); R(3, 23, 50, 17, st); R(3, 23, 50, 2, lt); R(3, 23, 3, 17, lt); R(46, 24, 7, 16, dk);
+    for (let x = 4, i = 0; x < 52; x += 9 + Math.floor(S() * 5), i++) { R(x, 25, 1, 15, dk); }
+    R(4, 31, 48, 1, dk); R(0, 36, 56, 4, o); R(1, 37, 54, 3, dk); R(1, 37, 54, 1, st);
+    R(4, 22, 48, 3, o); R(5, 22, 46, 1, "#4a6a7a");                       // the rim, water just behind it
+    // central pillar and a bowl on top
+    R(24, 6, 8, 18, o); R(25, 7, 6, 17, st); R(25, 7, 2, 17, lt); R(29, 8, 2, 16, dk); R(20, 4, 16, 4, o); R(21, 5, 14, 2, lt); R(22, 7, 12, 1, dk);
+    R(26, 0, 4, 5, o); R(27, 1, 2, 4, st);
+    // chips, cracks and moss
+    R(46, 22, 5, 3, "rgba(0,0,0,0)"); R(3, 38, 3, 2, "rgba(0,0,0,0)");
+    for (let k = 0; k < 3; k++) { const cx = 8 + Math.floor(S() * 40); R(cx, 26, 1, 5, o); R(cx + 1, 30, 1, 3, o); }
+    for (let k = 0; k < 9; k++) R(3 + Math.floor(S() * 48), 22 + Math.floor(S() * 16), 2 + Math.floor(S() * 3), 1, "#46702e");
+  }, seed + zone);
+}
+
+function drawGarden(d, cx, cy, lights) {
+  const x = Math.round(d.x - cx), y = Math.round(d.y - cy), z = d.zone != null ? d.zone : G.room.zone, t = G.frame + (d.seed | 0);
+  if (d.kind === "statue") ctx.drawImage(statueArt(d.type, d.seed, z), x + 4, y - 36);
+  else if (d.kind === "tree") { const sw = Math.round(Math.sin(t / 50 + G.wind * 0) * 0.6); ctx.drawImage(treeArt(d.type, d.seed, z), x - 8 + sw, y - 48); }
+  else if (d.kind === "fountain") {
+    const it = d.it, dry = it && it.dry > 0;
+    ctx.drawImage(fountainArt(d.seed, z), x - 4, y - 24);
+    // the water surface and a thin jet that falls from the top bowl
+    const wx = x - 4 + 6, wy = y - 24 + 23;
+    ctx.fillStyle = dry ? "#2a3a42" : "#3a7a96"; ctx.fillRect(wx, wy, 44, 8); ctx.fillStyle = dry ? "#3a4a52" : "#6ab4d0"; for (let k = 0; k < 6; k++) ctx.fillRect(wx + ((k * 9 + (t >> 2)) % 42), wy + 1 + (k & 1) * 3, 4, 1);
+    if (!dry) { for (let k = 0; k < 4; k++) { const f = ((t + k * 6) % 24) / 24, px = x - 4 + 28 + (k - 1.5) * 5 * f * 1.6, py = y - 24 + 6 + f * f * 18; ctx.fillStyle = k & 1 ? "#a8dcf0" : "#6ab4d0"; ctx.fillRect(Math.round(px), Math.round(py), 1, 2); } lights.push([d.x + 24, d.y + 8, 36, 0.35, "120,200,255"]); }
+    if (it && !it.near && G.mode === "play" && !dry) { ctx.fillStyle = "#bfe8ff"; ctx.font = "bold 7px monospace"; ctx.textAlign = "center"; ctx.fillText("WATER", x + 24, y - 14 + Math.round(Math.sin(t / 10))); }
+  }
+}
+
+function updateFountain(it, hb) {
+  if (it.dry > 0) it.dry--;
+  const near = overlap(hb, { x: it.x - 4, y: it.y - 16, w: 56, h: 40 });
+  if (!near) { it.near = false; return; }
+  if (it.near || it.dry > 0) return; it.near = true;
+  const h = G.hero;
+  if (G.hunger >= 98 && h.hp >= G.maxHP) { popup(it.x + 24, it.y - 8, "You are not thirsty"); return; }
+  it.dry = 2400; G.hunger = Math.min(100, G.hunger + 45); h.hp = Math.min(G.maxHP, h.hp + 1);
+  popup(it.x + 24, it.y - 8, "Cool water. Fed"); G.banner = "You drink from the old fountain. It runs dry for a while."; G.bannerT = 160;
+  for (let i = 0; i < 8; i++) G.particles.push({ x: h.x + 16, y: h.y + 8, vx: (Math.random() - .5) * 1.4, vy: -Math.random() * 1.6, t: 24, color: "#8ad0f0" });
+}
+
+function buildGarden(rooms, items, get, out, zonesN) {
+  const used = []; let nf = 0;
+  const free = (r, x, y, w, hgt) => {
+    for (let yy = y - hgt + 1; yy <= y; yy++) for (let xx = x; xx < x + w; xx++) if (get(xx, yy) !== EMPTY) return false;
+    for (let xx = x; xx < x + w; xx++) if (get(xx, y + 1) !== SOLID) return false;
+    for (const i of items) if (i.x >= (x - 2) * TS && i.x < (x + w + 2) * TS && i.y >= (y - hgt - 1) * TS && i.y <= (y + 2) * TS) return false;
+    for (const u of used) if (u.r === r.id && x < u.x + u.w + 1 && x + w + 1 > u.x) return false;
+    return true;
+  };
+  const spots = (r, w, hgt) => { const out2 = [], fl = r.ty + r.th - 1; for (let x = r.tx + 3; x + w < r.tx + r.tw - 3; x++) if (free(r, x, fl - 1, w, hgt)) out2.push(x); return out2; };
+  for (const r of rooms) {
+    if (r.id === 0 || r.cave || r.ruin) continue;
+    const S = rng(r.id * 71 + 5), fl = r.ty + r.th - 1;
+    const place = (kind, w, hgt, extra) => { const sp = spots(r, w, hgt); if (!sp.length) return null; const x = sp[Math.floor(S() * sp.length)]; used.push({ r: r.id, x, w }); const d = { kind, x: x * TS, y: (fl - 1) * TS, seed: Math.floor(S() * 999), zone: r.zone, ...extra }; out.push(d); return d; };
+    if (S() < 0.07) { const w = r.w >= 2 ? 3 : 3; const d = place("fountain", 3, 3, {}); if (d) { const it = { id: r.id * 100 + 80, kind: "fountain", x: d.x, y: d.y - 0, dry: 0 }; d.it = it; items.push(it); nf++; } }
+    if (S() < 0.2) place("statue", 2, 4, { type: Math.floor(S() * 4) });
+    if (S() < 0.26) place("tree", 2, 4, { type: Math.floor(S() * 4) });
+    if (r.w >= 2 && S() < 0.2) place("statue", 2, 4, { type: Math.floor(S() * 4) });
+    if (r.w >= 2 && S() < 0.25) place("tree", 2, 4, { type: Math.floor(S() * 4) });
+  }
+  return nf;
+}
+
+
+
 
 const PEB = [[4, 3], [5, 3], [6, 4], [7, 5]];   // pebbles are big enough to read as objects
 
