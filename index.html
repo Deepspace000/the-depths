@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.89">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.89">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.90">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.90">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.89</title>
+<title>Black Tiger: The Depths v0.90</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.89";   // bump by 0.01 with every change
+const VERSION = "0.90";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -3143,8 +3143,9 @@ function gearImg(f) {
   const isArm = (x, y) => { if (x < 0 || x >= W || y < 0 || y >= H) return false; const i = (y * W + x) * 4; return d[i + 3] > 128 && d[i] > 60 && d[i] !== 12; };
   const skin = (r, gg, b) => r > 140 && gg > 80 && b < 140 && r > gg && gg > b && (r - b) > 55;
   const bandOf = (y, x) => y < y1 ? "head" : (y >= top + Math.round(BH * 0.40) && y < top + Math.round(BH * 0.66) && Math.abs(x - cx) >= 4) ? "bracer" : y < y2 ? "chest" : "legs";
+  const orig = new Uint8ClampedArray(d), lumAt = (x, y) => { const i = (y * W + x) * 4; return orig[i + 3] < 128 ? -1 : (0.3 * orig[i] + 0.59 * orig[i + 1] + 0.11 * orig[i + 2]) / 255; };
   for (let y = by0; y < by1; y++) for (let x = bx0; x < bx1; x++) {
-    const i = (y * W + x) * 4; if (d[i + 3] < 128) continue; const r = d[i], gg = d[i + 1], b = d[i + 2], lum = (0.3 * r + 0.59 * gg + 0.11 * b) / 255, band = bandOf(y, x);
+    const i = (y * W + x) * 4; if (d[i + 3] < 128) continue; const r = d[i], gg = d[i + 1], b = d[i + 2], band = bandOf(y, x); let lum = (0.3 * r + 0.59 * gg + 0.11 * b) / 255; { let sum = 0, n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const l = lumAt(x + dx, y + dy); if (l >= 0.1) { sum += l; n++; } } if (n && lum >= 0.1) lum = 0.35 * lum + 0.65 * (sum / n); }   // smooth the dither into flat tones
     const t = band === "head" ? g.helm : band === "chest" ? g.chest : band === "legs" ? g.legs : g.bracer; if (!t) continue;
     if (band === "head" && skin(r, gg, b)) continue;     // the face stays bare
     if (lum < 0.1) continue;                              // keep the dark outline
@@ -4587,6 +4588,7 @@ function upBody(atk) {   // body pose: [dy px, lean rad]
   if (atk <= 28) return [-1, 0.04];
   return [atk > 31 ? 1 : 0, 0];                                                  // settle
 }
+
 
 
 
