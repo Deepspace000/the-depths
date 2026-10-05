@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.53">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.53">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.54">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.54">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.53</title>
+<title>Black Tiger: The Depths v0.54</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -142,7 +142,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.53";   // bump by 0.01 with every change
+const VERSION = "0.54";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -1388,9 +1388,9 @@ function update() {
     if (--G.dead <= 0) { const h = G.hero; Object.assign(h, { x: G.shrine.x, y: G.shrine.y, vx: 0, vy: 0, hp: G.maxHP, inv: 90, climb: false, atk: 0 }); G.mode = "play"; G.room = null; enterRoom(roomAtPx(h.x + 16, h.y + 16), true); }
     clearPressed(); return;
   }
-  if (G.pan) { const p = G.pan, k = ++p.t / p.n, e = k * k * (3 - 2 * k); G.cam.x = p.fx + (p.tx - p.fx) * e; G.cam.y = p.fy + (p.ty - p.fy) * e; if (p.t >= p.n) G.pan = null; clearPressed(); return; }
+  if (G.fade > 0) G.fade--;
   G.wind = windNow(); updateHero();
-  const r = roomAtPx(G.hero.x + 16, G.hero.y + 20); if (r && r !== G.room) { const cf = { x: G.cam.x, y: G.cam.y }; enterRoom(r, false); const ct = camTarget(); G.cam.x = cf.x; G.cam.y = cf.y; G.pan = { t: 0, n: 18, fx: cf.x, fy: cf.y, tx: ct.x, ty: ct.y }; }
+  const r = roomAtPx(G.hero.x + 16, G.hero.y + 20); if (r && r !== G.room) { enterRoom(r, false); snapCamera(); G.fade = 7; }
   updateItems(); updateEnemies(); updateTraps(); updatePebbles(); updateLife(); updateBugs(); updateWind(); updateSmoke(); updateHunger(); updateCampfire();
   G.popups = G.popups.filter(p => (p.y -= 0.5, --p.t > 0));
   G.particles = G.particles.filter(p => (p.x += p.vx, p.y += p.vy, p.vy += 0.15, --p.t > 0));
@@ -1481,6 +1481,7 @@ function draw() {
   floodFx(cx, cy, lights);
   drawLighting(cx, cy, lights);
   floodTint(cx, cy);
+  if (G.fade > 0) { ctx.fillStyle = "rgba(0,0,0," + (G.fade / 7 * 0.85).toFixed(2) + ")"; ctx.fillRect(0, 0, VW, VH); }
   drawHUD();
   if (G.mode === "pack") drawPack();
   if (G.mode === "shop") drawShopUI();
