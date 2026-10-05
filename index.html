@@ -8,10 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="The Depths">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f1118">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.90">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.90">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=0.91">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png?v=0.91">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Black Tiger: The Depths v0.90</title>
+<title>Black Tiger: The Depths v0.91</title>
 <style>
 :root{
   --bg:#0f1118; --panel:#1b1f2b; --line:#33394a; --text:#e9e4d6; --muted:#9aa3b2; --gold:#d4a843; --ink:#151821; --warn:#e0874f;
@@ -161,7 +161,7 @@ html,body{overflow-x:hidden}
 /* ======================================================================
    1. CONFIG — tune the feel of the game here
    ====================================================================== */
-const VERSION = "0.90";   // bump by 0.01 with every change
+const VERSION = "0.91";   // bump by 0.01 with every change
 const CFG = {
   walkSpeed: 1.25, jumpSpeed: 5.3, gravity: 0.25, maxFall: 5, shortHop: 2,
   climbSpeed: 1, maxHP: 6, invulnFrames: 60,
@@ -4141,7 +4141,7 @@ function bossArt(kind, zone, pose, flash) {
 function bossBox(it) { const bw = it.kind2 === "chief" ? 28 : 38, bh = it.kind2 === "chief" ? 46 : 58; return { x: it.fx - bw / 2, y: it.fy - bh, w: bw, h: bh }; }
 
 // the punch: a long warning (cocked fist, red danger zone, blinking mark), then a fast straight jab at chest height
-function bossPunchReach(it) { if (it.state !== "punch") return 0; const t = it.t; return 50 * (t < 4 ? t / 4 : t < 10 ? 1 : Math.max(0, (14 - t) / 4)); }
+function bossPunchReach(it) { if (it.state !== "punch") return 0; const t = it.t; return 30 * (t < 4 ? t / 4 : t < 10 ? 1 : Math.max(0, (14 - t) / 4)); }
 function bossPunchBox(it) { const r = bossPunchReach(it); if (r < 18) return null; const x0 = it.fx + it.dir * 14; return { x: it.dir > 0 ? x0 : x0 - (r + 10), y: it.fy - 46, w: r + 10, h: 34 }; }
 function bossArmCols(it, img) {
   const k = "__ac"; if (it[k]) return it[k]; let cols = [];
@@ -4152,14 +4152,15 @@ function bossArmCols(it, img) {
 function bossPunchFx(it, cx, cy, img) {
   const sx = Math.round(it.fx - cx), fy = Math.round(it.fy - cy), d = it.dir, t = it.t, C = bossArmCols(it, img);
   if (it.state === "pwarn") {
-    const n = (it.t >> 2) & 1, fx0 = sx + d * 14, zw = 66, k = Math.min(1, it.t / 10);
+    const n = (it.t >> 2) & 1, fx0 = sx + d * 14, zw = 56, k = Math.min(1, it.t / 10);
     ctx.save(); ctx.fillStyle = "rgba(255,40,30," + (0.1 + 0.16 * n) * k + ")"; ctx.fillRect(d > 0 ? fx0 : fx0 - zw, fy - 46, zw, 34);
     ctx.fillStyle = "rgba(255,90,70," + (0.55 * k) + ")"; const ex = d > 0 ? fx0 + zw - 2 : fx0 - zw; ctx.fillRect(ex, fy - 46, 2, 34); ctx.fillRect(d > 0 ? fx0 : fx0 - zw, fy - 46, zw, 1); ctx.fillRect(d > 0 ? fx0 : fx0 - zw, fy - 13, zw, 1);
     ctx.globalAlpha = n ? 1 : 0.55; ctx.font = "bold 16px monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#0a0000"; ctx.fillText("!", sx + 1, fy - 84); ctx.fillStyle = "#ff4030"; ctx.fillText("!", sx, fy - 85);
     ctx.globalAlpha = 0.5 + 0.4 * n; const gx = sx + d * 18, gy = fy - 40, g = ctx.createRadialGradient(gx, gy, 1, gx, gy, 12); g.addColorStop(0, "rgba(255,80,50,.9)"); g.addColorStop(1, "rgba(255,80,50,0)"); ctx.fillStyle = g; ctx.fillRect(gx - 12, gy - 12, 24, 24); ctx.restore(); return;
   }
-  const r = bossPunchReach(it), shx = sx + d * 23, shy = fy - 52, fxp = shx + d * r * 0.95, fyp = fy - 34 - (r < 20 ? (20 - r) * 0.2 : 0), mx = (shx + fxp) / 2, my = (shy + fyp) / 2 - 3;
+  const r = bossPunchReach(it), shx = sx + d * 23, shy = fy - 52, fxp = shx + d * r, fyp = fy - 34 - (r < 20 ? (20 - r) * 0.2 : 0), mx = (shx + fxp) / 2, my = (shy + fyp) / 2 - 3;
   ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.fillStyle = "#0a0806"; ctx.beginPath(); ctx.arc(shx, shy + 1, 6, 0, 7); ctx.fill(); ctx.fillStyle = C[1]; ctx.beginPath(); ctx.arc(shx, shy + 1, 5, 0, 7); ctx.fill(); ctx.fillStyle = C[2]; ctx.fillRect(shx - 3, shy - 3, 3, 2);   // shoulder cap
   for (const [w, col] of [[9, "#0a0806"], [7, C[1]], [2, C[2]]]) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(shx, shy + (w === 2 ? -2 : 0)); ctx.quadraticCurveTo(mx, my + (w === 2 ? -2 : 0), fxp, fyp + (w === 2 ? -2 : 0)); ctx.stroke(); }
   ctx.fillStyle = "#0a0806"; ctx.fillRect(fxp - 5 + (d > 0 ? 1 : -1), fyp - 6, 10, 12); ctx.fillStyle = C[1]; ctx.fillRect(fxp - 4 + (d > 0 ? 1 : -1), fyp - 5, 8, 10); ctx.fillStyle = C[2]; ctx.fillRect(fxp - 4 + (d > 0 ? 1 : -1), fyp - 5, 8, 2); ctx.fillStyle = C[0]; ctx.fillRect(fxp - 4 + (d > 0 ? 1 : -1), fyp + 3, 8, 2);
   ctx.fillStyle = "#f0ead4"; for (let k = -1; k <= 1; k++) ctx.fillRect(fxp + d * 5 + (d > 0 ? 0 : -2), fyp + k * 3 - 1, 2, 2);   // claw tips
@@ -4193,8 +4194,8 @@ function updateBoss(it, hb) {
   switch (it.state) {
     case "idle": it.dir = toHero; it.state = "walk"; it.t = 0; break;
     case "walk": { it.dir = toHero; if (dist > 34) it.fx += it.dir * sp; clampX(); touch();
-      if (dist < 70 && it.t > (phase2 ? 22 : 40) && Math.random() < 0.03) { it.state = "pwarn"; it.t = 0; it.dir = toHero; sfx("roar"); break; }
-      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; if (dist < 80 && r < 0.45) { it.state = "pwarn"; it.dir = toHero; sfx("roar"); break; } it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
+      if (!chief && dist < 70 && it.t > (phase2 ? 22 : 40) && Math.random() < 0.03) { it.state = "pwarn"; it.t = 0; it.dir = toHero; sfx("roar"); break; }
+      if (it.t > (phase2 ? 50 : 90)) { const r = Math.random(); it.t = 0; if (!chief && dist < 80 && r < 0.45) { it.state = "pwarn"; it.dir = toHero; sfx("roar"); break; } it.state = chief ? (r < 0.5 ? "telegraph" : "windup") : (r < 0.4 ? "windup" : r < 0.75 ? "telegraph" : (phase2 ? "orbs" : "windup")); it.dir = toHero; } break; }
     case "pwarn": if (it.t < 12) it.dir = toHero; if (it.t >= (phase2 ? 22 : 32)) { it.state = "punch"; it.t = 0; it.hitDone = false; sfx("slam"); } break;
     case "punch": { const pb = bossPunchBox(it); if (pb && !it.hitDone && !h.inv && G.mode === "play" && overlap(hb, pb)) { it.hitDone = true; hurtHero(it.dir); } touch(); if (it.t > 15) { it.state = "recover"; it.t = 0; } break; }
     case "telegraph": it.dir = toHero; if (it.t > 26) { it.state = "charge"; it.t = 0; it.cdir = toHero; sfx("roar"); } break;
@@ -4305,7 +4306,7 @@ function armPaths(pose, lean, cr, zone) {
     slam: [{ S: SL, E: P(SL, -10, 14), W: P(SL, -8, 40 * fl), w0: wl, w1: wl - 3 }, { S: SR, E: P(SR, 10, 15), W: P(SR, 8, 38 * fr), w0: wr + 1, w1: wr - 2 }],
     charge: [{ S: SL, E: P(SL, -11, 5), W: P(SL, -22, 13 * fl), w0: wl, w1: wl - 4 }, { S: SR, E: P(SR, -3, 17), W: P(SR, -12, 31 * fr), w0: wr + 1, w1: wr - 3 }]
   };
-  sets.pwarn = [sets.idle[0], { S: SR, E: P(SR, 9, 3), W: P(SR, -5, 12), w0: wr + 1, w1: wr - 2 }]; sets.punch = sets.pwarn;   // the punching arm is cocked back; the strike itself is drawn live
+  sets.pwarn = [sets.idle[0], { S: SR, E: P(SR, 9, 3), W: P(SR, -5, 12), w0: wr + 1, w1: wr - 2 }]; sets.punch = [sets.idle[0]];   // the punching arm is cocked back; the strike itself is drawn live
   return sets[pose] || sets.idle;
 }
 
